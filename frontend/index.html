@@ -13,52 +13,48 @@
     </header>
     
     <main>
-        <div style="padding: 10px; margin-bottom: 20px; background-color: #f0f0f0; border-radius: 5px; text-align: center;">
-            <label for="userTierSelector" style="margin-right: 10px; font-weight: bold;">Select User Tier:</label>
+        <div id="user-tier-controls" class="glass-container content-block">
+            <label for="userTierSelector">Select User Tier:</label>
             <select id="userTierSelector">
                 <option value="free" selected>Free User</option>
                 <option value="premium">Premium User</option>
             </select>
-            <div id="subscriptionStatus" style="margin-top: 5px; font-style: italic;">Status: Free Tier</div>
-            <button id="subscribeButton" style="margin-top: 10px; padding: 8px 15px;">Subscribe to Premium</button>
+            <div id="subscriptionStatus">Status: Free Tier</div>
+            <button id="subscribeButton">Subscribe to Premium</button>
         </div>
 
-        <section class="upload-section">
+        <section class="upload-section glass-container">
             <h2>Upload Your Resume</h2>
             <!-- Updated accept attribute to include .txt -->
             <input type="file" id="resumeUpload" accept=".pdf,.doc,.docx,.txt">
             <button id="analyzeButton">Optimize Resume</button> <!-- Changed from onclick to id for event listener -->
         </section>
         
-        <section id="analysis-results">
+        <section id="analysis-results" class="glass-container">
             <h2>AI Analysis</h2>
-            <!-- Changed p to div for potentially more complex results display -->
-            <div id="results-display">Upload a resume to see AI-powered enhancements.</div>
+            <div id="results-display" class="results-box">Upload a resume to see AI-powered enhancements.</div>
 
-            <!-- New ATS Compatibility Check Button and Display Area -->
-            <button id="checkAtsButton" style="margin-top: 15px;">Check ATS Compatibility</button>
-            <div id="atsSuggestionsDisplay" style="margin-top: 10px;">Click the button to check ATS compatibility.</div>
+            <button id="checkAtsButton">Check ATS Compatibility</button>
+            <div id="atsSuggestionsDisplay" class="results-box">Click the button to check ATS compatibility.</div>
 
-            <!-- New Smart Suggestions Button and Display Area -->
-            <button id="getSmartSuggestionsButton" style="margin-top: 15px;">Get Smart Suggestions (AI Jules)</button>
-            <div id="smartSuggestionsDisplay" style="margin-top: 10px;">Click the button for AI-powered smart suggestions.</div>
+            <button id="getSmartSuggestionsButton">Get Smart Suggestions (AI Jules)</button>
+            <div id="smartSuggestionsDisplay" class="results-box">Click the button for AI-powered smart suggestions.</div>
 
-            <!-- New Job Market Insights Button and Display Area -->
-            <button id="getJobMarketInsightsButton" style="margin-top: 15px;">Get Job Market Insights (AI Jules)</button>
-            <div id="jobMarketInsightsDisplay" style="margin-top: 10px;">Click the button for AI-powered job market insights.</div>
+            <button id="getJobMarketInsightsButton">Get Job Market Insights (AI Jules)</button>
+            <div id="jobMarketInsightsDisplay" class="results-box">Click the button for AI-powered job market insights.</div>
         </section>
 
-        <section id="job-match-section">
+        <section id="job-match-section" class="glass-container">
             <h2>Job Description Match</h2>
             <textarea id="jobDescriptionInput" rows="10" placeholder="Paste the job description here..."></textarea>
             <button id="jobMatchButton">Analyze Job Match</button>
-            <div id="jobMatchResultsDisplay">Enter a job description to see match analysis.</div>
+            <div id="jobMatchResultsDisplay" class="results-box">Enter a job description to see match analysis.</div>
         </section>
 
-        <section id="translation-section">
+        <section id="translation-section" class="glass-container">
             <h2>Translate Resume</h2>
             <textarea id="resumeTextForTranslation" rows="15" placeholder="Paste your resume text here for translation..."></textarea>
-            <div style="margin-top: 10px; margin-bottom: 10px;">
+            <div id="translation-controls">
                 <label for="targetLanguage">Translate to:</label>
                 <select id="targetLanguage">
                     <option value="es">Spanish</option>
@@ -69,7 +65,7 @@
                 </select>
             </div>
             <button id="translateResumeButton">Translate Resume</button>
-            <div id="translatedResumeDisplay" style="margin-top: 10px; padding: 10px; border: 1px solid #ccc; min-height: 100px; background-color: #f9f9f9;">
+            <div id="translatedResumeDisplay" class="results-box">
                 Translated resume will appear here.
             </div>
         </section>

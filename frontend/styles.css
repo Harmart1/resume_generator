@@ -20,19 +20,38 @@ body {
     min-height: 100vh;
 }
 
+/* General Glassmorphism Container Style */
+.glass-container {
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px); /* Safari support */
+    border-radius: 15px;
+    padding: 25px;
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    margin-bottom: 25px; /* Added for spacing between glass containers */
+}
+
 header {
-    background: rgba(255, 255, 255, 0.25); /* Slightly more opaque for header readability */
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px); /* Safari support */
-    border-radius: 15px; /* Softer corners */
-    padding: 25px 30px;
-    margin-bottom: 30px;
+    /* background: rgba(255, 255, 255, 0.25); /* Slightly more opaque for header readability - Handled by .glass-container */
+    /* backdrop-filter: blur(12px); */
+    /* -webkit-backdrop-filter: blur(12px); /* Safari support */
+    /* border-radius: 15px; /* Softer corners */
+    padding: 25px 30px; /* Keep specific padding for header */
+    /* margin-bottom: 30px; */ /* Handled by .glass-container */
     width: 100%;
     max-width: 700px; /* Slightly narrower */
     text-align: center;
-    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37); /* More pronounced shadow */
-    border: 1px solid rgba(255, 255, 255, 0.18);
+    /* box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37); /* More pronounced shadow */
+    /* border: 1px solid rgba(255, 255, 255, 0.18); */
 }
+/* Applying .glass-container to header, so some properties are inherited */
+header.glass-container {
+     background: rgba(255, 255, 255, 0.25); /* Override for header: Slightly more opaque */
+     backdrop-filter: blur(12px); /* Override for header: Slightly more blur */
+    -webkit-backdrop-filter: blur(12px);
+}
+
 
 header h1 {
     font-size: 2.3em; /* Slightly reduced */
@@ -50,37 +69,47 @@ main {
     max-width: 700px;
     display: flex;
     flex-direction: column;
-    gap: 25px;
+    gap: 0; /* Let .glass-container margin handle the gap */
 }
 
-section {
+/* section styling is now covered by .glass-container */
+/* section {
     background: rgba(255, 255, 255, 0.2); /* Standard glass effect */
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px); /* Safari support */
-    border-radius: 15px;
-    padding: 25px;
-    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
-    border: 1px solid rgba(255, 255, 255, 0.18);
-}
+/*    backdrop-filter: blur(10px);
+/*    -webkit-backdrop-filter: blur(10px); /* Safari support */
+/*    border-radius: 15px;
+/*    padding: 25px;
+/*    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+/*    border: 1px solid rgba(255, 255, 255, 0.18);
+/*}
 
-section h2 {
+.glass-container h2 { /* Target h2 within .glass-container for consistency */
     font-size: 1.7em; /* Slightly reduced */
     color: #2c3e50; /* Darker heading for contrast */
     margin-bottom: 20px; /* More space below heading */
     text-align: center;
 }
 
-input[type="file"] {
+/* Styling for form elements within glass containers */
+.glass-container input[type="file"],
+.glass-container textarea,
+.glass-container select {
     display: block;
-    margin: 0 auto 20px auto; /* Center the input */
+    width: calc(100% - 20px); /* Adjust width to account for padding */
+    margin: 10px auto 20px auto; /* Centering and spacing */
     padding: 12px;
     border: 1px solid rgba(255, 255, 255, 0.3);
-    border-radius: 8px; /* Softer corners */
-    background: rgba(255, 255, 255, 0.1); /* Lighter background */
-    color: #333; /* Darker text for readability */
-    width: 90%; /* Responsive width */
-    max-width: 400px; /* Max width for larger screens */
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #333; /* Ensure text is readable */
+    font-family: 'Roboto', sans-serif;
+    font-size: 1em;
 }
+
+.glass-container input[type="file"] {
+    max-width: 400px; /* Specific max-width for file input */
+}
+
 
 input[type="file"]::file-selector-button {
     background-color: #5DADE2; /* A calm blue */
@@ -98,45 +127,100 @@ input[type="file"]::file-selector-button:hover {
     transform: translateY(-1px);
 }
 
-button {
+.glass-container button { /* Target buttons within .glass-container */
     background-color: #5DADE2; /* A calm blue */
     color: white;
     padding: 12px 25px;
     border: none;
     border-radius: 8px;
-    font-size: 1.05em; /* Slightly larger font */
+    font-size: 1.05em;
     cursor: pointer;
     transition: background-color 0.3s ease, transform 0.2s ease;
-    display: block; /* Make button a block element */
-    margin: 0 auto; /* Center the button */
+    display: block;
+    margin: 15px auto; /* Consistent margin for buttons */
     font-weight: bold;
 }
 
-button:hover {
+.glass-container button:hover {
     background-color: #3498DB; /* Darker blue on hover */
     transform: translateY(-2px); /* Subtle lift */
 }
 
-button:active {
+.glass-container button:active {
     transform: translateY(0); /* Click effect */
 }
 
-#analysis-results p {
-    color: #34495e; /* Darker text for contrast */
-    font-size: 1.05em;
-    min-height: 50px;
-    text-align: center; /* Center placeholder text */
-    padding: 10px;
-    background: rgba(0,0,0,0.05); /* Slight background for the text area */
-    border-radius: 8px;
+/* Style for user tier controls section */
+#user-tier-controls {
+    text-align: center; /* Center content */
 }
+
+#user-tier-controls label {
+    display: block;
+    margin-bottom: 8px;
+    color: #333;
+    font-weight: bold;
+}
+
+#user-tier-controls select {
+    margin-bottom: 10px; /* Space below select */
+}
+
+#user-tier-controls #subscriptionStatus {
+    margin: 10px 0;
+    font-style: italic;
+    color: #34495e;
+}
+
+/* Styling for translation controls */
+#translation-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 15px 0;
+}
+
+#translation-controls label {
+    margin-bottom: 8px;
+    color: #333;
+    font-weight: bold;
+}
+
+
+/* Styles for results display boxes */
+.results-box {
+    background: rgba(0, 0, 0, 0.05); /* Slightly darker, less transparent */
+    border-radius: 8px;
+    padding: 15px;
+    margin: 15px 0; /* Space around results boxes */
+    min-height: 50px;
+    color: #333; /* Ensure good contrast */
+    font-size: 1em;
+    line-height: 1.5;
+    border: 1px solid rgba(255, 255, 255, 0.1); /* Subtle border */
+}
+
+.results-box h3 { /* For potential subheadings within results */
+    color: #2c3e50;
+    margin-bottom: 10px;
+}
+
+.results-box ul, .results-box ol {
+    list-style-position: inside;
+    padding-left: 10px;
+}
+
+.results-box li {
+    margin-bottom: 5px;
+}
+
 
 /* Responsive Design */
 @media (max-width: 768px) {
     body {
         padding: 15px;
     }
-    header {
+    .glass-container, header { /* Apply to header as well */
         padding: 20px;
         max-width: 95%;
     }
@@ -149,25 +233,26 @@ button:active {
     header p {
         font-size: 1em;
     }
-    section h2 {
+    .glass-container h2 { /* Target h2 within .glass-container */
         font-size: 1.5em;
     }
-    button {
+    .glass-container button {
         padding: 10px 20px;
         font-size: 1em;
     }
-    input[type="file"] {
+    .glass-container input[type="file"],
+    .glass-container textarea,
+    .glass-container select {
         width: 100%;
     }
 }
 
 @media (max-width: 480px) {
-    header {
+    .glass-container, header { /* Apply to header as well */
         padding: 15px;
-        margin-bottom: 20px;
     }
-    section {
-        padding: 15px;
+    header { /* Specific header adjustments if needed */
+        margin-bottom: 20px; /* Ensure header has bottom margin */
     }
     header h1 {
         font-size: 1.8em;
@@ -175,13 +260,26 @@ button:active {
     header p {
         font-size: 0.9em;
     }
-    section h2 {
+    .glass-container h2 { /* Target h2 within .glass-container */
         font-size: 1.3em;
     }
     input[type="file"]::file-selector-button {
         padding: 8px 15px;
     }
-    button {
-        width: 100%; /* Full width button on small screens */
+    .glass-container button {
+        width: calc(100% - 40px); /* Adjust button width for padding */
+        margin-left: auto;
+        margin-right: auto;
     }
+    #user-tier-controls, #translation-controls { /* Stack elements vertically */
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    #user-tier-controls select, #user-tier-controls button,
+    #translation-controls select, #translation-controls button {
+        width: 90%; /* Make controls wider */
+        margin-bottom: 10px;
+    }
+
 }

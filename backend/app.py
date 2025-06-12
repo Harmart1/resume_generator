@@ -58,14 +58,18 @@ import google.generativeai as genai
 
 
 # For PDF text extraction (attempt pdfplumber first, then PyPDF2 as fallback)
+import io # Ensure io is imported for file stream handling
+import pdfplumber # Ensure pdfplumber is imported
+import docx # For python-docx
+
 PDFPLUMBER_AVAILABLE = False
 PYPDF2_AVAILABLE = False
 try:
-    import pdfplumber
-    PDFPLUMBER_AVAILABLE = True
+    # import pdfplumber # Already imported above
+    PDFPLUMBER_AVAILABLE = True # Assume available if import didn't raise error
     logger.info("pdfplumber imported successfully. Enhanced PDF extraction available.")
-except ImportError:
-    logger.warning("pdfplumber not found. Attempting PyPDF2 as fallback for PDF extraction.")
+except ImportError: # This except block might be less relevant if pdfplumber is directly imported
+    logger.warning("pdfplumber not found (this should not happen if import successful). Attempting PyPDF2 as fallback for PDF extraction.")
     try:
         import PyPDF2
         PYPDF2_AVAILABLE = True
@@ -2099,27 +2103,35 @@ def analyze_resume():
 
     if file:
         filename = secure_filename(file.filename)
+        resume_content_string = None
 
-        # For this subtask, only process .txt files
-        if not filename.lower().endswith('.txt'):
-            logger.warning(f"File type not supported for /analyze_resume: {filename}. Only .txt is currently supported.")
-            # Future enhancement: Add robust text extraction for PDF/DOCX files.
-            return jsonify({"error": f"File type not supported: {filename}. Only .txt files are currently processed for analysis. PDF/DOCX support is a future enhancement."}), 415
+        if filename.lower().endswith('.pdf'):
+            resume_content_string = extract_text_from_pdf(file)
+        elif filename.lower().endswith('.docx'):
+            resume_content_string = extract_text_from_docx(file)
+        elif filename.lower().endswith('.txt'):
+            try:
+                file.seek(0)
+                resume_content_string = file.read().decode('utf-8')
+            except Exception as e:
+                logger.error(f"Error reading .txt file {filename}: {e}")
+                return jsonify({"error": f"Error reading text file: {filename}"}), 500
+        else:
+            logger.warning(f"Unsupported file type uploaded to /analyze_resume: {filename}")
+            return jsonify({"error": "Unsupported file type. Please upload a .txt, .pdf, or .docx file."}), 415
 
-        try:
-            resume_text = file.read().decode('utf-8')
-            if not resume_text.strip():
-                logger.warning(f"Uploaded file '{filename}' is empty or contains only whitespace.")
-                return jsonify({"error": "Uploaded file is empty."}), 400
-        except UnicodeDecodeError:
-            logger.error(f"Could not decode file '{filename}' as UTF-8 text.")
-            return jsonify({"error": "Could not decode file. Please ensure it is a plain text file."}), 400
-        except Exception as e:
-            logger.error(f"Error reading file '{filename}': {e}")
-            return jsonify({"error": "Could not read file content."}), 500
+        if resume_content_string is None:
+            logger.error(f"Failed to extract text from {filename} in /analyze_resume.")
+            return jsonify({"error": f"Failed to extract text from {filename}."}), 500
+        if not resume_content_string.strip():
+            logger.warning(f"No text content found in {filename} after extraction in /analyze_resume.")
+            return jsonify({"error": f"No text content found in {filename}."}), 400
+
+        # Ensure resume_text is the extracted string for subsequent logic
+        resume_text = resume_content_string
 
         if not WATSON_NLP_AVAILABLE or nlu_client is None:
-            logger.error("Watson NLU client not configured. Cannot perform resume analysis.")
+            logger.error("Watson NLU client not configured. Cannot perform resume analysis in /analyze_resume.")
             return jsonify({"error": "Watson NLU client not configured. Please check server setup."}), 500
 
         try:
@@ -2284,6 +2296,28 @@ def check_ats():
         logger.warning("No file selected in /check_ats request.")
         return jsonify({"error": "No selected file"}), 400
 
+    resume_content_string = None
+    if filename.lower().endswith('.pdf'):
+        resume_content_string = extract_text_from_pdf(file)
+    elif filename.lower().endswith('.docx'):
+        resume_content_string = extract_text_from_docx(file)
+    elif filename.lower().endswith('.txt'):
+        try:
+            file.seek(0)
+            resume_content_string = file.read().decode('utf-8')
+        except Exception as e:
+            logger.error(f"Error reading .txt file {filename} for /check_ats: {e}")
+            return jsonify({"error": f"Error reading text file: {filename}"}), 500
+    else:
+        logger.warning(f"Unsupported file type uploaded to /check_ats: {filename}")
+        return jsonify({"error": "Unsupported file type. Please upload a .txt, .pdf, or .docx file."}), 415
+
+    if resume_content_string is None:
+        logger.error(f"Failed to extract text from {filename} in /check_ats.")
+        return jsonify({"error": f"Failed to extract text from {filename}."}), 500
+    # No separate check for empty string here, as generic tips can still be provided.
+    # If NLU analysis is desired for empty string, it will likely not yield specific results.
+
     ats_suggestions = [
         "Use standard, readable fonts (e.g., Arial, Calibri, Times New Roman). Font size should be 10-12 points.",
         "Avoid using tables, columns, or text boxes for critical information like skills or experience, as some ATS may not parse these correctly.",
@@ -2292,69 +2326,48 @@ def check_ats():
         "Spell check and proofread carefully; typos can cause your resume to be filtered out by ATS or viewed negatively by recruiters.",
         "Submit your resume in a compatible file format, typically .docx or PDF (unless .txt is specifically requested)."
     ]
-    # Note: Smart suggestions currently only support .txt files. Future enhancement: Add PDF/DOCX parsing.
-    logger.info("Note: ATS check currently only supports .txt files for NLU analysis. Future enhancement: Add PDF/DOCX parsing.")
 
-    if not filename.lower().endswith('.txt'):
-        logger.warning(f"File type not .txt for /check_ats: {filename}. Skipping NLU analysis, providing generic tips.")
-        ats_suggestions.append("Advanced analysis for section detection was skipped as only .txt files are currently processed by NLU here.")
-        # (Gemini refinement could still be attempted on these generic tips if desired)
+    # Perform NLU analysis if content was extracted (even if empty, NLU might handle it gracefully or return nothing)
+    if resume_content_string.strip(): # Only proceed with NLU if there's actual text
+        if WATSON_NLP_AVAILABLE and nlu_client:
+            try:
+                logger.info(f"Analyzing '{filename}' with Watson NLU for ATS check...")
+                analysis_results = nlu_client.analyze(
+                    text=resume_content_string,
+                    features=Features(
+                        keywords={'limit': 50, 'sentiment': False, 'emotion': False},
+                        entities={'limit': 50, 'sentiment': False, 'emotion': False}
+                    )
+                ).get_result()
+
+                nlu_keywords = [kw['text'].lower() for kw in analysis_results.get('keywords', [])]
+                standard_sections = ["experience", "education", "skills", "contact", "summary", "objective", "projects", "awards", "certifications", "languages", "volunteer"]
+                found_sections_count = 0
+                for section in standard_sections:
+                    if any(section in kw for kw in nlu_keywords):
+                        found_sections_count +=1
+                    else:
+                        ats_suggestions.append(f"Consider adding a clear '{section.capitalize()}' section if applicable to your experience.")
+
+                if len(nlu_keywords) < 10 and len(resume_content_string) > 200:
+                    ats_suggestions.append("Ensure your resume text is machine-readable and not primarily image-based. If your resume is text-based but few keywords were extracted by NLU, review its clarity and keyword optimization for ATS.")
+                elif found_sections_count < 2 and len(resume_content_string) > 200:
+                     ats_suggestions.append("Your resume seems to be missing several standard sections or they are not clearly identified. Ensure clear headings like 'Experience', 'Education', and 'Skills'.")
+            except ApiException as e:
+                logger.error(f"Watson NLU API error during ATS check for '{filename}': {e.code} - {e.message}")
+                ats_suggestions.append("Could not perform detailed NLU analysis for section detection due to an API error.")
+            except Exception as e:
+                logger.error(f"Unexpected error during Watson NLU analysis for ATS check: {e}")
+                ats_suggestions.append("An unexpected error occurred during detailed resume analysis.")
+        else:
+            ats_suggestions.append("Watson NLU client not available for detailed structural analysis. Displaying generic ATS tips.")
     else:
-        try:
-            resume_content_string = file.read().decode('utf-8')
-            if not resume_content_string.strip():
-                logger.warning(f"Uploaded file '{filename}' for ATS check is empty.")
-                return jsonify({"error": "Uploaded resume file is empty."}), 400
+        logger.warning(f"No text content found in '{filename}' for ATS check, providing generic tips.")
+        ats_suggestions.append("The uploaded file appears to be empty or no text could be extracted. Please check the file content.")
 
-            if WATSON_NLP_AVAILABLE and nlu_client:
-                try:
-                    logger.info(f"Analyzing '{filename}' with Watson NLU for ATS check...")
-                    analysis_results = nlu_client.analyze(
-                        text=resume_content_string,
-                        features=Features(
-                            keywords={'limit': 50, 'sentiment': False, 'emotion': False},
-                            entities={'limit': 50, 'sentiment': False, 'emotion': False}
-                            # Optional: categories={'limit': 3}
-                        )
-                    ).get_result()
-
-                    nlu_keywords = [kw['text'].lower() for kw in analysis_results.get('keywords', [])]
-                    # Consider entities for section headings too if keywords are sparse
-                    # nlu_entities_texts = [entity['text'].lower() for entity in analysis_results.get('entities', [])]
-                    # combined_texts_for_sections = set(nlu_keywords + nlu_entities_texts)
-
-                    standard_sections = ["experience", "education", "skills", "contact", "summary", "objective", "projects", "awards", "certifications", "languages", "volunteer"]
-                    found_sections_count = 0
-                    for section in standard_sections:
-                        if any(section in kw for kw in nlu_keywords): # Simple substring check for section presence
-                            found_sections_count +=1
-                        else:
-                            ats_suggestions.append(f"Consider adding a clear '{section.capitalize()}' section if applicable to your experience.")
-
-                    if len(nlu_keywords) < 10 and len(resume_content_string) > 200: # Heuristic for a resume of reasonable length
-                        ats_suggestions.append("Ensure your resume text is machine-readable and not primarily image-based. If your resume is text-based but few keywords were extracted by NLU, review its clarity and keyword optimization for ATS.")
-                    elif found_sections_count < 2 and len(resume_content_string) > 200: # If very few standard sections found
-                         ats_suggestions.append("Your resume seems to be missing several standard sections or they are not clearly identified. Ensure clear headings like 'Experience', 'Education', and 'Skills'.")
-
-
-                except ApiException as e:
-                    logger.error(f"Watson NLU API error during ATS check for '{filename}': {e.code} - {e.message}")
-                    ats_suggestions.append("Could not perform detailed NLU analysis for section detection due to an API error.")
-                except Exception as e:
-                    logger.error(f"Unexpected error during Watson NLU analysis for ATS check: {e}")
-                    ats_suggestions.append("An unexpected error occurred during detailed resume analysis.")
-            else:
-                ats_suggestions.append("Watson NLU client not available for detailed structural analysis. Displaying generic ATS tips.")
-
-        except UnicodeDecodeError:
-            logger.error(f"Could not decode file '{filename}' as UTF-8 text for ATS check.")
-            return jsonify({"error": "Could not decode file. Please ensure it is a plain text file for ATS check."}), 400
-        except Exception as e:
-            logger.error(f"Error reading file '{filename}' for ATS check: {e}")
-            return jsonify({"error": "Could not read file content for ATS check."}), 500
 
     final_suggestions = ats_suggestions
-    if gemini_model and ats_suggestions: # Check if there are suggestions to refine
+    if gemini_model and ats_suggestions:
         try:
             gemini_prompt = "Review the following ATS compatibility suggestions for a resume. Rephrase them to be more encouraging, clear, and actionable for a job seeker. Ensure each suggestion is a separate point. Suggestions:\n" + "\n".join(ats_suggestions)
             logger.info(f"Refining ATS suggestions for '{filename}' using Gemini...")
@@ -2483,24 +2496,30 @@ def get_smart_suggestions():
         return jsonify({"error": "No selected file"}), 400
 
     if file:
-        # For this subtask, only process .txt files for smart suggestions
-        if not filename.lower().endswith('.txt'):
-            logger.warning(f"File type not supported for /get_smart_suggestions: {filename}. Only .txt is currently supported.")
-            logger.info("Note: Smart suggestions currently only support .txt files. Future enhancement: Add robust text extraction for PDF/DOCX.")
-            return jsonify({"error": "Unsupported file type. Please upload a .txt file."}), 415
+        resume_content_string = None
+        if filename.lower().endswith('.pdf'):
+            resume_content_string = extract_text_from_pdf(file)
+        elif filename.lower().endswith('.docx'):
+            resume_content_string = extract_text_from_docx(file)
+        elif filename.lower().endswith('.txt'):
+            try:
+                file.seek(0)
+                resume_content_string = file.read().decode('utf-8')
+            except Exception as e:
+                logger.error(f"Error reading .txt file {filename} for /get_smart_suggestions: {e}")
+                return jsonify({"error": f"Error reading text file: {filename}"}), 500
+        else:
+            logger.warning(f"Unsupported file type uploaded to /get_smart_suggestions: {filename}")
+            return jsonify({"error": "Unsupported file type. Please upload a .txt, .pdf, or .docx file."}), 415
 
-        resume_content_string = ""
-        try:
-            resume_content_string = file.read().decode('utf-8')
-            if not resume_content_string.strip():
-                logger.warning(f"Uploaded file '{filename}' for smart suggestions is empty.")
-                return jsonify({"error": "Uploaded resume file is empty."}), 400
-        except UnicodeDecodeError:
-            logger.error(f"Could not decode file '{filename}' as UTF-8 text for smart suggestions.")
-            return jsonify({"error": "Could not decode file. Please ensure it is a plain text file."}), 500
-        except Exception as e:
-            logger.error(f"Error reading file '{filename}' for smart suggestions: {e}")
-            return jsonify({"error": "Could not read file content for smart suggestions."}), 500
+        if resume_content_string is None:
+            logger.error(f"Failed to extract text from {filename} in /get_smart_suggestions.")
+            return jsonify({"error": f"Failed to extract text from {filename}."}), 500
+        if not resume_content_string.strip():
+            logger.warning(f"No text content found in {filename} after extraction in /get_smart_suggestions.")
+            return jsonify({"error": f"No text content found in {filename}."}), 400
+
+        # resume_content_string is now guaranteed to be populated with text
 
         prompt_text = f"""Analyze the following resume text and provide actionable suggestions to improve it. Focus on:
 1. Rephrasing sentences for greater impact and clarity (try to provide specific examples of original vs. suggested phrase).
