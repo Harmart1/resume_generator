@@ -3,7 +3,7 @@ import logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-from flask import Flask, request, render_template_string, send_file, flash, redirect, url_for, session, g, jsonify
+from flask import Flask, request, render_template_string, send_file, flash, redirect, url_for, session, g, jsonify, send_from_directory
 from flask_wtf import FlaskForm
 from flask_wtf.csrf import CSRFProtect
 from flask_session import Session
@@ -104,6 +104,26 @@ app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'a-very-secret-key-for-dev')
 app.config['SESSION_TYPE'] = 'filesystem'
 Session(app)
 csrf = CSRFProtect(app)
+
+@app.route('/')
+def serve_homepage():
+    # Serves new_homepage.html from the 'frontend' directory,
+    # which is one level up from the 'backend' directory where app.py resides.
+    return send_from_directory('../frontend', 'new_homepage.html')
+
+@app.route('/static/<path:path>')
+def serve_frontend_static_file(path):
+    # Serves files from ../frontend/static
+    return send_from_directory('../frontend/static', path)
+
+@app.route('/<path:filename>')
+def serve_frontend_file(filename):
+    # Serves files like homepage_styles.css directly from ../frontend
+    # Add checks for specific allowed files for security if necessary,
+    # or ensure filenames are sanitized.
+    # For now, attempt to serve any file from frontend - be cautious
+    # This will also catch index.html (app page) and its styles.css
+    return send_from_directory('../frontend', filename)
 
 # --- Jinja2 Custom Filter for strftime ---
 @app.before_request
@@ -247,18 +267,18 @@ def extract_keywords_watson(text: str, max_keywords: int = 100) -> List[str]:
                 entities=EntitiesOptions(limit=max_keywords, sentiment=False, emotion=False, mentions=False)
             )
         ).get_result()
-        
+
         extracted_kws = set()
         if 'keywords' in response:
             for kw in response['keywords']:
                 extracted_kws.add(normalize_text(kw['text']))
-        
+
         if 'entities' in response:
             for entity in response['entities']:
                 extracted_kws.add(normalize_text(entity['text']))
-        
+
         return sorted(list(extracted_kws))[:max_keywords]
-    
+
     except ApiException as e:
         logger.error(f"IBM Watson NLU SDK API error: {e.code} - {e.message}")
         return []
@@ -275,24 +295,24 @@ def extract_keywords_spacy(text: str, max_keywords: int = 100) -> List[str]:
     if not nlp or not text:
         logger.warning("SpaCy model is not loaded or text is empty. Skipping SpaCy keyword extraction.")
         return []
-    
+
     text = normalize_text(text)
     doc = nlp(text)
-    
+
     keywords = []
     for token in doc:
-        if (not token.is_stop and 
+        if (not token.is_stop and
             not token.is_punct and
             not token.is_digit and
-            token.is_alpha and 
+            token.is_alpha and
             len(token.text) > 2 and
             token.pos_ in ['NOUN', 'PROPN', 'VERB', 'ADJ', 'X']):
-            
+
             if token.pos_ == 'PROPN' or token.text.istitle() or token.text.isupper():
                 keywords.append(token.text.lower())
             else:
                 keywords.append(token.lemma_)
-    
+
     for i in range(len(doc) - 1):
         bigram = doc[i:i+2].text.lower()
         if bigram in SYNONYM_MAP:
@@ -309,12 +329,12 @@ def extract_keywords_spacy(text: str, max_keywords: int = 100) -> List[str]:
 
     keyword_counts = Counter(keywords)
     common_undesirable_words = {'work', 'use', 'company', 'team', 'project', 'develop', 'manage', 'system', 'data', 'create', 'build', 'implement', 'lead', 'design', 'process', 'solution'}
-    
+
     filtered_keywords = [
         kw for kw, count in keyword_counts.most_common(max_keywords * 2)
         if kw not in common_undesirable_words and len(kw) > 1
     ]
-    
+
     return filtered_keywords[:max_keywords]
 
 
@@ -338,11 +358,11 @@ def match_resume_to_job(resume_text: str, job_description: str, industry: str) -
         logger.warning("Neither IBM Watson NLP nor SpaCy model is available. Cannot perform keyword analysis.")
         return {
             "matched_keywords": [],
-            "missing_keywords": [], 
+            "missing_keywords": [],
             "match_score": 0,
             "missing_by_category": {'technical': [], 'soft': [], 'other': []}
         }
-    
+
     # Get industry-specific skills
     technical_skills = ALL_TECHNICAL_SKILLS.get('generic', set()).union(ALL_TECHNICAL_SKILLS.get(industry, set()))
     soft_skills = ALL_SOFT_SKILLS.get('generic', set()).union(ALL_SOFT_SKILLS.get(industry, set()))
@@ -353,17 +373,17 @@ def match_resume_to_job(resume_text: str, job_description: str, industry: str) -
     # Calculate match metrics
     matched = sorted(list(resume_normalized.intersection(job_normalized)))
     missing = sorted(list(job_normalized.difference(resume_normalized)))
-    
+
     # Avoid division by zero if job description has no keywords
     score = round((len(matched) / max(len(job_normalized), 1)) * 100, 2)
-    
+
     # Categorize missing keywords for better suggestions
     categorized_missing = {
         'technical': [kw for kw in missing if kw in technical_skills],
         'soft': [kw for kw in missing if kw in soft_skills],
         'other': [kw for kw in missing if kw not in technical_skills and kw not in soft_skills]
     }
-    
+
     return {
         "matched_keywords": matched,
         "missing_keywords": missing,
@@ -379,7 +399,7 @@ def suggest_insertions_for_keywords(missing_keywords: List[str], industry: str =
     Generates suggestions based on categorized missing keywords.
     """
     suggestions = []
-    
+
     # Get industry-specific skills for categorization
     technical_skills = ALL_TECHNICAL_SKILLS.get('generic', set()).union(ALL_TECHNICAL_SKILLS.get(industry, set()))
     soft_skills = ALL_SOFT_SKILLS.get('generic', set()).union(ALL_SOFT_SKILLS.get(industry, set()))
@@ -387,18 +407,18 @@ def suggest_insertions_for_keywords(missing_keywords: List[str], industry: str =
     tech_kws = [kw for kw in missing_keywords if kw in technical_skills]
     if tech_kws:
         suggestions.append(f"**Technical Skills:** Consider adding projects or experiences demonstrating proficiency in: {', '.join(tech_kws[:5])}.")
-    
+
     soft_kws = [kw for kw in missing_keywords if kw in soft_skills]
     if soft_kws:
         suggestions.append(f"**Soft Skills:** Integrate examples illustrating your abilities in: {', '.join(soft_kws[:3])} using the STAR method.")
-    
+
     other_kws = [kw for kw in missing_keywords if kw not in technical_skills and kw not in soft_skills]
     if other_kws:
         suggestions.append(f"**Keywords:** Look for opportunities to naturally incorporate terms like: {', '.join(other_kws[:4])} into your experience descriptions or summary.")
 
     if industry and industry != 'generic':
         suggestions.append(f"**Industry Tailoring:** Ensure all examples and descriptions are tailored to resonate specifically with the {industry} industry.")
-    
+
     if not suggestions:
         suggestions.append("Great job! Your resume aligns well with the job description. Consider minor refinements for even stronger impact.")
 
@@ -409,13 +429,13 @@ def _generate_descriptive_language_llm(prompt_text: str, model_name: str = "gemi
     Calls the Gemini API to generate descriptive language based on a prompt.
     """
     # NOTE: If running locally outside Canvas, you may need to uncomment and set your API key here:
-    api_key = "AIzaSyCHZBiMT8I6oFfHJloX_vvbDqvREfhyVOA" 
+    api_key = "AIzaSyCHZBiMT8I6oFfHJloX_vvbDqvREfhyVOA"
     # api_key = "" # Leave empty for Canvas environment to inject API key automatically
     api_url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
 
     chat_history = []
     chat_history.append({ # Changed .push() to .append()
-        "role": "user", 
+        "role": "user",
         "parts": [{"text": prompt_text}]
     })
 
@@ -477,7 +497,7 @@ def apply_llm_enhancements(organized_sections: Dict[str, str], missing_keywords:
     Applies LLM-generated enhancements to the organized resume sections.
     """
     modified_sections = organized_sections.copy()
-    
+
     technical_skills = ALL_TECHNICAL_SKILLS.get('generic', set()).union(ALL_TECHNICAL_SKILLS.get(industry, set()))
     soft_skills = ALL_SOFT_SKILLS.get('generic', set()).union(ALL_SOFT_SKILLS.get(industry, set()))
 
@@ -532,7 +552,7 @@ def apply_llm_enhancements(organized_sections: Dict[str, str], missing_keywords:
             else:
                 modified_sections[target_section] = generated_other_text if target_section == 'summary' else f"• {generated_other_text}"
             logger.info(f"Added general keywords enhancement: {generated_other_text}")
-    
+
     return modified_sections
 
 
@@ -544,7 +564,7 @@ def auto_insert_keywords(resume_text: str, missing_keywords: List[str], context:
     """
     if not missing_keywords:
         return resume_text
-    
+
     keywords_to_add = sorted(list(set(missing_keywords)))
     insert_str = ", ".join(keywords_to_add[:10])
 
@@ -553,14 +573,14 @@ def auto_insert_keywords(resume_text: str, missing_keywords: List[str], context:
     if skills_section_match:
         header_text = skills_section_match.group(1)
         existing_skills_line = skills_section_match.group(2).strip()
-        
+
         if existing_skills_line:
             replacement = f"{header_text}{existing_skills_line}, {insert_str}"
         else:
             replacement = f"{header_text}\n{insert_str}"
-        
+
         return re.sub(r'(?i)(^\s*skills\s*[:\n])([^\n]*)', replacement, resume_text, count=1, flags=re.MULTILINE | re.DOTALL)
-    
+
     return resume_text + f"\n\nSkills\n{'-'*6}\n{insert_str}"
 
 def highlight_keywords_in_html(text: str, keywords: List[str]) -> str:
@@ -569,9 +589,9 @@ def highlight_keywords_in_html(text: str, keywords: List[str]) -> str:
     for keyword in sorted(list(set(keywords)), key=len, reverse=True):
         normalized_keyword = normalize_text(keyword)
         highlighted_text = re.sub(
-            r'\b(' + re.escape(normalized_keyword) + r')\b', 
-            r'<mark class="bg-yellow-300 text-yellow-900 rounded px-0.5 font-semibold">\1</mark>', 
-            highlighted_text, 
+            r'\b(' + re.escape(normalized_keyword) + r')\b',
+            r'<mark class="bg-yellow-300 text-yellow-900 rounded px-0.5 font-semibold">\1</mark>',
+            highlighted_text,
             flags=re.IGNORECASE
         )
     return highlighted_text.replace('\n', '<br>')
@@ -593,7 +613,7 @@ def extract_quantifiable_achievements(experience_text: str) -> List[str]:
     ]
 
     lines = re.split(r'\n[•*-]|\n\s{2,}[•*-]|\n\s{4,}', experience_text)
-    
+
     for line in lines:
         line = line.strip()
         if not line:
@@ -602,7 +622,7 @@ def extract_quantifiable_achievements(experience_text: str) -> List[str]:
             if re.search(pattern, line, re.IGNORECASE):
                 achievements.append(line)
                 break
-    
+
     return list(set(achievements))
 
 def extract_text_from_file(file_storage) -> str:
@@ -614,7 +634,7 @@ def extract_text_from_file(file_storage) -> str:
 
     filename = secure_filename(file_storage.filename)
     file_extension = os.path.splitext(filename)[1].lower()
-    
+
     text_content = ""
     file_bytes_io = BytesIO(file_storage.read()) # Read file content into BytesIO
     file_bytes_io.seek(0) # Rewind to the beginning
@@ -668,7 +688,7 @@ COMMON_LANGUAGES = [
 
 class ResumeForm(FlaskForm):
     resume_text = TextAreaField(
-        'Resume Content (Paste Here)', 
+        'Resume Content (Paste Here)',
         validators=[Optional()], # Make optional as file upload is an alternative
         render_kw={"rows": 10, "placeholder": "Paste your full resume text here...", "aria-label": "Resume Content Textarea"}
     )
@@ -677,7 +697,7 @@ class ResumeForm(FlaskForm):
         validators=[Optional()], # Optional
         render_kw={"aria-label": "Resume File Upload"}
     )
-    
+
     job_description = TextAreaField(
         'Job Description (Paste Here - Optional)',
         validators=[Optional()], # Make optional as file upload is an alternative
@@ -698,7 +718,7 @@ class ResumeForm(FlaskForm):
         ('legal', 'Legal'),
         ('teaching_academic', 'Teaching / Academic'),
     ], default='tech', render_kw={"aria-label": "Select Industry Focus"})
-    
+
     # New fields for multilingual support
     enable_translation = BooleanField('Translate Output', render_kw={"aria-label": "Enable translation of output"})
     target_language = SelectField('Translate Output To', choices=COMMON_LANGUAGES, validators=[Optional()], default='en', render_kw={"aria-label": "Select target language for translation"})
@@ -708,7 +728,7 @@ class ResumeForm(FlaskForm):
     auto_draft_enhancements = BooleanField('Automatically draft and insert suggested enhancements (AI-powered)', render_kw={"aria-label": "Auto-draft suggested enhancements"})
 
     include_action_verb_list = BooleanField('Include Action Verb List', render_kw={"aria-label": "Include strong action verb list"})
-    include_summary_best_practices = BooleanField('Include Resume Summary Tips', render_kw={"aria-label": "Include resume summary best practices"}) 
+    include_summary_best_practices = BooleanField('Include Resume Summary Tips', render_kw={"aria-label": "Include resume summary best practices"})
     include_ats_formatting_tips = BooleanField('Include ATS Formatting Tips', render_kw={"aria-label": "Include ATS formatting tips"})
 
     submit = SubmitField('Analyze and Optimize Resume', render_kw={"aria-label": "Analyze and Organize Resume Button"})
@@ -721,8 +741,8 @@ def parse_contact_info(text: str) -> Dict[str, str]:
     Parses contact information from the beginning of the resume text.
     """
     contact_info = {}
-    search_area = "\n".join(text.split('\n')[:8]) 
-    
+    search_area = "\n".join(text.split('\n')[:8])
+
     email_match = re.search(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b', search_area)
     if email_match:
         contact_info['email'] = email_match.group(0)
@@ -734,7 +754,7 @@ def parse_contact_info(text: str) -> Dict[str, str]:
     linkedin_match = re.search(r'(?:https?://)?(?:www\.)?linkedin\.com/in/[\w-]{5,}\b', search_area)
     if linkedin_match:
         contact_info['linkedin'] = linkedin_match.group(0)
-    
+
     lines = [line.strip() for line in search_area.split('\n') if line.strip()]
     for line in lines:
         if (1 < len(line.split()) < 5 and
@@ -757,7 +777,7 @@ def parse_resume(text: str) -> Tuple[Dict[str, str], Dict[str, str]]:
         return {}, {}
 
     contact_info_dict = parse_contact_info(text)
-    
+
     lines_to_process = []
     original_lines = text.replace('\r\n', '\n').split('\n')
     for line in original_lines:
@@ -768,14 +788,14 @@ def parse_resume(text: str) -> Tuple[Dict[str, str], Dict[str, str]]:
                 break
         if not is_contact_line:
             lines_to_process.append(line)
-    
+
     processed_text = "\n".join(lines_to_process)
 
     filtered_lines = []
     for line in processed_text.split('\n'):
         line_stripped = line.strip()
-        if (not line_stripped or 
-            len(line_stripped) < 5 or 
+        if (not line_stripped or
+            len(line_stripped) < 5 or
             len(line_stripped) > 150 or
             re.search(r'(?:^\s*import\s+\w+)|(?:^\s*def\s+\w+\s*\(.*\):)|(?:^\s*class\s+\w+:)|(?:^\s*<[^>]+>)|(?:^(?:git|npm|pip|sudo)\s+)', line_stripped, re.IGNORECASE) or
             (re.search(r'http[s]?://[^\s]+', line_stripped, re.IGNORECASE) and not any(ci_val and ci_val in line_stripped for ci_val in contact_info_dict.values())) or
@@ -817,13 +837,13 @@ def parse_resume(text: str) -> Tuple[Dict[str, str], Dict[str, str]]:
     section_content_lines: Dict[str, List[str]] = {current_section_name: []}
 
     lines = [line.strip() for line in processed_text.split('\n')]
-    
+
     for line in lines:
         if not line:
             continue
-        
+
         found_header = False
-        
+
         if line.isupper() and 2 < len(line) < 50:
             for name, pattern_regex in section_patterns.items():
                 if re.match(pattern_regex, line):
@@ -834,8 +854,8 @@ def parse_resume(text: str) -> Tuple[Dict[str, str], Dict[str, str]]:
                     break
             if found_header:
                 continue
-        
-        if not found_header: 
+
+        if not found_header:
             for name, pattern_regex in section_patterns.items():
                 if re.match(pattern_regex, line):
                     current_section_name = name
@@ -843,7 +863,7 @@ def parse_resume(text: str) -> Tuple[Dict[str, str], Dict[str, str]]:
                     found_header = True
                     logger.debug(f"Identified header: {line} -> {name}")
                     break
-        
+
         if not found_header:
             section_content_lines[current_section_name].append(line)
 
@@ -857,9 +877,9 @@ def parse_resume(text: str) -> Tuple[Dict[str, str], Dict[str, str]]:
     for name, content_list in section_content_lines.items():
         if name != 'unclassified' and content_list:
             sections[name] = "\n".join(content_list).strip()
-    
+
     sections = {k: v for k, v in sections.items() if v}
-    
+
     return contact_info_dict, sections
 
 # Mapping for optimized header wording
@@ -968,11 +988,11 @@ def organize_resume_data(contact_info: Dict, sections: Dict, additional_tips_con
         'professional_memberships', 'bar_admissions', 'professional_development',
         'volunteer', 'languages', 'interests', 'references', 'extracurriculars', 'coursework', 'thesis', 'other'
     ]
-    
+
     contact_header_lines = []
     if contact_info.get('name'):
         contact_header_lines.append(f"{contact_info['name']}")
-    
+
     contact_details = []
     if contact_info.get('email'):
         contact_details.append(contact_info['email'])
@@ -980,15 +1000,15 @@ def organize_resume_data(contact_info: Dict, sections: Dict, additional_tips_con
         contact_details.append(contact_info['phone'])
     if contact_info.get('linkedin'):
         contact_details.append(contact_info['linkedin'])
-    
+
     if contact_details:
         contact_header_lines.append(" | ".join(contact_details))
-    
+
     if contact_header_lines:
         formatted_contact_content = "\n".join(contact_header_lines)
         organized_text_list.append(formatted_contact_content)
         organized_sections_dict['contact'] = formatted_contact_content
-    
+
     for section_name_raw in section_order:
         content = sections.get(section_name_raw, '').strip()
         section_name_optimized = HEADER_OPTIMIZATION_MAP.get(section_name_raw, section_name_raw.replace('_', ' ').title())
@@ -998,10 +1018,10 @@ def organize_resume_data(contact_info: Dict, sections: Dict, additional_tips_con
 
         formatted_content = ""
 
-        if section_name_raw in ['experience', 'education', 'projects', 'volunteer', 'publications', 
-                                'research_experience', 'presentations', 'extracurriculars', 
+        if section_name_raw in ['experience', 'education', 'projects', 'volunteer', 'publications',
+                                'research_experience', 'presentations', 'extracurriculars',
                                 'bar_admissions', 'professional_development']:
-            
+
             # Updated splitting pattern for job/education entries
             # This pattern attempts to be more robust by looking for common starting points of new entries:
             # - A line starting with multiple capitalized words (potential title/company)
@@ -1015,7 +1035,7 @@ def organize_resume_data(contact_info: Dict, sections: Dict, additional_tips_con
                             r'|' \
                             r'(?:[A-Z][a-zA-Z\s,\'-]*\s*){1,5}(?:\s*\||\s*[-–])' \
                             r'))'
-            
+
             entries = re.split(split_pattern, content)
             entries = [entry.strip() for entry in entries if entry.strip()]
 
@@ -1024,17 +1044,17 @@ def organize_resume_data(contact_info: Dict, sections: Dict, additional_tips_con
                 entry_lines = [line.strip() for line in entry.strip().split('\n') if line.strip()]
                 if not entry_lines:
                     continue
-                
+
                 # Logic to identify the main header and sub-bullets
                 # The first non-empty line is assumed to be part of the header.
                 # Look for date patterns on subsequent lines to extend the header.
                 main_header_parts = []
                 description_lines = []
-                
+
                 # Take the first line as part of the header
                 if entry_lines:
                     main_header_parts.append(entry_lines[0])
-                    
+
                     # Iterate through subsequent lines to find location/date info
                     i = 1
                     while i < len(entry_lines):
@@ -1057,22 +1077,22 @@ def organize_resume_data(contact_info: Dict, sections: Dict, additional_tips_con
                 else:
                     formatted_entry_content = []
 
-                for desc_line in description_lines: 
+                for desc_line in description_lines:
                     # Clean bullet points if present, then add our own
                     cleaned_desc_line = re.sub(r'^\s*[•*-]\s*', '', desc_line).strip()
                     if cleaned_desc_line:
                         formatted_entry_content.append(f"  • {cleaned_desc_line}")
-                
-                formatted_entries.append("\n".join(formatted_entry_content)) 
-            formatted_content = "\n\n".join(formatted_entries) 
+
+                formatted_entries.append("\n".join(formatted_entry_content))
+            formatted_content = "\n\n".join(formatted_entries)
 
         elif section_name_raw == 'skills':
             # Handle skills as a comma-separated list if they are line-separated initially
-            if '\n' in content and not re.search(r',|\s\s+', content): 
+            if '\n' in content and not re.search(r',|\s\s+', content):
                 cleaned_skills = [re.sub(r'^[•*-]\s*', '', s).strip() for s in content.split('\n')]
                 formatted_content = ", ".join(filter(None, cleaned_skills))
             else:
-                formatted_content = content 
+                formatted_content = content
 
         else:
             lines = [line.strip() for line in content.split('\n')]
@@ -1112,7 +1132,7 @@ def generate_enhanced_preview(contact_info: Dict, organized_sections: Dict, orig
         return f"bg-gray-800 bg-opacity-70 backdrop-filter backdrop-blur-lg rounded-2xl shadow-xl border border-electric-cyan border-opacity-40 {extra_classes}"
 
     html_content = '<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">'
-    
+
     # Left Pane: Original Resume (if available)
     html_content += f"""
     <div class="{get_glass_card_classes('p-6 sm:p-8 md:p-10')}">
@@ -1131,14 +1151,14 @@ def generate_enhanced_preview(contact_info: Dict, organized_sections: Dict, orig
         <p class="text-sm text-secondary-light text-center mb-3 font-inter">Output Language: <span class="font-semibold text-primary-light">{target_lang.upper()}</span></p>
         <div class="bg-gray-900 bg-opacity-80 p-4 sm:p-6 rounded-lg text-gray-200 overflow-auto h-[450px] sm:h-[550px] text-sm sm:text-base">
     """
-    
+
     # Custom rendering for the Contact/Header section
     if contact_info:
         html_content += '<section class="mb-6 text-center pb-4 border-b border-gray-700 border-opacity-70">'
         if contact_info.get('name'):
             # Text color adjusted to a brighter accent color
             html_content += f'<h1 class="text-3xl sm:text-4xl font-extrabold text-electric-cyan mb-2 font-sora">{escape(contact_info["name"])}</h1>'
-        
+
         details = []
         if contact_info.get('email'):
             details.append(f'<a href="mailto:{escape(contact_info["email"])}" class="text-tech-blue hover:underline">{escape(contact_info["email"])}</a>')
@@ -1146,7 +1166,7 @@ def generate_enhanced_preview(contact_info: Dict, organized_sections: Dict, orig
             details.append(escape(contact_info["phone"]))
         if contact_info.get('linkedin'):
             details.append(f'<a href="{escape(contact_info["linkedin"])}" target="_blank" class="text-tech-blue hover:underline">{escape(contact_info["linkedin"])}</a>')
-        
+
         if details:
             # Text color adjusted for dark readability
             separator_span = '<span class="text-gray-500 font-normal mx-2">|</span>'
@@ -1158,7 +1178,7 @@ def generate_enhanced_preview(contact_info: Dict, organized_sections: Dict, orig
         title_optimized = HEADER_OPTIMIZATION_MAP.get(title_raw, title_raw.replace('_', ' ').title())
         if title_raw == 'resume_optimization_tips':
              title_optimized = "Resume Optimization Tips"
-        
+
         return f"""
         <section class="mb-5">
             <h4 class="text-xl sm:text-2xl font-bold text-neon-purple border-b border-tech-blue border-opacity-70 pb-2 mb-3 capitalize font-sora">{title_optimized}</h4>
@@ -1167,7 +1187,7 @@ def generate_enhanced_preview(contact_info: Dict, organized_sections: Dict, orig
             </div>
         </section>
         """
-    
+
     section_order_html = [
         'summary', 'experience', 'education', 'skills', 'projects',
         'research_experience', 'publications', 'presentations', 'awards', 'certifications', 'grants',
@@ -1175,7 +1195,7 @@ def generate_enhanced_preview(contact_info: Dict, organized_sections: Dict, orig
         'volunteer', 'languages', 'interests', 'references', 'extracurriculars', 'coursework', 'thesis', 'other',
         'resume_optimization_tips'
     ]
-    
+
     for sec_name_raw in section_order_html:
         content_to_process = organized_sections.get(sec_name_raw)
         if content_to_process:
@@ -1186,7 +1206,7 @@ def generate_enhanced_preview(contact_info: Dict, organized_sections: Dict, orig
             else:
                 temp_html_content = escape(content_to_process)
                 # Strong text in electric cyan for visibility on dark background
-                temp_html_content = re.sub(r'\*\*(.*?)\*\*', r'<strong><span class="text-electric-cyan">\1</span></strong>', temp_html_content) 
+                temp_html_content = re.sub(r'\*\*(.*?)\*\*', r'<strong><span class="text-electric-cyan">\1</span></strong>', temp_html_content)
                 # This complex regex handles both '  • ' and '• ' by converting them to proper HTML list items
                 # It first converts '  • ' (indented bullet) to a nested list item
                 temp_html_content = re.sub(r'^ {2}• (.*)$', r'  <ul class="list-disc ml-8"><li class="mb-1">\1</li></ul>', temp_html_content, flags=re.MULTILINE)
@@ -1198,13 +1218,13 @@ def generate_enhanced_preview(contact_info: Dict, organized_sections: Dict, orig
                 # Find all </ul><br>\n<ul...> patterns and replace them to merge lists.
                 temp_html_content = re.sub(r'</ul>\s*<br>\s*<ul class="list-disc ml-4">', '', temp_html_content, flags=re.DOTALL)
                 temp_html_content = re.sub(r'</ul>\s*<br>\s* <ul class="list-disc ml-8">', '', temp_html_content, flags=re.DOTALL)
-                
+
                 # Replace newline characters with <br> for general flow, but ensure they don't break list structure.
                 # This step should be done after handling bullet points.
                 processed_content_html = temp_html_content.replace('\n', '<br>')
-                
+
             html_content += format_section_html(sec_name_raw, processed_content_html)
-            
+
     html_content += '</div></div>' # Close organized resume and main grid container
     return html_content
 
@@ -1214,7 +1234,7 @@ def export_to_word(text: str):
     that aims to visually appear substantively similar to the live preview.
     """
     doc = Document()
-    
+
     section = doc.sections[0]
     section.top_margin = Inches(1)
     section.bottom_margin = Inches(1)
@@ -1241,7 +1261,7 @@ def export_to_word(text: str):
         p_format = new_style.paragraph_format
         p_format.space_before = Pt(12)
         p_format.space_after = Pt(6)
-        
+
         pPr = p_format._element.get_or_add_pPr()
         pBdr = OxmlElement('w:pBdr')
         pPr.insert_element_before(pBdr, 'w:shd', 'w:tabs', 'w:suppressAutoHyphens', 'w:kinsoku', 'w:wordWrap', 'w:overflowPunct', 'w:topLinePunct', 'w:autoSpaceDN', 'w:autoSpaceDE', 'w:autoSpaceDZ', 'w:lvlText', 'w:lvlJc')
@@ -1267,9 +1287,9 @@ def export_to_word(text: str):
         run.font.size = default_font_size
 
     sections_split = re.split(r'\n([A-Za-z &]+)\n=+\n', text)
-    
+
     content_before_first_header = sections_split[0].strip()
-    
+
     if content_before_first_header:
         contact_lines = content_before_first_header.split('\n')
         if contact_lines:
@@ -1279,20 +1299,20 @@ def export_to_word(text: str):
             name_run.font.size = Pt(24)
             name_run.bold = True
             name_run.font.name = default_font_name
-            
+
             if len(contact_lines) > 1:
                 details_paragraph = doc.add_paragraph(contact_lines[1].strip())
                 details_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
                 details_run = details_paragraph.runs[0]
                 details_run.font.size = Pt(10)
                 details_run.font.name = default_font_name
-            
+
             doc.add_paragraph(style='Normal').paragraph_format.space_after = Pt(12)
 
     for i in range(1, len(sections_split), 2):
         title = sections_split[i].strip()
         content = sections_split[i+1].strip()
-        
+
         if title:
             heading = doc.add_paragraph(title, style='Custom Heading 1')
 
@@ -1303,7 +1323,7 @@ def export_to_word(text: str):
                 if not line_stripped:
                     if j > 0 and lines[j-1].strip():
                         doc.add_paragraph(style='Normal').paragraph_format.space_after = Pt(6)
-                    continue 
+                    continue
 
                 if re.fullmatch(r'\*\*.*?\*\*', line_stripped):
                     subheading_text = line_stripped.strip('**').strip()
@@ -1326,7 +1346,7 @@ def export_to_word(text: str):
                     p = doc.add_paragraph(line_stripped, style='Normal')
                     for run in p.runs:
                         apply_default_run_style(run)
-            
+
             doc.add_paragraph(style='Normal').paragraph_format.space_after = Pt(12)
 
     bio = BytesIO()
@@ -1354,11 +1374,11 @@ HTML_TEMPLATE = """
         .text-tech-blue { color: #007BFF; } /* Brighter, more accessible blue */
         .text-electric-cyan { color: #00D8FF; } /* Brighter cyan */
         .text-neon-purple { color: #8A2BE2; } /* Deeper purple */
-        
+
         /* Neutral text colors for dark theme */
         .text-primary-light { color: #E0E0E0; } /* Light gray for main text */
         .text-secondary-light { color: #A0AEC0; } /* Medium-light gray for secondary text */
-        
+
         /* Adjusted colors for dark background borders and highlights */
         .header-text-color { color: #00D8FF; } /* Electric Cyan for branding text */
         .border-accent-dark { border-color: #00D8FF; } /* Electric Cyan for borders */
@@ -1376,7 +1396,7 @@ HTML_TEMPLATE = """
             background-color: #1A1A2E; /* Fallback for gradient */
             color: #E0E0E0; /* Default text color for dark mode */
         }
-        
+
         .container {
             max-width: 1200px;
             margin: 0 auto;
@@ -1567,7 +1587,7 @@ HTML_TEMPLATE = """
         .analysis-card strong {
              font-weight: 700;
         }
-        
+
         /* Checkbox styling - more integrated */
         input[type="checkbox"] {
             -webkit-appearance: none;
@@ -1672,7 +1692,7 @@ HTML_TEMPLATE = """
 
             <form method="POST" enctype="multipart/form-data" class="space-y-6 sm:space-y-8">
                 {{ form.csrf_token }}
-                
+
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
                     <div>
                         {{ form.resume_text.label(class="block text-lg sm:text-xl font-sora font-semibold text-tech-blue mb-2") }}
@@ -1755,7 +1775,7 @@ HTML_TEMPLATE = """
                         {{ form.include_ats_formatting_tips.label(class="text-base sm:text-lg text-secondary-light font-medium cursor-pointer") }}
                     </div>
                 </div>
-                
+
                 <div class="text-center pt-4">
                     {{ form.submit(class="btn-glow btn-primary inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 font-bold rounded-full shadow-lg text-white text-lg sm:text-xl transition duration-300 ease-in-out transform hover:scale-105 w-full sm:w-auto") }}
                 </div>
@@ -1772,7 +1792,7 @@ HTML_TEMPLATE = """
                 <!-- Analysis & Suggestions Section (Bottom) -->
                 <div class="lg:col-span-2 glass-card p-6 sm:p-8 md:p-10">
                     <h2 class="text-3xl sm:text-4xl font-sora font-extrabold text-electric-cyan mb-4 sm:mb-6 text-center leading-tight">Analysis & Suggestions</h2>
-                    
+
                     {% if match_data %}
                         <div class="mb-6 p-4 sm:p-6 rounded-lg shadow-md analysis-card analysis-card-blue">
                             <h3 class="text-xl sm:text-2xl font-bold text-electric-cyan mb-3 flex items-center">
@@ -1844,7 +1864,7 @@ HTML_TEMPLATE = """
                             <p class="text-secondary-light text-xs sm:text-sm mt-3 font-inter">Example: "Increased sales by 15% ($50K) in Q3 2023."</p>
                         </div>
                     {% endif %}
-                    
+
                     <div class="text-center mt-6 sm:mt-10 space-y-4 sm:space-x-4 flex flex-col sm:flex-row justify-center items-center">
                         {% if word_available %}
                             <a href="{{ url_for('download_word') }}" class="btn-glow btn-download inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 font-bold rounded-full shadow-lg text-white text-base sm:text-lg transition duration-300 ease-in-out transform hover:scale-105 w-full sm:w-auto">
@@ -1855,7 +1875,7 @@ HTML_TEMPLATE = """
                                 Download DOCX
                             </button>
                         {% endif %}
-                        
+
                         <button disabled class="btn-disabled inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 font-bold rounded-full shadow-md text-base sm:text-lg w-full sm:w-auto">
                             Download PDF (Unavailable)
                         </button>
@@ -1880,7 +1900,7 @@ HTML_TEMPLATE = """
 def index():
     global nlp
     if not WATSON_NLP_AVAILABLE:
-        if nlp is None: 
+        if nlp is None:
             try:
                 _nlp_instance = spacy.load("en_core_web_sm")
                 nlp = _nlp_instance
@@ -1891,7 +1911,7 @@ def index():
             except Exception as e:
                 logger.error(f"Failed to load SpaCy model as fallback: {e}")
                 nlp = None
-        
+
         if not WATSON_NLP_AVAILABLE and nlp is None:
             flash("Neither IBM Watson NLP nor SpaCy model is loaded. Keyword analysis and advanced parsing will be disabled. Please configure IBM Watson NLP credentials or run: `python -m spacy download en_core_web_sm` to enable full features.", "error")
         elif not WATSON_NLP_AVAILABLE and nlp is not None:
@@ -1911,7 +1931,7 @@ def index():
         try:
             resume_text = form.resume_text.data
             job_desc = form.job_description.data
-            
+
             # Prioritize file uploads over pasted text
             if form.resume_file.data:
                 uploaded_resume_text = extract_text_from_file(form.resume_file.data)
@@ -1987,7 +2007,7 @@ def index():
                 if match_data.get('missing_keywords'):
                     original_parsed_sections = parsed_sections.copy()
                     modified_sections_by_llm = apply_llm_enhancements(original_parsed_sections, match_data.get('missing_keywords', []), form.industry.data)
-                    
+
                     organized_text, organized_sections_dict = organize_resume_data(contact_info, modified_sections_by_llm, additional_tips_content)
                     flash('AI-powered enhancements drafted and inserted into the preview.', 'success')
                 else:
@@ -1995,19 +2015,19 @@ def index():
                     flash('No missing keywords found for AI-powered drafting. Resume is already well-aligned!', 'info')
             else:
                 organized_text, organized_sections_dict = organize_resume_data(contact_info, parsed_sections, additional_tips_content)
-                
+
                 if form.insert_keywords.data and job_desc and job_desc.strip() and current_llm_nlp_status:
-                    temp_match_data = match_resume_to_job(organized_text, job_desc, form.industry.data) 
+                    temp_match_data = match_resume_to_job(organized_text, job_desc, form.industry.data)
                     text_after_simple_insert = auto_insert_keywords(organized_text, temp_match_data.get('missing_keywords', []))
-                    
+
                     contact_info_after_simple_insert, parsed_sections_after_simple_insert = parse_resume(text_after_simple_insert)
                     organized_text, organized_sections_dict = organize_resume_data(contact_info_after_simple_insert, parsed_sections_after_simple_insert, additional_tips_content)
                     flash('Missing keywords have been automatically inserted into the preview (simple insertion).', 'success')
 
             if job_desc and job_desc.strip() and current_llm_nlp_status:
-                match_data = match_resume_to_job(organized_text, job_desc, form.industry.data) 
+                match_data = match_resume_to_job(organized_text, job_desc, form.industry.data)
                 insert_recs = suggest_insertions_for_keywords(match_data.get('missing_keywords', []), form.industry.data)
-            
+
             if current_llm_nlp_status and organized_sections_dict.get('experience'):
                 quantifiable_achievements = extract_quantifiable_achievements(organized_sections_dict['experience'])
                 if quantifiable_achievements:
@@ -2016,10 +2036,10 @@ def index():
             # --- Apply Translation if enabled and languages differ ---
             if form.enable_translation.data and target_language != detected_language:
                 flash(f"Translating generated content to {target_language.upper()}...", "info")
-                
+
                 # Translate main organized text
                 organized_text = _translate_text_gemini(organized_text, target_language, detected_language)
-                
+
                 # Translate each section in the dictionary
                 translated_sections_dict = {}
                 for key, value in organized_sections_dict.items():
@@ -2034,19 +2054,19 @@ def index():
                     match_data['missing_keywords'] = [_translate_text_gemini(kw, target_language, detected_language) for kw in match_data.get('missing_keywords', [])]
                     for cat in match_data['missing_by_category']:
                         match_data['missing_by_category'][cat] = [_translate_text_gemini(kw, target_language, detected_language) for kw in match_data['missing_by_category'][cat]]
-                
+
                 # Translate enhancement suggestions
                 insert_recs = [_translate_text_gemini(rec, target_language, detected_language) for rec in insert_recs]
                 quantifiable_achievements = [_translate_text_gemini(ach, target_language, detected_language) for ach in quantifiable_achievements]
-                
+
                 flash("Translation complete.", "success")
-            
+
             preview = generate_enhanced_preview(contact_info, organized_sections_dict, escape(original_resume_for_preview).replace('\n', '<br>'), match_data, form.highlight_keywords.data, detected_language, target_language)
 
             word_file_bytes = export_to_word(organized_text)
             session['word_file'] = word_file_bytes.getvalue()
             word_available = True
-            
+
             session['html_preview_content'] = preview
 
             if not match_data and job_desc and job_desc.strip():
@@ -2059,11 +2079,11 @@ def index():
         except Exception as e:
             logger.error(f"An unexpected error occurred during form processing: {e}\n{traceback.format_exc()}")
             flash('An unexpected error occurred. Please try again or simplify your input. Check console for details.', 'error')
-    
+
     # Pass detected_language and target_language to the template even on GET requests
-    return render_template_string(HTML_TEMPLATE, 
-                                form=form, 
-                                preview=preview, 
+    return render_template_string(HTML_TEMPLATE,
+                                form=form,
+                                preview=preview,
                                 match_data=match_data,
                                 insert_recs=insert_recs,
                                 quantifiable_achievements=quantifiable_achievements,
@@ -2679,7 +2699,7 @@ else:
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000))
     debug_mode = os.getenv('FLASK_ENV') == 'development'
-    
+
     print("=" * 50)
     print("🚀 Starting AI Resume Analyzer")
     if not WATSON_NLP_AVAILABLE:
@@ -2695,5 +2715,5 @@ if __name__ == '__main__':
     print(f"📝 PDF text extraction (PyPDF2 fallback): {PYPDF2_AVAILABLE}")
     print(f"🗣️ Language detection (langdetect): {LANGDETECT_AVAILABLE}")
     print("=" * 50)
-    
+
     app.run(debug=debug_mode, host='0.0.0.0', port=port)
