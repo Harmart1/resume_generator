@@ -3,7 +3,7 @@ import logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-from flask import Flask, request, render_template_string, send_file, flash, redirect, url_for, session, g, jsonify, send_from_directory
+from flask import Flask, request, render_template_string, send_file, flash, redirect, url_for, session, g, jsonify, send_from_directory, abort
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_wtf import FlaskForm
@@ -112,29 +112,66 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False # Suppress a warning
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
+# --- Database Models ---
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password_hash = db.Column(db.String(128)) # Stores the hashed password
+    tier = db.Column(db.String(50), nullable=False, default='free') # e.g., 'free', 'premium'
+
+    def __repr__(self):
+        return f'<User {self.email}>'
+
+# You will need to import Werkzeug security helpers later for password hashing,
+# e.g., from werkzeug.security import generate_password_hash, check_password_hash
+# And add methods to the User model like set_password and check_password.
+# For now, this basic structure is sufficient for schema creation.
+
 app.config['SESSION_TYPE'] = 'filesystem'
 Session(app)
 csrf = CSRFProtect(app)
 
 @app.route('/')
 def serve_homepage():
-    # Serves new_homepage.html from the 'frontend' directory,
-    # which is one level up from the 'backend' directory where app.py resides.
-    return send_from_directory('../frontend', 'new_homepage.html')
+    frontend_dir = os.path.join(os.path.dirname(__file__), '../frontend')
+    return send_from_directory(frontend_dir, 'new_homepage.html')
 
 @app.route('/static/<path:path>')
 def serve_frontend_static_file(path):
-    # Serves files from ../frontend/static
-    return send_from_directory('../frontend/static', path)
+    static_dir = os.path.join(os.path.dirname(__file__), '../frontend/static')
+    return send_from_directory(static_dir, path)
 
 @app.route('/<path:filename>')
 def serve_frontend_file(filename):
-    # Serves files like homepage_styles.css directly from ../frontend
-    # Add checks for specific allowed files for security if necessary,
-    # or ensure filenames are sanitized.
-    # For now, attempt to serve any file from frontend - be cautious
-    # This will also catch index.html (app page) and its styles.css
-    return send_from_directory('../frontend', filename)
+    frontend_dir = os.path.join(os.path.dirname(__file__), '../frontend')
+    # Basic security: prevent accessing files outside the intended frontend directory.
+    if '..' in filename or filename.startswith('/'):
+        abort(404)
+    return send_from_directory(frontend_dir, filename)
+
+@app.route('/contact.html')
+def serve_contact_page():
+    frontend_dir = os.path.join(os.path.dirname(__file__), '../frontend')
+    return send_from_directory(frontend_dir, 'contact.html')
+
+@app.route('/submit_contact_form', methods=['POST'])
+def handle_contact_submission():
+    if request.method == 'POST':
+        name = request.form.get('name')
+        email = request.form.get('email')
+        message = request.form.get('message')
+
+        # For now, just log the submission to the console.
+        logger.info(f"Contact form submission received:")
+        logger.info(f"  Name: {name}")
+        logger.info(f"  Email: {email}")
+        logger.info(f"  Message: {message}")
+
+        flash('Thank you for your message! We will get back to you soon.', 'success')
+        return redirect(url_for('serve_contact_page'))
+
+    # Should not be reached if form method is POST and handled
+    return redirect(url_for('serve_contact_page'))
 
 # --- Jinja2 Custom Filter for strftime ---
 @app.before_request

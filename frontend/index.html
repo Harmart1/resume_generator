@@ -10,11 +10,31 @@
     <header class="glass-container">
         <div class="app-header-content-wrapper" style="display: flex; justify-content: center; align-items: center; position: relative;">
             <div class="logo-container-app" style="text-align: center; flex-grow: 1;"> <!-- New container for logo -->
-                <img src="/static/revisume.jpg" alt="Revisume Logo" id="appPageLogoNew" class="app-logo-stylized" style="display: inline-block; max-height: 60px;"> <!-- Apply some default styling for now -->
+                        <img src="/static/revisume.jpg" alt="Revisume Logo" id="appPageLogoNew" class="app-logo-stylized">
             </div>
-            <nav style="position: absolute; right: 20px; top: 50%; transform: translateY(-50%);"> <!-- Example styling for nav -->
-                <a href="new_homepage.html" id="homeLinkAppPage">Home</a>
-                <!-- Account button will be added here later -->
+            <nav style="position: absolute; right: 20px; top: 50%; transform: translateY(-50%); display: flex; align-items: center;">
+                <a href="new_homepage.html" id="homeLinkAppPage" style="margin-right: 15px;">Home</a>
+                <div class="account-dropdown-container" style="position: relative;">
+                    <button id="accountButton" class="button-like-nav" aria-expanded="false" aria-controls="accountDropdownMenu">
+                        Account
+                    </button>
+                    <div id="accountDropdownMenu" class="dropdown-menu" style="display: none; position: absolute; right: 0; top: 100%; margin-top: 5px; background-color: var(--glass-background, #282846); border: 1px solid var(--glass-border, #444); border-radius: 8px; padding: 15px; min-width: 250px; z-index: 1000; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+                        <div class="user-info-section" style="margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid var(--glass-border, #444);">
+                            <p style="margin-bottom: 5px;"><strong>Email:</strong> <span id="userDropdownEmail">user@example.com</span></p>
+                            <p style="margin-bottom: 5px;"><strong>Tier:</strong> <span id="userDropdownTier">Premium</span></p>
+                            <p><strong>Next Payment:</strong> <span id="userDropdownPaymentDate">2024-12-31</span></p>
+                        </div>
+                        <!-- Placeholder for more user-entered info if needed -->
+                        <div class="user-custom-info" style="margin-bottom: 15px;">
+                            <label for="userDropdownCustomField" style="display:block; margin-bottom:5px; font-weight:normal;">Custom Info:</label>
+                            <input type="text" id="userDropdownCustomField" value="Sample user data" style="width:100%; padding:8px; border-radius:4px; border:1px solid var(--input-background); background-color:var(--input-background); color:var(--text-primary);">
+                        </div>
+                        <div class="dropdown-actions" style="display: flex; justify-content: space-between;">
+                            <button id="editAccountInfoButton" class="button-small button-secondary-app">Edit</button>
+                            <button id="saveAccountInfoButton" class="button-small button-primary-app" style="display:none;">Save</button>
+                        </div>
+                    </div>
+                </div>
             </nav>
         </div>
     </header>

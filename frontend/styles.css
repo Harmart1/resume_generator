@@ -10,7 +10,7 @@
     --text-secondary: #B1B1B1; /* Light gray */
     --success-confirm: #21D19F; /* Neon teal */
     --error-alert: #D32145; /* Deep red */
-    --glass-background: rgba(40, 40, 70, 0.3); /* Darker, slightly more opaque glass for app */
+    --glass-background: rgba(40, 40, 70, 0.3); /* Fallback if CSS var not loaded */
     --glass-border: rgba(255, 255, 255, 0.15); /* Brighter border for contrast */
     --input-background: rgba(255, 255, 255, 0.08);
     --button-text-dark: #1A1A2E; /* For light buttons like secondary-accent */
@@ -62,14 +62,14 @@ label {
 
 /* General Glassmorphism Container Style */
 .glass-container {
-    background: var(--glass-background);
-    backdrop-filter: blur(8px); /* Adjusted blur */
-    -webkit-backdrop-filter: blur(8px);
-    border-radius: 15px;
-    padding: 25px;
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); /* Darker shadow for depth */
+    background: var(--glass-background); /* rgba(40, 40, 70, 0.3) */
+    backdrop-filter: blur(12px); /* Increased blur */
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 18px; /* Slightly more rounded */
+    padding: 30px; /* Slightly more padding */
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45); /* Deeper, softer shadow */
     border: 1px solid var(--glass-border);
-    margin-bottom: 25px;
+    margin-bottom: 30px; /* Slightly more margin */
 }
 
 /* App Page Header Styling - New and Adjustments */
@@ -80,6 +80,12 @@ header.glass-container .app-header-content-wrapper {
     width: 100%;
     /* padding: 0 2%; /* Header already has padding */
     box-sizing: border-box;
+}
+
+.app-logo-stylized {
+    height: 80px; /* Increased size */
+    width: auto; /* Maintain aspect ratio */
+    vertical-align: middle; /* Good practice for images in flows */
 }
 
 header.glass-container .logo-link-app img#appPageLogo {
@@ -136,20 +142,35 @@ main {
 }
 
 /* Form Elements */
+.glass-container input[type="text"], /* Add text inputs here */
+.glass-container input[type="email"], /* Add email inputs */
+.glass-container input[type="password"], /* Add password inputs */
 .glass-container input[type="file"],
 .glass-container textarea,
 .glass-container select {
     display: block;
-    width: calc(100% - 20px);
-    margin: 10px auto 20px auto;
-    padding: 12px;
-    border: 1px solid var(--glass-border);
-    border-radius: 8px;
-    background: var(--input-background); /* Use input-background variable */
+    width: 100%; /* Use full width, padding will be inside */
+    margin: 10px auto 20px auto; /* Keep vertical margin, auto for horizontal centering */
+    padding: 14px; /* Slightly more padding */
+    border: 1px solid var(--glass-border); /* Keep border */
+    border-radius: 10px; /* More rounded */
+    background: rgba(255, 255, 255, 0.05); /* Make input background even more subtle */
     color: var(--text-primary);
-    font-family: 'Roboto', sans-serif;
+    font-family: 'Inter', sans-serif; /* Ensure it inherits Inter */
     font-size: 1em;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease; /* Add transitions */
 }
+
+.glass-container input[type="text"]:focus,
+.glass-container input[type="email"]:focus,
+.glass-container input[type="password"]:focus,
+.glass-container textarea:focus,
+.glass-container select:focus {
+    outline: none;
+    border-color: var(--primary-accent);
+    box-shadow: 0 0 8px rgba(93, 63, 211, 0.5); /* Direct RGBA for accent shadow */
+}
+
 .glass-container input[type="file"] {
     max-width: 400px;
 }
@@ -213,6 +234,74 @@ main {
     background-color: #7658D1; /* Matches homepage primary button hover */
     color: var(--text-primary); /* Ensure text color */
 }
+
+/* Account Button in Nav */
+#accountButton.button-like-nav { /* Assuming .button-like-nav will be a general class for nav buttons */
+    padding: 8px 15px;
+    color: var(--text-primary);
+    background-color: transparent; /* Or a subtle background */
+    border: 1px solid var(--glass-border); /* Subtle border */
+    border-radius: 5px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+#accountButton.button-like-nav:hover,
+#accountButton.button-like-nav[aria-expanded="true"] { /* Style when active/hovered */
+    background-color: var(--primary-accent);
+    color: var(--text-primary);
+    border-color: var(--primary-accent);
+}
+
+/* Account Dropdown Menu */
+.dropdown-menu {
+    /* display: none; /* Controlled by JS, but ensure base styles are here */
+    /* position: absolute; right: 0; top: 100%; etc. from inline style are okay for now */
+    background-color: var(--background-main); /* Darker, more solid background than glass */
+    border: 1px solid var(--primary-accent); /* Accent border */
+    border-radius: 8px;
+    padding: 20px; /* More padding */
+    min-width: 280px; /* Wider */
+    z-index: 1000;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.5); /* More pronounced shadow */
+}
+
+.dropdown-menu p {
+    margin-bottom: 8px;
+    font-size: 0.95em;
+    color: var(--text-secondary);
+}
+.dropdown-menu p strong {
+    color: var(--text-primary);
+}
+.dropdown-menu .user-custom-info label {
+    font-size: 0.9em;
+    color: var(--text-secondary);
+    margin-bottom: 5px;
+}
+.dropdown-menu .user-custom-info input[type="text"] {
+    background-color: rgba(255,255,255,0.05); /* Very subtle input bg */
+    border: 1px solid var(--glass-border);
+    padding: 10px; /* More padding for input */
+    font-size: 0.95em;
+}
+
+/* Buttons within the dropdown */
+.dropdown-menu .button-small {
+    padding: 6px 12px;
+    font-size: 0.9em;
+    border-radius: 4px;
+    font-weight: 500;
+}
+.dropdown-menu .button-secondary-app { /* For 'Edit' button */
+    background-color: var(--secondary-accent);
+    color: var(--text-primary); /* Ensure good contrast if using secondary accent */
+}
+.dropdown-menu .button-secondary-app:hover {
+    background-color: #FFAC47; /* Darker orange for hover */
+}
+/* .button-primary-app is already defined for Save button */
 
 
 /* User Tier Controls Styling */
