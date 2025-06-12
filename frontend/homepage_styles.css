@@ -150,7 +150,7 @@ main > section {
 
 
 /* Button Styling */
-.button, button {
+.button, button, a.button { /* Ensuring 'a.button' is included */
     background-color: var(--secondary-accent);
     color: var(--text-primary);
     padding: 12px 25px;
@@ -163,20 +163,25 @@ main > section {
     margin: 5px;
     transition: background-color 0.3s ease, transform 0.2s ease;
     box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    display: inline-block; /* Important for anchor tags to behave like buttons */
+    text-align: center; /* If not inherited, to center text in anchor */
 }
 
-.button:hover, button:hover {
+.button:hover, button:hover, a.button:hover { /* Ensuring 'a.button:hover' is included */
     background-color: #FFAC47;
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    color: var(--text-primary); /* Explicitly set for anchor hover state */
+    text-decoration: none; /* Remove underline on hover for button-styled anchors */
 }
 
-.button.primary, button.primary {
+.button.primary, button.primary, a.button.primary { /* Ensuring 'a.button.primary' is included */
      background-color: var(--primary-accent);
      color: var(--text-primary);
 }
-.button.primary:hover, button.primary:hover {
+.button.primary:hover, button.primary:hover, a.button.primary:hover { /* Ensuring 'a.button.primary:hover' is included */
     background-color: #7658D1;
+    color: var(--text-primary); /* Explicitly set for anchor hover state */
 }
 
 /* How It Works Section */
