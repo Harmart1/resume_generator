@@ -2157,27 +2157,27 @@ def analyze_resume():
     # It is for the NLU analysis itself.
     try:
         logger.info(f"Analyzing resume '{filename}' with Watson NLU...")
-            response = nlu_client.analyze(
-                text=resume_text,
-                features=Features(
-                    keywords=KeywordsOptions(limit=20, sentiment=False, emotion=False),
-                    entities=EntitiesOptions(limit=20, sentiment=False, emotion=False)
-                )
-                # language='en' # Optionally specify language if known, otherwise Watson detects
-            ).get_result()
+        response = nlu_client.analyze(
+            text=resume_text,
+            features=Features(
+                keywords=KeywordsOptions(limit=20, sentiment=False, emotion=False),
+                entities=EntitiesOptions(limit=20, sentiment=False, emotion=False)
+            )
+            # language='en' # Optionally specify language if known, otherwise Watson detects
+        ).get_result()
 
-            keywords = response.get('keywords', [])
-            entities = response.get('entities', [])
+        keywords = response.get('keywords', [])
+        entities = response.get('entities', [])
 
-            logger.info(f"Successfully analyzed '{filename}' with Watson NLU.")
-            return jsonify({
-                "filename": filename,
-                "message": "Resume analyzed successfully",
-                "keywords": keywords,
-                "entities": entities
-            }), 200
+        logger.info(f"Successfully analyzed '{filename}' with Watson NLU.")
+        return jsonify({
+            "filename": filename,
+            "message": "Resume analyzed successfully",
+            "keywords": keywords,
+            "entities": entities
+        }), 200
 
-        except ApiException as e:
+    except ApiException as e:
             logger.error(f"Watson NLU API error during analysis of '{filename}': {e.code} - {e.message}")
             return jsonify({"error": f"Watson NLU API error: {e.message}"}), 500
         except Exception as e:
