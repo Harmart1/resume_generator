@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Revisume.ai - AI Resume Optimizer</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1>Revisume.ai</h1>
+        <p>Your AI-powered resume assistant.</p>
+    </header>
+    
+    <main>
+        <section class="upload-section">
+            <h2>Upload Your Resume</h2>
+            <input type="file" id="resumeUpload" accept=".pdf, .doc, .docx">
+            <button onclick="processResume()">Optimize Resume</button>
+        </section>
+        
+        <section id="analysis-results">
+            <h2>AI Analysis</h2>
+            <p id="results">Upload a resume to see AI-powered enhancements.</p>
+        </section>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
