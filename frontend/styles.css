@@ -198,22 +198,52 @@ input[type="file"]::file-selector-button:hover {
     font-size: 1em;
     line-height: 1.5;
     border: 1px solid rgba(255, 255, 255, 0.1); /* Subtle border */
+    overflow-y: auto; /* Allow scrolling for long content */
+    max-height: 400px; /* Default max height */
+    text-align: left; /* Default text alignment for content */
+}
+
+.results-box p, .results-box div { /* Ensure paragraphs and divs also align left if they contain direct text */
+    text-align: left;
 }
 
 .results-box h3 { /* For potential subheadings within results */
     color: #2c3e50;
     margin-bottom: 10px;
+    text-align: center; /* Keep h3 centered as it was originally */
 }
+
+.results-box h4, .results-box h5 { /* General styling for new headings */
+    color: #2c3e50; /* Match h2/h3 color */
+    margin-top: 15px;
+    margin-bottom: 10px;
+    text-align: left; /* Default to left for these */
+}
+
 
 .results-box ul, .results-box ol {
     list-style-position: inside;
-    padding-left: 10px;
+    padding-left: 20px; /* Standard larger padding */
+    margin-left: 0; /* Reset margin if padding is used for indent */
+    text-align: left;
 }
 
 .results-box li {
-    margin-bottom: 5px;
+    margin-bottom: 8px; /* Increased spacing */
+    text-align: left;
 }
 
+.results-box pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    background-color: #f8f9fa;
+    padding: 10px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    margin-top: 5px;
+    margin-bottom: 10px;
+    text-align: left;
+}
 
 /* Responsive Design */
 @media (max-width: 768px) {
@@ -244,6 +274,15 @@ input[type="file"]::file-selector-button:hover {
     .glass-container textarea,
     .glass-container select {
         width: 100%;
+    }
+    .results-box {
+        max-height: 300px;
+    }
+    .results-box h4 {
+        font-size: 1.1em;
+    }
+    .results-box h5 {
+        font-size: 1.0em;
     }
 }
 
@@ -281,5 +320,31 @@ input[type="file"]::file-selector-button:hover {
         width: 90%; /* Make controls wider */
         margin-bottom: 10px;
     }
+    .results-box {
+        max-height: 250px;
+    }
+    .results-box ul, .results-box ol {
+        margin-left: 10px; /* Reduced indent further for very small screens */
+        padding-left: 15px; /* Ensure padding is adjusted with margin */
+    }
+    .results-box h4 {
+        font-size: 1.0em;
+    }
+    .results-box h5 {
+        font-size: 0.9em;
+    }
+    .results-box pre {
+        padding: 8px;
+    }
+}
 
+/* Standardized Error Message Styling */
+.error-message {
+    color: #D8000C; /* Standard error red */
+    background-color: #FFBABA; /* Lighter red background */
+    border: 1px solid #D8000C;
+    padding: 10px;
+    border-radius: 4px; /* Consistent with other elements */
+    margin-top: 10px;
+    text-align: left; /* Ensure text is aligned left */
 }

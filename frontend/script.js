@@ -49,6 +49,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (analyzeButton) {
         analyzeButton.addEventListener('click', async () => {
+            const originalButtonText = analyzeButton.textContent;
+            analyzeButton.disabled = true;
+            analyzeButton.textContent = 'Analyzing...';
+            resultsDisplay.innerHTML = ''; // Clear previous results
+
             if (!resumeUploadInput || !resumeUploadInput.files || resumeUploadInput.files.length === 0) {
                 resultsDisplay.textContent = 'Please select a resume file first.';
                 resultsDisplay.style.color = 'red';
@@ -67,10 +72,30 @@ document.addEventListener("DOMContentLoaded", () => {
             const formData = new FormData();
             formData.append('resume', file);
 
-            resultsDisplay.textContent = 'Analyzing...';
-            resultsDisplay.style.color = '#333'; // Default text color
+            // resultsDisplay.textContent = 'Analyzing...'; // Already handled by button text
+            resultsDisplay.style.color = '#333'; // Default text color for messages
 
             try {
+                // Validation moved after button state change, ensure finally block handles re-enable
+                if (!resumeUploadInput || !resumeUploadInput.files || resumeUploadInput.files.length === 0) {
+                    resultsDisplay.textContent = 'Please select a resume file first.';
+                    resultsDisplay.style.color = 'red';
+                    // No early return, allow finally to run
+                    throw new Error("Validation: No file selected."); // Throw error to be caught by catch and run finally
+                }
+
+                const file = resumeUploadInput.files[0];
+                const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
+
+                if (!allowedTypes.includes(file.type)) {
+                    resultsDisplay.textContent = 'Invalid file type. Please upload a PDF, DOC, DOCX, or TXT file.';
+                    resultsDisplay.style.color = 'red';
+                    throw new Error("Validation: Invalid file type."); // Throw error
+                }
+
+                const formData = new FormData();
+                formData.append('resume', file);
+
                 const response = await fetch('/analyze_resume', {
                     method: 'POST',
                     body: formData,
@@ -82,9 +107,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     resultsHTML += `<p><strong>Message:</strong> ${data.message}</p>`;
 
                     if (data.keywords && data.keywords.length > 0) {
-                        resultsHTML += `<h4>Keywords:</h4><ul>`;
+                        resultsHTML += `<h4>Keywords</h4><ul>`; // Removed colon for consistency
                         data.keywords.forEach(kw => {
-                            resultsHTML += `<li>${kw.text} (Relevance: ${kw.relevance ? kw.relevance.toFixed(2) : 'N/A'})</li>`;
+                            resultsHTML += `<li><strong>${kw.text}</strong> (Relevance: ${kw.relevance ? kw.relevance.toFixed(2) : 'N/A'})</li>`;
                         });
                         resultsHTML += `</ul>`;
                     } else {
@@ -92,9 +117,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
 
                     if (data.entities && data.entities.length > 0) {
-                        resultsHTML += `<h4>Entities:</h4><ul>`;
+                        resultsHTML += `<h4>Entities</h4><ul>`; // Removed colon
                         data.entities.forEach(entity => {
-                            resultsHTML += `<li>${entity.type}: ${entity.text} (Relevance: ${entity.relevance ? entity.relevance.toFixed(2) : 'N/A'})</li>`;
+                            resultsHTML += `<li><strong>${entity.type}:</strong> ${entity.text} (Relevance: ${entity.relevance ? entity.relevance.toFixed(2) : 'N/A'})</li>`;
                         });
                         resultsHTML += `</ul>`;
                     } else {
@@ -112,14 +137,23 @@ document.addEventListener("DOMContentLoaded", () => {
                     console.log("Stored resume analysis data:", lastResumeAnalysisData);
                 } else {
                     lastResumeAnalysisData = null; // Clear on error
-                    const errorData = await response.json();
-                    resultsDisplay.textContent = `Error: ${errorData.error || response.statusText}`;
-                    resultsDisplay.style.color = 'red';
+                    let errorMessage = `Error: ${response.status} ${response.statusText}`;
+                    try {
+                        const errorData = await response.json();
+                        if (errorData && errorData.error) {
+                            errorMessage = errorData.error;
+                        }
+                    } catch (e) {
+                        console.error("Failed to parse error JSON for analyze_resume:", e);
+                    }
+                    resultsDisplay.innerHTML = `<p class="error-message">${errorMessage}</p>`;
                 }
             } catch (error) {
-                console.error('Error sending file:', error);
-                resultsDisplay.textContent = 'An error occurred while sending the file. Please try again.';
-                resultsDisplay.style.color = 'red';
+                console.error('Fetch error for analyze_resume:', error);
+                resultsDisplay.innerHTML = `<p class="error-message">A network error occurred, or the server is unreachable. Please try again later.</p>`;
+            } finally {
+                analyzeButton.disabled = false;
+                analyzeButton.textContent = originalButtonText;
             }
         });
     }
@@ -130,17 +164,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (getJobMarketInsightsButton) {
         getJobMarketInsightsButton.addEventListener('click', async () => {
+            const originalButtonText = getJobMarketInsightsButton.textContent;
+            getJobMarketInsightsButton.disabled = true;
+            getJobMarketInsightsButton.textContent = 'Fetching Insights...';
+            jobMarketInsightsDisplay.innerHTML = ''; // Clear previous
+
             if (!lastResumeAnalysisData || !lastResumeAnalysisData.keywords || !lastResumeAnalysisData.entities) {
                 jobMarketInsightsDisplay.textContent = 'Please analyze your resume first to get keywords and entities for job market insights.';
                 jobMarketInsightsDisplay.style.color = 'red';
+                // Restore button state even on early validation failure
+                getJobMarketInsightsButton.disabled = false;
+                getJobMarketInsightsButton.textContent = originalButtonText;
                 return;
             }
 
-            // No direct file upload needed here as we use analyzed data.
-            // Premium tier check will be handled by the backend based on user_tier.
-
-            jobMarketInsightsDisplay.textContent = 'Fetching job market insights...';
-            jobMarketInsightsDisplay.style.color = '#333'; // Default text color
+            // jobMarketInsightsDisplay.textContent = 'Fetching job market insights...'; // Handled by button
+            jobMarketInsightsDisplay.style.color = '#333'; // Default text color for messages
 
             try {
                 const payload = {
@@ -159,35 +198,50 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 if (response.ok) {
                     const data = await response.json();
-                    let resultsHTML = `<h3>Job Market Insights (AI Jules)</h3>`;
+                    let resultsHTML = `<h4>Job Market Insights (General Guidance)</h4>`; // Changed heading
                     resultsHTML += `<p><strong>Message:</strong> ${data.message}</p>`;
 
                     if (data.identified_skills_for_insights && data.identified_skills_for_insights.length > 0) {
                         resultsHTML += `<p><strong>Based on skills:</strong> ${data.identified_skills_for_insights.join(', ')}</p>`;
                     }
 
-                    resultsHTML += `<h4>Insights:</h4>`;
+                    resultsHTML += `<p><strong>Insights:</strong></p>`; // Changed from H4 to P
                     if (data.insights_text) {
-                        // Assuming insights_text might be a paragraph or bullet points.
-                        // Simple display for now, can be enhanced with markdown parsing if Gemini returns markdown.
-                        resultsHTML += `<div style="white-space: pre-wrap;">${data.insights_text}</div>`;
+                        // Replace newlines with <br> for paragraph-like display.
+                        // If Gemini returns actual list markdown, more sophisticated parsing might be needed.
+                        resultsHTML += `<div style="text-align: left; padding: 5px;">${data.insights_text.replace(/\n/g, '<br>')}</div>`;
                     } else {
                         resultsHTML += `<p>No specific insights generated at this time.</p>`;
                     }
 
-                    resultsHTML += `<br><p style="font-size: 0.8em; font-style: italic; color: #555;">Note: These insights are AI-generated based on general knowledge and are not real-time job market data. They are intended for informational purposes only.</p>`;
+                    // Preserve the disclaimer (assuming it's correctly styled/positioned already if it was part of a previous step)
+                    // For this subtask, we ensure it's programmatically added if not already managed by a static part of HTML.
+                    // If the disclaimer was part of the original `data.insights_text` or `data.message`, this is fine.
+                    // If it needs to be a separate, static element, it should be outside this dynamic HTML generation.
+                    // The prompt mentioned a "disclaimer-message" class, so let's assume it's part of the data or added after this block.
+                    // For now, adding it here as per task description structure:
+                    resultsHTML += `<p class="disclaimer-message" style="font-size: 0.9em; color: #555; margin-top:15px;">Note: These insights are AI-generated based on general knowledge and are not real-time job market data. They are intended for informational purposes only.</p>`;
 
                     jobMarketInsightsDisplay.innerHTML = resultsHTML;
                     jobMarketInsightsDisplay.style.color = '#0077b6';
                 } else {
-                    const errorData = await response.json();
-                    jobMarketInsightsDisplay.textContent = `Error: ${errorData.error || response.statusText}`;
-                    jobMarketInsightsDisplay.style.color = 'red';
+                    let errorMessage = `Error: ${response.status} ${response.statusText}`;
+                    try {
+                        const errorData = await response.json();
+                        if (errorData && errorData.error) {
+                            errorMessage = errorData.error;
+                        }
+                    } catch (e) {
+                        console.error("Failed to parse error JSON for get_job_market_insights:", e);
+                    }
+                    jobMarketInsightsDisplay.innerHTML = `<p class="error-message">${errorMessage}</p>`;
                 }
             } catch (error) {
-                console.error('Error fetching job market insights:', error);
-                jobMarketInsightsDisplay.textContent = 'An error occurred while fetching job market insights. Please try again.';
-                jobMarketInsightsDisplay.style.color = 'red';
+                console.error('Fetch error for get_job_market_insights:', error);
+                jobMarketInsightsDisplay.innerHTML = `<p class="error-message">A network error occurred, or the server is unreachable. Please try again later.</p>`;
+            } finally {
+                getJobMarketInsightsButton.disabled = false;
+                getJobMarketInsightsButton.textContent = originalButtonText;
             }
         });
     }
@@ -199,9 +253,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (getSmartSuggestionsButton) {
         getSmartSuggestionsButton.addEventListener('click', async () => {
+            const originalButtonText = getSmartSuggestionsButton.textContent;
+            getSmartSuggestionsButton.disabled = true;
+            getSmartSuggestionsButton.textContent = 'Generating...';
+            smartSuggestionsDisplay.innerHTML = ''; // Clear previous
+
             if (!resumeUploadInput || !resumeUploadInput.files || resumeUploadInput.files.length === 0) {
                 smartSuggestionsDisplay.textContent = 'Please upload a resume first using the "Upload Your Resume" section.';
                 smartSuggestionsDisplay.style.color = 'red';
+                getSmartSuggestionsButton.disabled = false;
+                getSmartSuggestionsButton.textContent = originalButtonText;
                 return;
             }
 
@@ -210,6 +271,8 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!allowedTypes.includes(file.type)) {
                 smartSuggestionsDisplay.textContent = 'Invalid file type for Smart Suggestions. Please upload a PDF, DOC, DOCX, or TXT file.';
                 smartSuggestionsDisplay.style.color = 'red';
+                getSmartSuggestionsButton.disabled = false;
+                getSmartSuggestionsButton.textContent = originalButtonText;
                 return;
             }
 
@@ -217,8 +280,8 @@ document.addEventListener("DOMContentLoaded", () => {
             formData.append('resume', file);
             formData.append('user_tier', currentUserTier); // Add user tier
 
-            smartSuggestionsDisplay.textContent = 'Generating smart suggestions...';
-            smartSuggestionsDisplay.style.color = '#333'; // Default text color
+            // smartSuggestionsDisplay.textContent = 'Generating smart suggestions...'; // Handled by button
+            smartSuggestionsDisplay.style.color = '#333'; // Default text color for messages
 
             try {
                 const response = await fetch('/get_smart_suggestions', {
@@ -228,25 +291,37 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 if (response.ok) {
                     const data = await response.json();
-                    let resultsHTML = `<strong>${data.message}</strong>`;
+                    let resultsHTML = `<h4>Smart Suggestions:</h4>`; // Added heading
+                    resultsHTML += `<p><strong>${data.message}</strong></p>`; // Wrap message in <p>
                     if (data.suggestions && data.suggestions.length > 0) {
-                        resultsHTML += `<br><br><strong>Smart Suggestions (from AI Jules):</strong><ul>`;
+                        resultsHTML += `<ol>`; // Using ordered list
                         data.suggestions.forEach(suggestion => {
                             resultsHTML += `<li>${suggestion}</li>`;
                         });
-                        resultsHTML += `</ul>`;
+                        resultsHTML += `</ol>`;
+                    } else {
+                        resultsHTML += `<p>No specific suggestions available at this time.</p>`;
                     }
                     smartSuggestionsDisplay.innerHTML = resultsHTML;
                     smartSuggestionsDisplay.style.color = '#5a0099'; // A distinct purple color
                 } else {
-                    const errorData = await response.json();
-                    smartSuggestionsDisplay.textContent = `Error: ${errorData.error || response.statusText}`;
-                    smartSuggestionsDisplay.style.color = 'red';
+                    let errorMessage = `Error: ${response.status} ${response.statusText}`;
+                    try {
+                        const errorData = await response.json();
+                        if (errorData && errorData.error) {
+                            errorMessage = errorData.error;
+                        }
+                    } catch (e) {
+                        console.error("Failed to parse error JSON for get_smart_suggestions:", e);
+                    }
+                    smartSuggestionsDisplay.innerHTML = `<p class="error-message">${errorMessage}</p>`;
                 }
             } catch (error) {
-                console.error('Error fetching smart suggestions:', error);
-                smartSuggestionsDisplay.textContent = 'An error occurred while fetching smart suggestions. Please try again.';
-                smartSuggestionsDisplay.style.color = 'red';
+                console.error('Fetch error for get_smart_suggestions:', error);
+                smartSuggestionsDisplay.innerHTML = `<p class="error-message">A network error occurred, or the server is unreachable. Please try again later.</p>`;
+            } finally {
+                getSmartSuggestionsButton.disabled = false;
+                getSmartSuggestionsButton.textContent = originalButtonText;
             }
         });
     }
@@ -259,22 +334,31 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (translateResumeButton) {
         translateResumeButton.addEventListener('click', async () => {
+            const originalButtonText = translateResumeButton.textContent;
+            translateResumeButton.disabled = true;
+            translateResumeButton.textContent = 'Translating...';
+            translatedResumeDisplay.innerHTML = ''; // Clear previous
+
             const resumeText = resumeTextForTranslationInput.value.trim();
             const targetLanguage = targetLanguageSelect.value;
 
             if (!resumeText) {
                 translatedResumeDisplay.textContent = 'Please paste the resume text for translation.';
                 translatedResumeDisplay.style.color = 'red';
+                translateResumeButton.disabled = false;
+                translateResumeButton.textContent = originalButtonText;
                 return;
             }
             if (!targetLanguage) {
                 translatedResumeDisplay.textContent = 'Please select a target language.';
                 translatedResumeDisplay.style.color = 'red';
+                translateResumeButton.disabled = false;
+                translateResumeButton.textContent = originalButtonText;
                 return;
             }
 
-            translatedResumeDisplay.textContent = 'Translating resume...';
-            translatedResumeDisplay.style.color = '#333'; // Default text color
+            // translatedResumeDisplay.textContent = 'Translating resume...'; // Handled by button
+            translatedResumeDisplay.style.color = '#333'; // Default text color for messages
 
             try {
                 const response = await fetch('/translate_resume', {
@@ -290,17 +374,33 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 if (response.ok) {
                     const data = await response.json();
-                    translatedResumeDisplay.textContent = `Translation to ${data.target_language.toUpperCase()}:\n\n${data.translated_text}`;
-                    translatedResumeDisplay.style.color = 'green'; // Or a neutral color
+                    let resultsHTML = `<h4>Translation Results:</h4>`;
+                    resultsHTML += `<p><strong>Original Language (Detected):</strong> ${data.identified_language_code || 'N/A'}</p>`;
+                    resultsHTML += `<p><strong>Target Language:</strong> ${data.target_language.toUpperCase()}</p>`;
+                    resultsHTML += `<p><strong>Original Snippet:</strong></p>`;
+                    resultsHTML += `<pre style="white-space: pre-wrap; word-wrap: break-word; background-color: #f8f9fa; padding: 10px; border: 1px solid #dee2e6; border-radius: 4px;">${data.original_text_snippet}</pre>`;
+                    resultsHTML += `<p><strong>Translated Text:</strong></p>`;
+                    resultsHTML += `<pre style="white-space: pre-wrap; word-wrap: break-word; background-color: #f0f0f0; padding: 10px; border-radius: 4px;">${data.translated_text}</pre>`;
+                    translatedResumeDisplay.innerHTML = resultsHTML;
+                    // translatedResumeDisplay.style.color = 'green'; // Color handled by CSS if needed
                 } else {
-                    const errorData = await response.json();
-                    translatedResumeDisplay.textContent = `Error: ${errorData.error || response.statusText}`;
-                    translatedResumeDisplay.style.color = 'red';
+                    let errorMessage = `Error: ${response.status} ${response.statusText}`;
+                    try {
+                        const errorData = await response.json();
+                        if (errorData && errorData.error) {
+                            errorMessage = errorData.error;
+                        }
+                    } catch (e) {
+                        console.error("Failed to parse error JSON for translate_resume:", e);
+                    }
+                    translatedResumeDisplay.innerHTML = `<p class="error-message">${errorMessage}</p>`;
                 }
             } catch (error) {
-                console.error('Error translating resume:', error);
-                translatedResumeDisplay.textContent = 'An error occurred during translation. Please try again.';
-                translatedResumeDisplay.style.color = 'red';
+                console.error('Fetch error for translate_resume:', error);
+                translatedResumeDisplay.innerHTML = `<p class="error-message">A network error occurred, or the server is unreachable. Please try again later.</p>`;
+            } finally {
+                translateResumeButton.disabled = false;
+                translateResumeButton.textContent = originalButtonText;
             }
         });
     }
@@ -313,26 +413,34 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (checkAtsButton) {
         checkAtsButton.addEventListener('click', async () => {
+            const originalButtonText = checkAtsButton.textContent;
+            checkAtsButton.disabled = true;
+            checkAtsButton.textContent = 'Checking...';
+            atsSuggestionsDisplay.innerHTML = ''; // Clear previous
+
             if (!resumeUploadInput || !resumeUploadInput.files || resumeUploadInput.files.length === 0) {
                 atsSuggestionsDisplay.textContent = 'Please upload a resume first using the "Upload Your Resume" section.';
                 atsSuggestionsDisplay.style.color = 'red';
+                checkAtsButton.disabled = false;
+                checkAtsButton.textContent = originalButtonText;
                 return;
             }
 
             const file = resumeUploadInput.files[0];
-            // Basic file type validation can be repeated here if desired, or assumed from previous upload
             const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
             if (!allowedTypes.includes(file.type)) {
                 atsSuggestionsDisplay.textContent = 'Invalid file type for ATS check. Please upload a PDF, DOC, DOCX, or TXT file.';
                 atsSuggestionsDisplay.style.color = 'red';
+                checkAtsButton.disabled = false;
+                checkAtsButton.textContent = originalButtonText;
                 return;
             }
 
             const formData = new FormData();
             formData.append('resume', file);
 
-            atsSuggestionsDisplay.textContent = 'Checking ATS compatibility...';
-            atsSuggestionsDisplay.style.color = '#333'; // Default text color
+            // atsSuggestionsDisplay.textContent = 'Checking ATS compatibility...'; // Handled by button
+            atsSuggestionsDisplay.style.color = '#333'; // Default text color for messages
 
             try {
                 const response = await fetch('/check_ats', {
@@ -342,25 +450,37 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 if (response.ok) {
                     const data = await response.json();
-                    let resultsHTML = `<strong>${data.message}</strong>`;
+                    let resultsHTML = `<h4>ATS Compatibility Tips:</h4>`; // Added heading
+                    resultsHTML += `<p><strong>${data.message}</strong></p>`; // Wrap message in <p>
                     if (data.suggestions && data.suggestions.length > 0) {
-                        resultsHTML += `<br><br><strong>ATS Suggestions:</strong><ul>`;
+                        resultsHTML += `<ul>`; // Using unordered list
                         data.suggestions.forEach(suggestion => {
                             resultsHTML += `<li>${suggestion}</li>`;
                         });
                         resultsHTML += `</ul>`;
+                    } else {
+                        resultsHTML += `<p>No specific ATS tips available at this time.</p>`;
                     }
                     atsSuggestionsDisplay.innerHTML = resultsHTML;
                     atsSuggestionsDisplay.style.color = 'blue'; // Using blue for suggestions
                 } else {
-                    const errorData = await response.json();
-                    atsSuggestionsDisplay.textContent = `Error: ${errorData.error || response.statusText}`;
-                    atsSuggestionsDisplay.style.color = 'red';
+                    let errorMessage = `Error: ${response.status} ${response.statusText}`;
+                    try {
+                        const errorData = await response.json();
+                        if (errorData && errorData.error) {
+                            errorMessage = errorData.error;
+                        }
+                    } catch (e) {
+                        console.error("Failed to parse error JSON for check_ats:", e);
+                    }
+                    atsSuggestionsDisplay.innerHTML = `<p class="error-message">${errorMessage}</p>`;
                 }
             } catch (error) {
-                console.error('Error sending file for ATS check:', error);
-                atsSuggestionsDisplay.textContent = 'An error occurred while checking ATS compatibility. Please try again.';
-                atsSuggestionsDisplay.style.color = 'red';
+                console.error('Fetch error for check_ats:', error);
+                atsSuggestionsDisplay.innerHTML = `<p class="error-message">A network error occurred, or the server is unreachable. Please try again later.</p>`;
+            } finally {
+                checkAtsButton.disabled = false;
+                checkAtsButton.textContent = originalButtonText;
             }
         });
     }
@@ -385,9 +505,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (jobMatchButton) {
         jobMatchButton.addEventListener('click', async () => {
+            const originalButtonText = jobMatchButton.textContent;
+            jobMatchButton.disabled = true;
+            jobMatchButton.textContent = 'Matching...';
+            jobMatchResultsDisplay.innerHTML = ''; // Clear previous
+
             if (!jobDescriptionInput || jobDescriptionInput.value.trim() === '') {
                 jobMatchResultsDisplay.textContent = 'Please paste a job description.';
                 jobMatchResultsDisplay.style.color = 'red';
+                jobMatchButton.disabled = false;
+                jobMatchButton.textContent = originalButtonText;
                 return;
             }
 
@@ -396,11 +523,13 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!lastResumeAnalysisData) {
                 jobMatchResultsDisplay.textContent = 'Please analyze your resume first to provide its keywords/entities for job matching.';
                 jobMatchResultsDisplay.style.color = 'red';
+                jobMatchButton.disabled = false;
+                jobMatchButton.textContent = originalButtonText;
                 return;
             }
 
-            jobMatchResultsDisplay.textContent = 'Analyzing job description and matching with resume...';
-            jobMatchResultsDisplay.style.color = '#333'; // Default text color
+            // jobMatchResultsDisplay.textContent = 'Analyzing job description and matching with resume...'; // Handled by button
+            jobMatchResultsDisplay.style.color = '#333'; // Default text color for messages
 
             try {
                 const response = await fetch('/match_job', {
@@ -417,25 +546,27 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 if (response.ok) {
                     const data = await response.json();
-                    let resultsHTML = `<h3>Job Match Analysis</h3>`;
+                    let resultsHTML = `<h3>Job Match Analysis</h3>`; // Main heading
                     resultsHTML += `<p><strong>Message:</strong> ${data.message}</p>`;
+
+                    resultsHTML += `<h4>Overall Match</h4>`;
                     resultsHTML += `<p><strong>Match Score:</strong> ${data.match_score || 'N/A'}</p>`;
 
                     if (data.job_description_analysis) {
-                        resultsHTML += `<h4>Job Description Analysis:</h4>`;
+                        resultsHTML += `<h4>Job Description Analysis</h4>`;
                         if (data.job_description_analysis.keywords && data.job_description_analysis.keywords.length > 0) {
-                            resultsHTML += `<h5>Keywords:</h5><ul>`;
+                            resultsHTML += `<h5>Keywords</h5><ul>`; // Removed colon
                             data.job_description_analysis.keywords.forEach(kw => {
-                                resultsHTML += `<li>${kw.text} (Relevance: ${kw.relevance ? kw.relevance.toFixed(2) : 'N/A'})</li>`;
+                                resultsHTML += `<li><strong>${kw.text}</strong> (Relevance: ${kw.relevance ? kw.relevance.toFixed(2) : 'N/A'})</li>`;
                             });
                             resultsHTML += `</ul>`;
                         } else {
                             resultsHTML += `<p>No keywords extracted from job description.</p>`;
                         }
                         if (data.job_description_analysis.entities && data.job_description_analysis.entities.length > 0) {
-                            resultsHTML += `<h5>Entities:</h5><ul>`;
+                            resultsHTML += `<h5>Entities</h5><ul>`; // Removed colon
                             data.job_description_analysis.entities.forEach(entity => {
-                                resultsHTML += `<li>${entity.type}: ${entity.text} (Relevance: ${entity.relevance ? entity.relevance.toFixed(2) : 'N/A'})</li>`;
+                                resultsHTML += `<li><strong>${entity.type}:</strong> ${entity.text} (Relevance: ${entity.relevance ? entity.relevance.toFixed(2) : 'N/A'})</li>`;
                             });
                             resultsHTML += `</ul>`;
                         } else {
@@ -444,7 +575,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
 
                     if (data.missing_resume_keywords && data.missing_resume_keywords.length > 0) {
-                        resultsHTML += `<h4>Keywords Missing from Your Resume:</h4><ul>`;
+                        resultsHTML += `<h4>Keywords Missing From Your Resume</h4><ul>`; // Removed colon
                         data.missing_resume_keywords.forEach(kwText => {
                             resultsHTML += `<li>${kwText}</li>`;
                         });
@@ -454,7 +585,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
 
                     if (data.ai_suggestions && data.ai_suggestions.length > 0) {
-                        resultsHTML += `<h4>AI-Powered Suggestions (Gemini):</h4><ul>`;
+                        resultsHTML += `<h4>AI-Generated Suggestions</h4><ul>`; // Removed (Gemini) for brevity
                         data.ai_suggestions.forEach(suggestion => {
                             resultsHTML += `<li>${suggestion}</li>`;
                         });
@@ -466,14 +597,23 @@ document.addEventListener("DOMContentLoaded", () => {
                     jobMatchResultsDisplay.innerHTML = resultsHTML;
                     jobMatchResultsDisplay.style.color = 'initial';
                 } else {
-                    const errorData = await response.json();
-                    jobMatchResultsDisplay.textContent = `Error: ${errorData.error || response.statusText}`;
-                    jobMatchResultsDisplay.style.color = 'red';
+                    let errorMessage = `Error: ${response.status} ${response.statusText}`;
+                    try {
+                        const errorData = await response.json();
+                        if (errorData && errorData.error) {
+                            errorMessage = errorData.error;
+                        }
+                    } catch (e) {
+                        console.error("Failed to parse error JSON for match_job:", e);
+                    }
+                    jobMatchResultsDisplay.innerHTML = `<p class="error-message">${errorMessage}</p>`;
                 }
             } catch (error) {
-                console.error('Error sending job description:', error);
-                jobMatchResultsDisplay.textContent = 'An error occurred while sending the job description. Please try again.';
-                jobMatchResultsDisplay.style.color = 'red';
+                console.error('Fetch error for match_job:', error);
+                jobMatchResultsDisplay.innerHTML = `<p class="error-message">A network error occurred, or the server is unreachable. Please try again later.</p>`;
+            } finally {
+                jobMatchButton.disabled = false;
+                jobMatchButton.textContent = originalButtonText;
             }
         });
     }
