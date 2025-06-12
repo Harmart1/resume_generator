@@ -28,6 +28,12 @@
             <!-- Updated accept attribute to include .txt -->
             <input type="file" id="resumeUpload" accept=".pdf,.doc,.docx,.txt">
             <button id="analyzeButton">Optimize Resume</button> <!-- Changed from onclick to id for event listener -->
+
+            <div class="input-group text-input-group" style="margin-top: 20px;">
+                <label for="resumeTextInput" style="display:block; margin-bottom:8px; font-weight: bold;">Or Paste Resume Text Here:</label>
+                <textarea id="resumeTextInput" rows="10" placeholder="Paste your resume text here..." style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-family: inherit;"></textarea>
+                <button id="analyzeTextButton" class="button" style="margin-top: 10px;">Analyze Pasted Text</button>
+            </div>
         </section>
         
         <section id="analysis-results" class="glass-container">

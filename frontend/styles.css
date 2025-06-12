@@ -348,3 +348,9 @@ input[type="file"]::file-selector-button:hover {
     margin-top: 10px;
     text-align: left; /* Ensure text is aligned left */
 }
+
+/* Drag and Drop Active State Styling */
+.drop-zone-active {
+    border: 2px dashed #5D3FD3; /* A vibrant purple, adjust to your theme's accent */
+    background-color: rgba(93, 63, 211, 0.05); /* Very light purple background */
+}
