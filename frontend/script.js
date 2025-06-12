@@ -1,5 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
     let currentUserTier = "free"; // Default user tier
+    let lastResumeAnalysisData = null; // To store keywords and entities from resume analysis
     const userTierSelector = document.getElementById('userTierSelector');
     const subscriptionStatusDisplay = document.getElementById('subscriptionStatus');
     const subscribeButton = document.getElementById('subscribeButton');
@@ -77,14 +78,40 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 if (response.ok) {
                     const data = await response.json();
-                    // Displaying the mock analysis results
-                    let resultsHTML = `<strong>${data.message}</strong><br>Filename: ${data.filename}`;
-                    if (data.keywords_found) {
-                        resultsHTML += `<br>Keywords Found: ${data.keywords_found.join(', ')}`;
+                    let resultsHTML = `<h3>Resume Analysis for ${data.filename}</h3>`;
+                    resultsHTML += `<p><strong>Message:</strong> ${data.message}</p>`;
+
+                    if (data.keywords && data.keywords.length > 0) {
+                        resultsHTML += `<h4>Keywords:</h4><ul>`;
+                        data.keywords.forEach(kw => {
+                            resultsHTML += `<li>${kw.text} (Relevance: ${kw.relevance ? kw.relevance.toFixed(2) : 'N/A'})</li>`;
+                        });
+                        resultsHTML += `</ul>`;
+                    } else {
+                        resultsHTML += `<p>No keywords extracted.</p>`;
                     }
+
+                    if (data.entities && data.entities.length > 0) {
+                        resultsHTML += `<h4>Entities:</h4><ul>`;
+                        data.entities.forEach(entity => {
+                            resultsHTML += `<li>${entity.type}: ${entity.text} (Relevance: ${entity.relevance ? entity.relevance.toFixed(2) : 'N/A'})</li>`;
+                        });
+                        resultsHTML += `</ul>`;
+                    } else {
+                        resultsHTML += `<p>No entities extracted.</p>`;
+                    }
+
                     resultsDisplay.innerHTML = resultsHTML;
-                    resultsDisplay.style.color = 'green';
+                    resultsDisplay.style.color = 'initial'; // Reset color to default
+
+                    // Store keywords and entities for Job Match feature
+                    lastResumeAnalysisData = {
+                        keywords: data.keywords || [],
+                        entities: data.entities || []
+                    };
+                    console.log("Stored resume analysis data:", lastResumeAnalysisData);
                 } else {
+                    lastResumeAnalysisData = null; // Clear on error
                     const errorData = await response.json();
                     resultsDisplay.textContent = `Error: ${errorData.error || response.statusText}`;
                     resultsDisplay.style.color = 'red';
@@ -100,52 +127,58 @@ document.addEventListener("DOMContentLoaded", () => {
     // New: Job Market Insights (AI Jules) Feature Logic
     const getJobMarketInsightsButton = document.getElementById('getJobMarketInsightsButton');
     const jobMarketInsightsDisplay = document.getElementById('jobMarketInsightsDisplay');
-    // Re-use resumeUploadInput from the Resume Analyzer section for file access
 
     if (getJobMarketInsightsButton) {
         getJobMarketInsightsButton.addEventListener('click', async () => {
-            if (!resumeUploadInput || !resumeUploadInput.files || resumeUploadInput.files.length === 0) {
-                jobMarketInsightsDisplay.textContent = 'Please upload a resume first using the "Upload Your Resume" section.';
+            if (!lastResumeAnalysisData || !lastResumeAnalysisData.keywords || !lastResumeAnalysisData.entities) {
+                jobMarketInsightsDisplay.textContent = 'Please analyze your resume first to get keywords and entities for job market insights.';
                 jobMarketInsightsDisplay.style.color = 'red';
                 return;
             }
 
-            const file = resumeUploadInput.files[0];
-            const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
-            if (!allowedTypes.includes(file.type)) {
-                jobMarketInsightsDisplay.textContent = 'Invalid file type for Job Market Insights. Please upload a PDF, DOC, DOCX, or TXT file.';
-                jobMarketInsightsDisplay.style.color = 'red';
-                return;
-            }
-
-            const formData = new FormData();
-            formData.append('resume', file);
-            formData.append('user_tier', currentUserTier); // Add user tier
+            // No direct file upload needed here as we use analyzed data.
+            // Premium tier check will be handled by the backend based on user_tier.
 
             jobMarketInsightsDisplay.textContent = 'Fetching job market insights...';
             jobMarketInsightsDisplay.style.color = '#333'; // Default text color
 
             try {
+                const payload = {
+                    resume_keywords: lastResumeAnalysisData.keywords,
+                    resume_entities: lastResumeAnalysisData.entities,
+                    user_tier: currentUserTier // Send user tier
+                };
+
                 const response = await fetch('/get_job_market_insights', {
                     method: 'POST',
-                    body: formData,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload),
                 });
 
                 if (response.ok) {
                     const data = await response.json();
-                    let resultsHTML = `<strong>${data.message}</strong>`;
-                    if (data.insights && data.insights.length > 0) {
-                        resultsHTML += `<br><br><strong>Job Market Insights (from AI Jules):</strong><ul>`;
-                        data.insights.forEach(insight => {
-                            resultsHTML += `<li>${insight}</li>`;
-                        });
-                        resultsHTML += `</ul>`;
+                    let resultsHTML = `<h3>Job Market Insights (AI Jules)</h3>`;
+                    resultsHTML += `<p><strong>Message:</strong> ${data.message}</p>`;
+
+                    if (data.identified_skills_for_insights && data.identified_skills_for_insights.length > 0) {
+                        resultsHTML += `<p><strong>Based on skills:</strong> ${data.identified_skills_for_insights.join(', ')}</p>`;
                     }
-                    if (data.trending_jobs && data.trending_jobs.length > 0) {
-                        resultsHTML += `<br><strong>Trending Jobs for your profile:</strong> ${data.trending_jobs.join(', ')}`;
+
+                    resultsHTML += `<h4>Insights:</h4>`;
+                    if (data.insights_text) {
+                        // Assuming insights_text might be a paragraph or bullet points.
+                        // Simple display for now, can be enhanced with markdown parsing if Gemini returns markdown.
+                        resultsHTML += `<div style="white-space: pre-wrap;">${data.insights_text}</div>`;
+                    } else {
+                        resultsHTML += `<p>No specific insights generated at this time.</p>`;
                     }
+
+                    resultsHTML += `<br><p style="font-size: 0.8em; font-style: italic; color: #555;">Note: These insights are AI-generated based on general knowledge and are not real-time job market data. They are intended for informational purposes only.</p>`;
+
                     jobMarketInsightsDisplay.innerHTML = resultsHTML;
-                    jobMarketInsightsDisplay.style.color = '#0077b6'; // A different blue color
+                    jobMarketInsightsDisplay.style.color = '#0077b6';
                 } else {
                     const errorData = await response.json();
                     jobMarketInsightsDisplay.textContent = `Error: ${errorData.error || response.statusText}`;
@@ -360,7 +393,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const jobDescription = jobDescriptionInput.value.trim();
 
-            jobMatchResultsDisplay.textContent = 'Analyzing job description...';
+            if (!lastResumeAnalysisData) {
+                jobMatchResultsDisplay.textContent = 'Please analyze your resume first to provide its keywords/entities for job matching.';
+                jobMatchResultsDisplay.style.color = 'red';
+                return;
+            }
+
+            jobMatchResultsDisplay.textContent = 'Analyzing job description and matching with resume...';
             jobMatchResultsDisplay.style.color = '#333'; // Default text color
 
             try {
@@ -369,21 +408,63 @@ document.addEventListener("DOMContentLoaded", () => {
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ job_description: jobDescription }),
+                    body: JSON.stringify({
+                        job_description: jobDescription,
+                        resume_keywords: lastResumeAnalysisData.keywords,
+                        resume_entities: lastResumeAnalysisData.entities
+                    }),
                 });
 
                 if (response.ok) {
                     const data = await response.json();
-                    let resultsHTML = `<strong>${data.message}</strong><br>Match Score: ${data.match_score}`;
-                    if (data.suggestions && data.suggestions.length > 0) {
-                        resultsHTML += `<br><br><strong>Suggestions:</strong><ul>`;
-                        data.suggestions.forEach(suggestion => {
+                    let resultsHTML = `<h3>Job Match Analysis</h3>`;
+                    resultsHTML += `<p><strong>Message:</strong> ${data.message}</p>`;
+                    resultsHTML += `<p><strong>Match Score:</strong> ${data.match_score || 'N/A'}</p>`;
+
+                    if (data.job_description_analysis) {
+                        resultsHTML += `<h4>Job Description Analysis:</h4>`;
+                        if (data.job_description_analysis.keywords && data.job_description_analysis.keywords.length > 0) {
+                            resultsHTML += `<h5>Keywords:</h5><ul>`;
+                            data.job_description_analysis.keywords.forEach(kw => {
+                                resultsHTML += `<li>${kw.text} (Relevance: ${kw.relevance ? kw.relevance.toFixed(2) : 'N/A'})</li>`;
+                            });
+                            resultsHTML += `</ul>`;
+                        } else {
+                            resultsHTML += `<p>No keywords extracted from job description.</p>`;
+                        }
+                        if (data.job_description_analysis.entities && data.job_description_analysis.entities.length > 0) {
+                            resultsHTML += `<h5>Entities:</h5><ul>`;
+                            data.job_description_analysis.entities.forEach(entity => {
+                                resultsHTML += `<li>${entity.type}: ${entity.text} (Relevance: ${entity.relevance ? entity.relevance.toFixed(2) : 'N/A'})</li>`;
+                            });
+                            resultsHTML += `</ul>`;
+                        } else {
+                            resultsHTML += `<p>No entities extracted from job description.</p>`;
+                        }
+                    }
+
+                    if (data.missing_resume_keywords && data.missing_resume_keywords.length > 0) {
+                        resultsHTML += `<h4>Keywords Missing from Your Resume:</h4><ul>`;
+                        data.missing_resume_keywords.forEach(kwText => {
+                            resultsHTML += `<li>${kwText}</li>`;
+                        });
+                        resultsHTML += `</ul>`;
+                    } else {
+                        resultsHTML += `<p>No significant keywords from the job description appear to be missing from your resume analysis data!</p>`;
+                    }
+
+                    if (data.ai_suggestions && data.ai_suggestions.length > 0) {
+                        resultsHTML += `<h4>AI-Powered Suggestions (Gemini):</h4><ul>`;
+                        data.ai_suggestions.forEach(suggestion => {
                             resultsHTML += `<li>${suggestion}</li>`;
                         });
                         resultsHTML += `</ul>`;
+                    } else {
+                        resultsHTML += `<p>No AI suggestions available at this time.</p>`;
                     }
+
                     jobMatchResultsDisplay.innerHTML = resultsHTML;
-                    jobMatchResultsDisplay.style.color = 'green';
+                    jobMatchResultsDisplay.style.color = 'initial';
                 } else {
                     const errorData = await response.json();
                     jobMatchResultsDisplay.textContent = `Error: ${errorData.error || response.statusText}`;
