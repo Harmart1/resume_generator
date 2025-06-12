@@ -3,7 +3,7 @@ import logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-from flask import Flask, request, render_template_string, send_file, flash, redirect, url_for, session, g
+from flask import Flask, request, render_template_string, send_file, flash, redirect, url_for, session, g, jsonify
 from flask_wtf import FlaskForm
 from flask_wtf.csrf import CSRFProtect
 from flask_session import Session
@@ -2080,6 +2080,233 @@ def download_word():
     return redirect(url_for('index'))
 
 # Removed the /download-pdf route and its function as requested.
+
+@app.route('/analyze_resume', methods=['POST'])
+def analyze_resume():
+    if 'resume' not in request.files:
+        logger.error("No resume file part in /analyze_resume request.")
+        return jsonify({"error": "No resume file part in the request"}), 400
+
+    file = request.files['resume']
+
+    if file.filename == '':
+        logger.warning("No file selected in /analyze_resume request.")
+        return jsonify({"error": "No selected file"}), 400
+
+    if file:
+        filename = secure_filename(file.filename)
+        # In a real application, you would save or process the file here.
+        # For example:
+        # upload_folder = app.config.get('UPLOAD_FOLDER', 'uploads')
+        # if not os.path.exists(upload_folder):
+        #     os.makedirs(upload_folder)
+        # file.save(os.path.join(upload_folder, filename))
+
+        # Mock AI analysis response as per subtask description
+        mock_analysis = {
+            "message": "File received for analysis", # Message from subtask
+            "filename": filename,
+            "keywords_found": ["python", "javascript", "flask"] # Mock keywords from subtask
+        }
+        logger.info(f"Successfully processed file '{filename}' for /analyze_resume. Sending mock response.")
+        return jsonify(mock_analysis), 200
+
+    # This case should ideally not be reached if the checks above are comprehensive
+    logger.error("File object was not valid in /analyze_resume for an unknown reason.")
+    return jsonify({"error": "An unexpected error occurred with the file processing."}), 500
+
+
+@app.route('/match_job', methods=['POST'])
+def match_job():
+    data = request.get_json()
+    if not data or 'job_description' not in data or not data['job_description'].strip():
+        logger.error("No job description provided in /match_job request.")
+        return jsonify({"error": "No job description provided or empty."}), 400
+
+    job_description = data['job_description']
+
+    # Mock AI job matching logic
+    # In a real application, this would involve comparing the job_description
+    # with a resume (either passed in or retrieved from a session/database).
+    # For now, we just acknowledge receipt and give mock results.
+
+    mock_match_results = {
+        "message": "Job description received and analyzed.",
+        "match_score": "82%", # Example score
+        "suggestions": [
+            "Emphasize your experience with cloud platforms.",
+            "Detail your contributions to team projects.",
+            "Ensure your skills section lists 'Data Analysis' and 'Agile Methodologies'."
+        ],
+        "positive_keywords": ["Team Player", "Problem Solver", job_description.split(" ")[0] if job_description else "Synergy"], # just an example
+        "missing_keywords": ["Specific Tool X", "Certification Y"] # example
+    }
+
+    logger.info(f"Successfully processed job description for /match_job. Sending mock response.")
+    return jsonify(mock_match_results), 200
+
+
+@app.route('/check_ats', methods=['POST'])
+def check_ats():
+    if 'resume' not in request.files:
+        logger.error("No resume file part in /check_ats request.")
+        return jsonify({"error": "No resume file part in the request"}), 400
+
+    file = request.files['resume']
+
+    if file.filename == '':
+        logger.warning("No file selected in /check_ats request.")
+        return jsonify({"error": "No selected file"}), 400
+
+    if file:
+        filename = secure_filename(file.filename)
+        # Placeholder for actual ATS analysis logic
+        # e.g., check font, layout, keywords, section headers
+
+        mock_ats_suggestions = {
+            "message": f"ATS compatibility check for '{filename}' complete.",
+            "suggestions": [
+                "Use standard fonts like Arial, Calibri, or Times New Roman.",
+                "Avoid using tables or columns for page layout as some ATS struggle to parse them.",
+                "Ensure section headings are clear and common (e.g., 'Experience', 'Education', 'Skills').",
+                "Include keywords relevant to the jobs you are applying for.",
+                "Save your resume as a PDF or .docx for best compatibility, avoid .txt if formatting is important.",
+                "Check for consistent date formatting (e.g., MM/YYYY or Month YYYY)."
+            ],
+            "font_check": "Passed (Mock - Assumed standard font)",
+            "layout_check": "Review (Mock - Suggests avoiding tables/columns)"
+        }
+
+        logger.info(f"Successfully processed file '{filename}' for /check_ats. Sending mock ATS suggestions.")
+        return jsonify(mock_ats_suggestions), 200
+
+    logger.error("File object was not valid in /check_ats for an unknown reason.")
+    return jsonify({"error": "An unexpected error occurred with the file processing for ATS check."}), 500
+
+
+@app.route('/translate_resume', methods=['POST'])
+def translate_resume():
+    data = request.get_json()
+    if not data:
+        logger.error("No JSON data received for /translate_resume.")
+        return jsonify({"error": "No data provided."}), 400
+
+    resume_text = data.get('resume_text')
+    target_language = data.get('target_language')
+
+    if not resume_text or not resume_text.strip():
+        logger.error("Resume text not provided for /translate_resume.")
+        return jsonify({"error": "Resume text is required."}), 400
+
+    if not target_language:
+        logger.error("Target language not provided for /translate_resume.")
+        return jsonify({"error": "Target language is required."}), 400
+
+    # Mock translation logic
+    mock_translated_text = f"[Mock Translation]\nOriginal text: '{resume_text[:50]}...' \nTranslated to '{target_language.upper()}': \nThis is your translated resume text. For a real translation, an actual translation service would be used."
+
+    if target_language == 'es':
+        mock_translated_text = f"[Traducción Simulada]\nTexto original: '{resume_text[:50]}...' \nTraducido a '{target_language.upper()}': \nEste es el texto de su currículum traducido. Para una traducción real, se utilizaría un servicio de traducción."
+    elif target_language == 'fr':
+        mock_translated_text = f"[Traduction Simulée]\nTexte original: '{resume_text[:50]}...' \nTraduit en '{target_language.upper()}': \nCeci est le texte de votre CV traduit. Pour une traduction réelle, un service de traduction serait utilisé."
+    elif target_language == 'de':
+        mock_translated_text = f"[Simulierte Übersetzung]\nOriginaltext: '{resume_text[:50]}...' \nÜbersetzt nach '{target_language.upper()}': \nDies ist Ihr übersetzter Lebenslauftext. Für eine echte Übersetzung würde ein Übersetzungsdienst verwendet."
+    elif target_language == 'zh':
+        mock_translated_text = f"[模拟翻译]\n原文: '{resume_text[:50]}...' \n翻译成 '{target_language.upper()}': \n这是您翻译后的简历文本。对于真正的翻译，将使用实际的翻译服务。"
+
+
+    response_data = {
+        "message": "Resume translated successfully (mock response).",
+        "translated_text": mock_translated_text,
+        "target_language": target_language,
+        "original_text_snippet": resume_text[:100] + "..." if len(resume_text) > 100 else resume_text
+    }
+
+    logger.info(f"Successfully processed resume for translation to '{target_language}'. Sending mock translation.")
+    return jsonify(response_data), 200
+
+
+@app.route('/get_smart_suggestions', methods=['POST'])
+def get_smart_suggestions():
+    user_tier = request.form.get('user_tier', 'free') # Get user_tier from FormData
+    if user_tier != 'premium':
+        logger.warning(f"Access denied for /get_smart_suggestions due to user tier: {user_tier}")
+        return jsonify({"error": "Access denied. Smart Suggestions is a premium feature. Please upgrade."}), 403
+
+    if 'resume' not in request.files:
+        logger.error("No resume file part in /get_smart_suggestions request.")
+        return jsonify({"error": "No resume file part in the request"}), 400
+
+    file = request.files['resume']
+
+    if file.filename == '':
+        logger.warning("No file selected in /get_smart_suggestions request.")
+        return jsonify({"error": "No selected file"}), 400
+
+    if file:
+        filename = secure_filename(file.filename)
+        # Placeholder for actual "Jules AI" smart suggestion logic
+        # This would involve more sophisticated NLP and heuristic analysis
+
+        mock_smart_suggestions = {
+            "message": f"Smart suggestions generated for '{filename}' (AI Jules).",
+            "suggestions": [
+                "Consider rephrasing your objective statement to be more action-oriented and tailored to specific roles. For example, instead of 'Seeking a challenging position', try 'Results-driven software engineer seeking to leverage expertise in Python and cloud computing to contribute to innovative projects at [Company Name]'.",
+                "Quantify your achievements in the 'Experience' section with numbers and specific outcomes. For instance, 'Managed a team that increased sales by 15% in 6 months' is stronger than 'Managed a team responsible for sales'.",
+                "Add a dedicated 'Projects' section if you have personal or academic projects that showcase relevant skills, especially if you're early in your career.",
+                "Tailor your 'Skills' section for each job application. Research keywords from the job description and incorporate them naturally.",
+                "Consider adding a brief 'Professional Profile' or 'Summary' at the top to give a quick overview of your key qualifications and career goals."
+            ],
+            "confidence_score": "High (Mock)"
+        }
+
+        logger.info(f"Successfully processed file '{filename}' for /get_smart_suggestions. Sending mock smart suggestions.")
+        return jsonify(mock_smart_suggestions), 200
+
+    logger.error("File object was not valid in /get_smart_suggestions for an unknown reason.")
+    return jsonify({"error": "An unexpected error occurred with the file processing for smart suggestions."}), 500
+
+
+@app.route('/get_job_market_insights', methods=['POST'])
+def get_job_market_insights():
+    user_tier = request.form.get('user_tier', 'free') # Get user_tier from FormData
+    if user_tier != 'premium':
+        logger.warning(f"Access denied for /get_job_market_insights due to user tier: {user_tier}")
+        return jsonify({"error": "Access denied. Job Market Insights is a premium feature. Please upgrade."}), 403
+
+    if 'resume' not in request.files:
+        logger.error("No resume file part in /get_job_market_insights request.")
+        return jsonify({"error": "No resume file part in the request"}), 400
+
+    file = request.files['resume']
+
+    if file.filename == '':
+        logger.warning("No file selected in /get_job_market_insights request.")
+        return jsonify({"error": "No selected file"}), 400
+
+    if file:
+        filename = secure_filename(file.filename)
+        # Placeholder for actual "Jules AI" job market insights logic
+        # This would involve analyzing extracted skills against job market data
+
+        mock_job_insights = {
+            "message": f"Job market insights generated for '{filename}' (AI Jules).",
+            "insights": [
+                "Skills like 'Cloud Computing (AWS, Azure)', 'Cybersecurity', and 'AI/Machine Learning' are currently experiencing high demand across multiple sectors.",
+                "Consider exploring roles in the 'Renewable Energy' or 'Healthcare Technology' sectors, which are showing significant growth.",
+                "Based on your profile (mock analysis), typical salary expectations in the national market could range from $X0,000 to $Y0,000. This can vary by location and specific role.",
+                "Networking and continuous learning are crucial. Consider certifications in [Relevant Skill Area]."
+            ],
+            "trending_jobs": ["Cloud Solutions Architect", "Cybersecurity Analyst", "AI Specialist", "Healthcare Informatics Manager"],
+            "demand_score_for_top_skill": "High (Mock - e.g., for 'Python')"
+        }
+
+        logger.info(f"Successfully processed file '{filename}' for /get_job_market_insights. Sending mock job market insights.")
+        return jsonify(mock_job_insights), 200
+
+    logger.error("File object was not valid in /get_job_market_insights for an unknown reason.")
+    return jsonify({"error": "An unexpected error occurred with the file processing for job market insights."}), 500
+
 
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000))

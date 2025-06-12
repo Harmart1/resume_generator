@@ -13,15 +13,65 @@
     </header>
     
     <main>
+        <div style="padding: 10px; margin-bottom: 20px; background-color: #f0f0f0; border-radius: 5px; text-align: center;">
+            <label for="userTierSelector" style="margin-right: 10px; font-weight: bold;">Select User Tier:</label>
+            <select id="userTierSelector">
+                <option value="free" selected>Free User</option>
+                <option value="premium">Premium User</option>
+            </select>
+            <div id="subscriptionStatus" style="margin-top: 5px; font-style: italic;">Status: Free Tier</div>
+            <button id="subscribeButton" style="margin-top: 10px; padding: 8px 15px;">Subscribe to Premium</button>
+        </div>
+
         <section class="upload-section">
             <h2>Upload Your Resume</h2>
-            <input type="file" id="resumeUpload" accept=".pdf, .doc, .docx">
-            <button onclick="processResume()">Optimize Resume</button>
+            <!-- Updated accept attribute to include .txt -->
+            <input type="file" id="resumeUpload" accept=".pdf,.doc,.docx,.txt">
+            <button id="analyzeButton">Optimize Resume</button> <!-- Changed from onclick to id for event listener -->
         </section>
         
         <section id="analysis-results">
             <h2>AI Analysis</h2>
-            <p id="results">Upload a resume to see AI-powered enhancements.</p>
+            <!-- Changed p to div for potentially more complex results display -->
+            <div id="results-display">Upload a resume to see AI-powered enhancements.</div>
+
+            <!-- New ATS Compatibility Check Button and Display Area -->
+            <button id="checkAtsButton" style="margin-top: 15px;">Check ATS Compatibility</button>
+            <div id="atsSuggestionsDisplay" style="margin-top: 10px;">Click the button to check ATS compatibility.</div>
+
+            <!-- New Smart Suggestions Button and Display Area -->
+            <button id="getSmartSuggestionsButton" style="margin-top: 15px;">Get Smart Suggestions (AI Jules)</button>
+            <div id="smartSuggestionsDisplay" style="margin-top: 10px;">Click the button for AI-powered smart suggestions.</div>
+
+            <!-- New Job Market Insights Button and Display Area -->
+            <button id="getJobMarketInsightsButton" style="margin-top: 15px;">Get Job Market Insights (AI Jules)</button>
+            <div id="jobMarketInsightsDisplay" style="margin-top: 10px;">Click the button for AI-powered job market insights.</div>
+        </section>
+
+        <section id="job-match-section">
+            <h2>Job Description Match</h2>
+            <textarea id="jobDescriptionInput" rows="10" placeholder="Paste the job description here..."></textarea>
+            <button id="jobMatchButton">Analyze Job Match</button>
+            <div id="jobMatchResultsDisplay">Enter a job description to see match analysis.</div>
+        </section>
+
+        <section id="translation-section">
+            <h2>Translate Resume</h2>
+            <textarea id="resumeTextForTranslation" rows="15" placeholder="Paste your resume text here for translation..."></textarea>
+            <div style="margin-top: 10px; margin-bottom: 10px;">
+                <label for="targetLanguage">Translate to:</label>
+                <select id="targetLanguage">
+                    <option value="es">Spanish</option>
+                    <option value="fr">French</option>
+                    <option value="de">German</option>
+                    <option value="zh">Chinese</option>
+                    <!-- Add more languages as needed -->
+                </select>
+            </div>
+            <button id="translateResumeButton">Translate Resume</button>
+            <div id="translatedResumeDisplay" style="margin-top: 10px; padding: 10px; border: 1px solid #ccc; min-height: 100px; background-color: #f9f9f9;">
+                Translated resume will appear here.
+            </div>
         </section>
     </main>
 
