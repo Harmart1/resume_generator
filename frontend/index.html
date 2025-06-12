@@ -8,12 +8,13 @@
 </head>
 <body>
     <header class="glass-container">
-        <div class="app-header-content-wrapper">
-            <a href="new_homepage.html" class="logo-link-app">
-                <img src="static/logo.png" alt="Revisume.ai Logo" id="appPageLogo">
-            </a>
-            <nav>
+        <div class="app-header-content-wrapper" style="display: flex; justify-content: center; align-items: center; position: relative;">
+            <div class="logo-container-app" style="text-align: center; flex-grow: 1;"> <!-- New container for logo -->
+                <img src="/static/revisume.jpg" alt="Revisume Logo" id="appPageLogoNew" class="app-logo-stylized" style="display: inline-block; max-height: 60px;"> <!-- Apply some default styling for now -->
+            </div>
+            <nav style="position: absolute; right: 20px; top: 50%; transform: translateY(-50%);"> <!-- Example styling for nav -->
                 <a href="new_homepage.html" id="homeLinkAppPage">Home</a>
+                <!-- Account button will be added here later -->
             </nav>
         </div>
     </header>
@@ -33,12 +34,12 @@
             <h2>Upload Your Resume</h2>
             <!-- Updated accept attribute to include .txt -->
             <input type="file" id="resumeUpload" accept=".pdf,.doc,.docx,.txt">
-            <button id="analyzeButton">Optimize Resume</button> <!-- Changed from onclick to id for event listener -->
+            <button id="analyzeButton" class="button-primary-app">Optimize Resume</button> <!-- Changed from onclick to id for event listener -->
 
             <div class="input-group text-input-group" style="margin-top: 20px;">
                 <label for="resumeTextInput" style="display:block; margin-bottom:8px; font-weight: bold;">Or Paste Resume Text Here:</label>
                 <textarea id="resumeTextInput" rows="10" placeholder="Paste your resume text here..." style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-family: inherit;"></textarea>
-                <button id="analyzeTextButton" class="button" style="margin-top: 10px;">Analyze Pasted Text</button>
+                <button id="analyzeTextButton" class="button button-primary-app" style="margin-top: 10px;">Analyze Pasted Text</button>
             </div>
         </section>
         
@@ -46,20 +47,20 @@
             <h2>AI Analysis</h2>
             <div id="results-display" class="results-box">Upload a resume to see AI-powered enhancements.</div>
 
-            <button id="checkAtsButton">Check ATS Compatibility</button>
+            <button id="checkAtsButton" class="button-primary-app">Check ATS Compatibility</button>
             <div id="atsSuggestionsDisplay" class="results-box">Click the button to check ATS compatibility.</div>
 
-            <button id="getSmartSuggestionsButton">Get Smart Suggestions (AI Jules)</button>
+            <button id="getSmartSuggestionsButton" class="button-primary-app">Get Smart Suggestions (AI Jules)</button>
             <div id="smartSuggestionsDisplay" class="results-box">Click the button for AI-powered smart suggestions.</div>
 
-            <button id="getJobMarketInsightsButton">Get Job Market Insights (AI Jules)</button>
+            <button id="getJobMarketInsightsButton" class="button-primary-app">Get Job Market Insights (AI Jules)</button>
             <div id="jobMarketInsightsDisplay" class="results-box">Click the button for AI-powered job market insights.</div>
         </section>
 
         <section id="job-match-section" class="glass-container">
             <h2>Job Description Match</h2>
             <textarea id="jobDescriptionInput" rows="10" placeholder="Paste the job description here..."></textarea>
-            <button id="jobMatchButton">Analyze Job Match</button>
+            <button id="jobMatchButton" class="button-primary-app">Analyze Job Match</button>
             <div id="jobMatchResultsDisplay" class="results-box">Enter a job description to see match analysis.</div>
         </section>
 
@@ -76,7 +77,7 @@
                     <!-- Add more languages as needed -->
                 </select>
             </div>
-            <button id="translateResumeButton">Translate Resume</button>
+            <button id="translateResumeButton" class="button-primary-app">Translate Resume</button>
             <div id="translatedResumeDisplay" class="results-box">
                 Translated resume will appear here.
             </div>
