@@ -1,5 +1,19 @@
-/* Add Roboto font from Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap');
+/* APP PAGE STYLES (styles.css) */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+
+:root {
+    --primary-accent: #5D3FD3; /* Deep futuristic purple */
+    --background-main: #1A1A2E; /* Dark navy */
+    --secondary-accent: #FF8C00; /* Vivid orange - for CTAs */
+    --text-primary: #EAEAEA; /* Soft white */
+    --text-secondary: #B1B1B1; /* Light gray */
+    --success-confirm: #21D19F; /* Neon teal */
+    --error-alert: #D32145; /* Deep red */
+    --glass-background: rgba(40, 40, 70, 0.25); /* Darker, slightly more opaque glass for app */
+    --glass-border: rgba(255, 255, 255, 0.15); /* Brighter border for contrast */
+    --input-background: rgba(255, 255, 255, 0.08);
+    --button-text-dark: #1A1A2E; /* For light buttons like secondary-accent */
+}
 
 /* Reset default browser styles */
 * {
@@ -8,112 +22,127 @@
     box-sizing: border-box;
 }
 
+html, body {
+    min-height: 100vh;
+}
+
 body {
     font-family: 'Roboto', sans-serif;
-    background: linear-gradient(to right, #74ebd5, #ACB6E5); /* New gradient for a softer look */
-    color: #333; /* Darker text for better contrast on light glass */
+    background-color: var(--background-main);
+    /* Optional: Add subtle gradient if desired, but solid dark often works well for apps */
+    /* background: linear-gradient(to bottom right, var(--background-main), #2a2a3e); */
+    color: var(--text-primary);
     line-height: 1.6;
     padding: 20px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    min-height: 100vh;
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+    color: var(--text-primary);
+    margin-bottom: 0.5em; /* Consistent bottom margin */
+}
+h1 { font-size: 2em; }
+h2 { font-size: 1.7em; } /* Existing .glass-container h2 */
+h3 { font-size: 1.4em; } /* Existing .results-box h3 / general h3 */
+h4 { font-size: 1.2em; } /* Existing .results-box h4 */
+h5 { font-size: 1.0em; } /* Existing .results-box h5 */
+
+p, label { /* Apply to labels as well */
+    color: var(--text-secondary);
+    margin-bottom: 0.5em;
+}
+label {
+    font-weight: bold;
+    display: block; /* Ensure labels take full width if needed */
 }
 
 /* General Glassmorphism Container Style */
 .glass-container {
-    background: rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px); /* Safari support */
+    background: var(--glass-background);
+    backdrop-filter: blur(8px); /* Adjusted blur */
+    -webkit-backdrop-filter: blur(8px);
     border-radius: 15px;
     padding: 25px;
-    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    margin-bottom: 25px; /* Added for spacing between glass containers */
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); /* Darker shadow for depth */
+    border: 1px solid var(--glass-border);
+    margin-bottom: 25px;
 }
 
-header {
-    /* background: rgba(255, 255, 255, 0.25); /* Slightly more opaque for header readability - Handled by .glass-container */
-    /* backdrop-filter: blur(12px); */
-    /* -webkit-backdrop-filter: blur(12px); /* Safari support */
-    /* border-radius: 15px; /* Softer corners */
-    padding: 25px 30px; /* Keep specific padding for header */
-    /* margin-bottom: 30px; */ /* Handled by .glass-container */
-    width: 100%;
-    max-width: 700px; /* Slightly narrower */
-    text-align: center;
-    /* box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37); /* More pronounced shadow */
-    /* border: 1px solid rgba(255, 255, 255, 0.18); */
+/* App Page Header */
+header.glass-container { /* Specifically for the app page header */
+    /* background: var(--glass-background); /* Already applied by .glass-container */
+    /* backdrop-filter: blur(12px); /* Slightly more blur for header if desired, or keep consistent */
+    padding: 15px 20px; /* Adjusted padding */
+    max-width: 900px; /* Consistent max-width for app content area */
+    /* text-align: left; /* Ensure header content aligns left if div inside is not full width */
 }
-/* Applying .glass-container to header, so some properties are inherited */
-header.glass-container {
-     background: rgba(255, 255, 255, 0.25); /* Override for header: Slightly more opaque */
-     backdrop-filter: blur(12px); /* Override for header: Slightly more blur */
-    -webkit-backdrop-filter: blur(12px);
+header.glass-container .logo-app h1 {
+    font-size: 1.6em; /* Adjusted for app header */
+    color: var(--text-primary);
+    margin-bottom: 0; /* Removed bottom margin */
 }
-
-
-header h1 {
-    font-size: 2.3em; /* Slightly reduced */
-    color: #2c3e50; /* Darker heading for contrast */
-    margin-bottom: 8px;
+header.glass-container .logo-app p {
+    font-size: 0.85em;
+    color: var(--text-secondary);
+    margin-top: 2px;
 }
 
-header p {
-    font-size: 1.1em; /* Slightly reduced */
-    color: #34495e; /* Darker subheading for contrast */
+#homeLinkAppPage {
+    padding: 8px 18px;
+    color: var(--text-primary);
+    background-color: var(--primary-accent);
+    text-decoration: none;
+    font-weight: bold;
+    border-radius: 5px;
+    transition: background-color 0.3s ease, transform 0.2s ease;
 }
+#homeLinkAppPage:hover {
+    background-color: #4B31A5; /* Darker shade of primary accent */
+    text-decoration: none;
+    color: #fff;
+    transform: translateY(-1px);
+}
+
 
 main {
     width: 100%;
-    max-width: 700px;
+    max-width: 900px; /* Consistent max-width */
     display: flex;
     flex-direction: column;
-    gap: 0; /* Let .glass-container margin handle the gap */
+    gap: 0;
 }
 
-/* section styling is now covered by .glass-container */
-/* section {
-    background: rgba(255, 255, 255, 0.2); /* Standard glass effect */
-/*    backdrop-filter: blur(10px);
-/*    -webkit-backdrop-filter: blur(10px); /* Safari support */
-/*    border-radius: 15px;
-/*    padding: 25px;
-/*    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
-/*    border: 1px solid rgba(255, 255, 255, 0.18);
-/*}
-
-.glass-container h2 { /* Target h2 within .glass-container for consistency */
-    font-size: 1.7em; /* Slightly reduced */
-    color: #2c3e50; /* Darker heading for contrast */
-    margin-bottom: 20px; /* More space below heading */
+.glass-container h2 { /* Section titles */
+    font-size: 1.7em;
+    color: var(--text-primary); /* Brighter for titles */
+    margin-bottom: 20px;
     text-align: center;
 }
 
-/* Styling for form elements within glass containers */
+/* Form Elements */
 .glass-container input[type="file"],
 .glass-container textarea,
 .glass-container select {
     display: block;
-    width: calc(100% - 20px); /* Adjust width to account for padding */
-    margin: 10px auto 20px auto; /* Centering and spacing */
+    width: calc(100% - 20px);
+    margin: 10px auto 20px auto;
     padding: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    border: 1px solid var(--glass-border);
     border-radius: 8px;
-    background: rgba(255, 255, 255, 0.1);
-    color: #333; /* Ensure text is readable */
+    background: var(--input-background); /* Use input-background variable */
+    color: var(--text-primary);
     font-family: 'Roboto', sans-serif;
     font-size: 1em;
 }
-
 .glass-container input[type="file"] {
-    max-width: 400px; /* Specific max-width for file input */
+    max-width: 400px;
 }
-
-
-input[type="file"]::file-selector-button {
-    background-color: #5DADE2; /* A calm blue */
-    color: white;
+.glass-container input[type="file"]::file-selector-button {
+    background-color: var(--primary-accent); /* Use primary accent */
+    color: var(--text-primary);
     padding: 10px 20px;
     border: none;
     border-radius: 8px;
@@ -121,15 +150,15 @@ input[type="file"]::file-selector-button {
     transition: background-color 0.3s ease, transform 0.2s ease;
     font-weight: bold;
 }
-
-input[type="file"]::file-selector-button:hover {
-    background-color: #3498DB; /* Darker blue on hover */
+.glass-container input[type="file"]::file-selector-button:hover {
+    background-color: #4B31A5; /* Darker shade of primary */
     transform: translateY(-1px);
 }
 
-.glass-container button { /* Target buttons within .glass-container */
-    background-color: #5DADE2; /* A calm blue */
-    color: white;
+/* General Button Styling (inside .glass-container) */
+.glass-container button {
+    background-color: var(--primary-accent); /* Primary buttons use primary accent */
+    color: var(--text-primary);
     padding: 12px 25px;
     border: none;
     border-radius: 8px;
@@ -137,141 +166,152 @@ input[type="file"]::file-selector-button:hover {
     cursor: pointer;
     transition: background-color 0.3s ease, transform 0.2s ease;
     display: block;
-    margin: 15px auto; /* Consistent margin for buttons */
+    margin: 20px auto 10px auto; /* Adjusted margin */
     font-weight: bold;
 }
-
 .glass-container button:hover {
-    background-color: #3498DB; /* Darker blue on hover */
-    transform: translateY(-2px); /* Subtle lift */
+    background-color: #4B31A5; /* Darker shade of primary */
+    transform: translateY(-2px);
 }
-
 .glass-container button:active {
-    transform: translateY(0); /* Click effect */
+    transform: translateY(0);
 }
 
-/* Style for user tier controls section */
+/* Specific button that might use secondary accent (if any, most are primary now) */
+/* e.g. #subscribeButton if it were to be secondary */
+#subscribeButton { /* Assuming this is a primary action too for now */
+    background-color: var(--success-confirm);
+    color: var(--button-text-dark);
+}
+#subscribeButton:hover {
+    background-color: #1AA882; /* Darker teal */
+}
+
+
+/* User Tier Controls Styling */
 #user-tier-controls {
-    text-align: center; /* Center content */
+    text-align: center;
 }
-
 #user-tier-controls label {
-    display: block;
-    margin-bottom: 8px;
-    color: #333;
-    font-weight: bold;
+    color: var(--text-secondary);
 }
-
 #user-tier-controls select {
-    margin-bottom: 10px; /* Space below select */
+    margin-bottom: 10px;
 }
-
 #user-tier-controls #subscriptionStatus {
     margin: 10px 0;
     font-style: italic;
-    color: #34495e;
+    color: var(--text-secondary);
 }
 
-/* Styling for translation controls */
-#translation-controls {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin: 15px 0;
-}
-
+/* Translation Controls Styling */
 #translation-controls label {
-    margin-bottom: 8px;
-    color: #333;
-    font-weight: bold;
+    color: var(--text-secondary);
 }
 
-
-/* Styles for results display boxes */
+/* Results Display Boxes */
 .results-box {
-    background: rgba(0, 0, 0, 0.05); /* Slightly darker, less transparent */
+    background: rgba(0, 0, 0, 0.15); /* Darker, more subtle background */
     border-radius: 8px;
-    padding: 15px;
-    margin: 15px 0; /* Space around results boxes */
+    padding: 20px; /* Increased padding */
+    margin: 15px 0;
     min-height: 50px;
-    color: #333; /* Ensure good contrast */
+    color: var(--text-secondary); /* Default text in results box */
     font-size: 1em;
     line-height: 1.5;
-    border: 1px solid rgba(255, 255, 255, 0.1); /* Subtle border */
-    overflow-y: auto; /* Allow scrolling for long content */
-    max-height: 400px; /* Default max height */
-    text-align: left; /* Default text alignment for content */
-}
-
-.results-box p, .results-box div { /* Ensure paragraphs and divs also align left if they contain direct text */
+    border: 1px solid var(--glass-border);
+    overflow-y: auto;
+    max-height: 400px;
     text-align: left;
 }
-
-.results-box h3 { /* For potential subheadings within results */
-    color: #2c3e50;
-    margin-bottom: 10px;
-    text-align: center; /* Keep h3 centered as it was originally */
+.results-box p, .results-box div {
+    text-align: left;
+    color: var(--text-secondary);
 }
-
-.results-box h4, .results-box h5 { /* General styling for new headings */
-    color: #2c3e50; /* Match h2/h3 color */
+.results-box strong { /* Make strong text pop more */
+    color: var(--text-primary);
+}
+.results-box h3 {
+    color: var(--text-primary);
+    margin-bottom: 15px;
+    text-align: center;
+}
+.results-box h4, .results-box h5 {
+    color: var(--text-primary);
     margin-top: 15px;
     margin-bottom: 10px;
-    text-align: left; /* Default to left for these */
+    text-align: left;
 }
-
-
 .results-box ul, .results-box ol {
     list-style-position: inside;
-    padding-left: 20px; /* Standard larger padding */
-    margin-left: 0; /* Reset margin if padding is used for indent */
+    padding-left: 20px;
+    margin-left: 0;
     text-align: left;
 }
-
 .results-box li {
-    margin-bottom: 8px; /* Increased spacing */
+    margin-bottom: 8px;
     text-align: left;
+    color: var(--text-secondary);
 }
-
-.results-box pre {
+.results-box pre { /* For translated text etc. */
     white-space: pre-wrap;
     word-wrap: break-word;
-    background-color: #f8f9fa;
+    background-color: rgba(0,0,0,0.2); /* Darker pre for dark theme */
     padding: 10px;
-    border: 1px solid #dee2e6;
+    border: 1px solid var(--glass-border);
     border-radius: 4px;
     margin-top: 5px;
     margin-bottom: 10px;
     text-align: left;
+    color: var(--text-primary); /* Ensure pre text is readable */
 }
 
-/* Responsive Design */
+/* Error Message Styling */
+.error-message {
+    color: var(--error-alert);
+    background-color: rgba(211, 33, 69, 0.1); /* Light red background with low opacity */
+    border: 1px solid var(--error-alert);
+    padding: 10px;
+    border-radius: 4px;
+    margin-top: 10px;
+    text-align: left;
+}
+
+/* Drag and Drop Active State Styling */
+.drop-zone-active {
+    border: 2px dashed var(--primary-accent);
+    background-color: rgba(93, 63, 211, 0.1); /* Light primary accent from homepage */
+}
+
+
+/* Responsive Design - Reviewing existing, ensuring color compatibility */
 @media (max-width: 768px) {
     body {
         padding: 15px;
     }
-    .glass-container, header { /* Apply to header as well */
+    .glass-container, header.glass-container { /* Applied to app header too */
         padding: 20px;
         max-width: 95%;
     }
     main {
         max-width: 95%;
     }
-    header h1 {
-        font-size: 2em;
-    }
-    header p {
-        font-size: 1em;
-    }
-    .glass-container h2 { /* Target h2 within .glass-container */
+    header.glass-container .logo-app h1 {
         font-size: 1.5em;
     }
-    .glass-container button {
-        padding: 10px 20px;
-        font-size: 1em;
+    header.glass-container .logo-app p {
+        font-size: 0.8em;
+    }
+    .glass-container h2 {
+        font-size: 1.5em;
+    }
+    /* General button sizing for 768px, specific buttons might override */
+    .glass-container button, button.button {
+        padding: 10px 18px; /* Slightly less padding than desktop */
+        font-size: 0.95em;
     }
     .glass-container input[type="file"],
-    .glass-container textarea,
+    .glass-container textarea, /* Includes resumeTextInput if it's a textarea in a glass-container */
     .glass-container select {
         width: 100%;
     }
@@ -287,70 +327,93 @@ input[type="file"]::file-selector-button:hover {
 }
 
 @media (max-width: 480px) {
-    .glass-container, header { /* Apply to header as well */
+    .glass-container, header.glass-container {
         padding: 15px;
     }
-    header { /* Specific header adjustments if needed */
-        margin-bottom: 20px; /* Ensure header has bottom margin */
+    header.glass-container {
+        margin-bottom: 15px; /* Slightly reduced margin */
     }
-    header h1 {
-        font-size: 1.8em;
+    header.glass-container .logo-app h1 {
+        font-size: 1.2em; /* Further adjust app title size */
     }
-    header p {
-        font-size: 0.9em;
+    header.glass-container .logo-app p {
+        font-size: 0.7em;
     }
-    .glass-container h2 { /* Target h2 within .glass-container */
-        font-size: 1.3em;
+    header.glass-container nav { /* For the nav containing homeLinkAppPage */
+        margin-top: 5px;
+    }
+    #homeLinkAppPage {
+        padding: 8px 12px;
+        font-size: 0.85em; /* Slightly smaller */
+    }
+
+    .glass-container h2 {
+        font-size: 1.2em; /* Smaller section titles */
     }
     input[type="file"]::file-selector-button {
-        padding: 8px 15px;
+        padding: 8px 12px; /* Smaller file button */
     }
-    .glass-container button {
-        width: calc(100% - 40px); /* Adjust button width for padding */
-        margin-left: auto;
-        margin-right: auto;
+
+    /* General button styling for mobile */
+    .glass-container button, button.button {
+        padding: 10px 12px;
+        font-size: 0.9em;
+        width: auto; /* Default to auto */
+        max-width: 95%; /* Prevent overly wide buttons if display:block is used */
+        display: block; /* Stack buttons by default in sections */
+        margin: 10px auto;
     }
-    #user-tier-controls, #translation-controls { /* Stack elements vertically */
-        display: flex;
-        flex-direction: column;
-        align-items: center;
+    /* Specific for analyze buttons if they need to be full-width */
+    .upload-section #analyzeButton,
+    .upload-section #analyzeTextButton {
+        width: calc(100% - 20px); /* Full-width feel */
+        max-width: 300px; /* But not excessively wide */
     }
-    #user-tier-controls select, #user-tier-controls button,
-    #translation-controls select, #translation-controls button {
-        width: 90%; /* Make controls wider */
-        margin-bottom: 10px;
+
+    .glass-container textarea { /* Targeting all textareas in glass containers, including resumeTextInput */
+        height: 120px;
+        font-size: 0.9em; /* Slightly smaller font in textarea */
     }
+
     .results-box {
         max-height: 250px;
+        padding: 15px; /* Slightly reduced padding for results box */
     }
     .results-box ul, .results-box ol {
-        margin-left: 10px; /* Reduced indent further for very small screens */
-        padding-left: 15px; /* Ensure padding is adjusted with margin */
+        margin-left: 10px;
+        padding-left: 15px;
     }
-    .results-box h4 {
+    .results-box h4 { /* Already 1.0em, this confirms */
         font-size: 1.0em;
     }
-    .results-box h5 {
+    .results-box h5 { /* Already 0.9em, this confirms */
         font-size: 0.9em;
     }
-    .results-box pre {
-        padding: 8px;
+    .results-box li {
+        font-size: 0.9em;
+        margin-bottom: 6px;
     }
-}
+    .results-box pre {
+        padding: 6px;
+        font-size: 0.85em;
+    }
 
-/* Standardized Error Message Styling */
-.error-message {
-    color: #D8000C; /* Standard error red */
-    background-color: #FFBABA; /* Lighter red background */
-    border: 1px solid #D8000C;
-    padding: 10px;
-    border-radius: 4px; /* Consistent with other elements */
-    margin-top: 10px;
-    text-align: left; /* Ensure text is aligned left */
-}
-
-/* Drag and Drop Active State Styling */
-.drop-zone-active {
-    border: 2px dashed #5D3FD3; /* A vibrant purple, adjust to your theme's accent */
-    background-color: rgba(93, 63, 211, 0.05); /* Very light purple background */
+    #userTierSelector {
+        padding: 8px;
+        font-size: 0.9em;
+        width: 90%; /* Make it take more width as its parent is flex-column */
+        margin: 0 auto 10px auto; /* Center it and add bottom margin */
+    }
+    #subscribeButton { /* Ensure subscribe button is also well-sized */
+        width: 90%;
+        max-width: 280px; /* Max width for subscribe button */
+        padding: 10px 12px;
+        font-size: 0.9em;
+        margin: 0 auto 10px auto; /* Center and provide margin */
+    }
+    /* Assuming .disclaimer-message class will be used on a <p> tag for Job Market Insights */
+    .results-box .disclaimer-message { /* Target specifically within results-box */
+        font-size: 0.8em;
+        margin-top: 10px; /* Adjust spacing if needed */
+    }
 }
