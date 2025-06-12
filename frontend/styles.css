@@ -71,39 +71,49 @@ label {
     margin-bottom: 25px;
 }
 
-/* App Page Header */
-header.glass-container { /* Specifically for the app page header */
-    /* background: var(--glass-background); /* Already applied by .glass-container */
-    /* backdrop-filter: blur(12px); /* Slightly more blur for header if desired, or keep consistent */
-    padding: 15px 20px; /* Adjusted padding */
-    max-width: 900px; /* Consistent max-width for app content area */
-    /* text-align: left; /* Ensure header content aligns left if div inside is not full width */
+/* App Page Header Styling - New and Adjustments */
+header.glass-container .app-header-content-wrapper {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    /* padding: 0 2%; /* Header already has padding */
+    box-sizing: border-box;
 }
+
+header.glass-container .logo-link-app img#appPageLogo {
+    height: 45px;
+    width: auto;
+    vertical-align: middle;
+}
+
+/* Remove or comment out old .logo-app h1 styles if they exist and are no longer needed */
+/*
 header.glass-container .logo-app h1 {
-    font-size: 1.6em; /* Adjusted for app header */
+    font-size: 1.6em;
     color: var(--text-primary);
-    margin-bottom: 0; /* Removed bottom margin */
+    margin-bottom: 0;
 }
 header.glass-container .logo-app p {
     font-size: 0.85em;
     color: var(--text-secondary);
     margin-top: 2px;
 }
+*/
 
 #homeLinkAppPage {
-    padding: 8px 18px;
+    padding: 8px 15px; /* Consistent padding */
     color: var(--text-primary);
-    background-color: var(--primary-accent);
+    background-color: transparent; /* Remove button-like background to look like a link */
     text-decoration: none;
     font-weight: bold;
     border-radius: 5px;
-    transition: background-color 0.3s ease, transform 0.2s ease;
+    transition: color 0.3s ease; /* Transition color for hover */
 }
 #homeLinkAppPage:hover {
-    background-color: #4B31A5; /* Darker shade of primary accent */
-    text-decoration: none;
-    color: #fff;
-    transform: translateY(-1px);
+    color: var(--secondary-accent);
+    text-decoration: underline; /* Standard link hover */
+    background-color: transparent;
 }
 
 
@@ -296,12 +306,9 @@ main {
     main {
         max-width: 95%;
     }
-    header.glass-container .logo-app h1 {
-        font-size: 1.5em;
-    }
-    header.glass-container .logo-app p {
-        font-size: 0.8em;
-    }
+    /* header.glass-container .logo-app h1 { font-size: 1.5em; } */ /* Old selector */
+    /* header.glass-container .logo-app p { font-size: 0.8em; } */ /* Old selector */
+
     .glass-container h2 {
         font-size: 1.5em;
     }
@@ -331,24 +338,29 @@ main {
         padding: 15px;
     }
     header.glass-container {
-        margin-bottom: 15px; /* Slightly reduced margin */
+        margin-bottom: 15px;
+        padding: 10px 15px; /* Adjusted header padding for mobile */
     }
-    header.glass-container .logo-app h1 {
-        font-size: 1.2em; /* Further adjust app title size */
+    header.glass-container .app-header-content-wrapper {
+        /* flex-direction: column; /* Example: Stack on very small screens if needed */
+        /* align-items: flex-start; */
     }
-    header.glass-container .logo-app p {
-        font-size: 0.7em;
+    header.glass-container .logo-link-app img#appPageLogo {
+        height: 35px;
     }
-    header.glass-container nav { /* For the nav containing homeLinkAppPage */
-        margin-top: 5px;
+    /* header.glass-container .logo-app h1 { font-size: 1.2em; } */ /* Old selector */
+    /* header.glass-container .logo-app p { font-size: 0.7em; } */ /* Old selector */
+
+    header.glass-container nav {
+        /* margin-top: 5px; /* Only if stacked */
     }
     #homeLinkAppPage {
-        padding: 8px 12px;
-        font-size: 0.85em; /* Slightly smaller */
+        padding: 8px 10px; /* Adjust padding */
+        font-size: 0.9em; /* Ensure readability */
     }
 
     .glass-container h2 {
-        font-size: 1.2em; /* Smaller section titles */
+        font-size: 1.2em;
     }
     input[type="file"]::file-selector-button {
         padding: 8px 12px; /* Smaller file button */

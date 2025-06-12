@@ -58,47 +58,78 @@ a:hover {
     box-shadow: 0 2px 10px rgba(0,0,0,0.2);
 }
 
-#page-footer {
-    border-top: 1px solid var(--glass-border);
-    border-bottom: none;
-    margin-top: 40px;
-    padding: 2em 5%;
-}
-
-#main-header nav {
+#main-header .header-content-wrapper {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    width: 100%;
     max-width: 1200px;
     margin: 0 auto;
 }
 
-#main-header nav span {
-    font-size: 1.8em;
-    font-weight: bold;
-    color: var(--text-primary);
+#main-header .logo-link img#homepageLogo {
+    height: 50px;
+    width: auto;
+    vertical-align: middle;
 }
+
+/* #main-header nav { */ /* Nav is now a direct child of header-content-wrapper */
+    /* No specific styles needed here if ul is flex */
+/* } */
+
+/* #main-header nav span {  */ /* Removed as logo is now an image */
+    /* font-size: 1.8em;
+    font-weight: bold;
+    color: var(--text-primary); */
+/* } */
 
 #main-header nav ul {
     list-style: none;
     padding: 0;
     margin: 0;
     display: flex;
+    align-items: center; /* Vertically align items if they have different heights */
+}
+
+#main-header nav ul li { /* Added to target li for spacing */
+    margin-left: 25px; /* Increased spacing between nav items */
 }
 
 #main-header nav ul li a {
-    margin: 0 15px;
+    /* margin: 0 15px; */ /* Margin now on li */
     color: var(--text-primary);
     font-weight: bold;
     font-size: 1em;
-    padding: 5px 10px;
+    padding: 8px 12px; /* Adjusted padding for better click area */
     border-radius: 4px;
-    transition: background-color 0.3s ease;
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 #main-header nav ul li a:hover {
     background-color: var(--primary-accent);
     color: var(--text-primary);
     text-decoration: none;
+}
+
+#main-header nav ul li a.button-nav { /* For Sign Up button in nav */
+    background-color: var(--secondary-accent);
+    color: var(--button-text-dark, var(--background-main));
+    padding: 8px 15px;
+    border-radius: 5px;
+    font-weight: bold;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+#main-header nav ul li a.button-nav:hover {
+    background-color: var(--primary-accent);
+    color: var(--text-primary);
+    text-decoration: none;
+}
+
+
+#page-footer {
+    border-top: 1px solid var(--glass-border);
+    border-bottom: none;
+    margin-top: 40px;
+    padding: 2em 5%;
 }
 
 
@@ -210,24 +241,6 @@ main > section {
 .step h3 {
     color: var(--text-primary); /* Ensure heading color */
     margin-bottom: 10px;
-}
-
-/* Drag & Drop Placeholder */
-#homepage-drag-drop-area {
-    padding: 30px;
-    margin-top: 30px;
-    border: 2px dashed var(--primary-accent);
-    border-radius: 10px;
-    text-align: center;
-    background-color: rgba(93, 63, 211, 0.05);
-    cursor: pointer;
-}
-#homepage-drag-drop-area p {
-    color: var(--text-secondary);
-    margin: 5px 0;
-}
-#homepage-drag-drop-area p small {
-    font-size: 0.85em;
 }
 
 
@@ -429,23 +442,23 @@ main > section {
     #hero h1 { font-size: 2.5em; }
     #hero p { font-size: 1.1em; }
 
-    #main-header nav {
+    #main-header nav { /* No longer direct child of main-header for flex */
+        /* flex-direction: column; */ /* This will be on .header-content-wrapper */
+    }
+    /* #main-header nav span { */ /* Logo is an image now */
+        /* margin-bottom: 10px; */
+    /* } */
+    /* Nav items already stack due to .header-content-wrapper: column */
+    /* #main-header nav ul {
         flex-direction: column;
-    }
-    #main-header nav span { /* Logo placeholder */
-        margin-bottom: 10px;
-    }
-    #main-header nav ul {
-        flex-direction: column; /* Stack nav items on smaller screens */
         align-items: center;
-    }
-    #main-header nav ul li {
-        margin-bottom: 8px; /* Space between stacked nav items */
-    }
-    #main-header nav ul li a {
-        margin: 0; /* Reset horizontal margin */
-        /* Further styling for stacked links can be added if needed */
-    }
+    } */
+    /* #main-header nav ul li {
+        margin-bottom: 8px;
+    } */
+    /* #main-header nav ul li a {
+        margin: 0;
+    } */
 
     .steps-container, .pricing-grid {
         flex-direction: column; /* Stack items */
@@ -480,18 +493,38 @@ main > section {
         padding: 12px; /* Ensure buttons are easy to tap */
     }
 
-    #main-header nav a { /* For nav links if they need more specific stacking */
-        display: block;
-        margin: 8px 0;
-        padding: 10px;
-        border-bottom: 1px solid var(--glass-border);
+    #main-header .header-content-wrapper { /* Apply stacking to the wrapper */
+        flex-direction: column;
+        align-items: center;
     }
-    #main-header nav a:last-child {
-        border-bottom: none;
+    #main-header .logo-link img#homepageLogo {
+        height: 40px;
+        margin-bottom: 15px; /* Increased space when stacked */
     }
-     #main-header nav ul { /* Ensure full width for stacked items if needed */
+    #main-header nav { /* Ensure nav takes full width for centered items */
         width: 100%;
     }
+    #main-header nav ul {
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+    }
+    #main-header nav ul li {
+        margin: 8px 0; /* Vertical margin for stacked items */
+        width: 100%; /* Make li take full width for centered text/button */
+        text-align: center;
+    }
+     #main-header nav ul li a.button-nav { /* Specific for button in nav */
+        display: inline-block; /* Allow padding and auto width */
+        width: auto;
+        padding: 10px 25px; /* Make button more prominent */
+    }
+    /* #main-header nav a:last-child {
+        border-bottom: none;
+    } */
+     /* #main-header nav ul {
+        width: 100%;
+    } */
 
 
     .steps-container {
