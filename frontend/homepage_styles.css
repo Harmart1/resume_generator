@@ -68,7 +68,7 @@ a:hover {
 }
 
 #main-header .logo-link img#homepageLogo {
-    height: 50px;
+    height: 70px;
     width: auto;
     vertical-align: middle;
 }
@@ -243,6 +243,13 @@ main > section {
     margin-bottom: 10px;
 }
 
+.step-icon img.step-icon-img {
+    max-width: 45px; /* Or a value that matches previous placeholder size */
+    height: auto;
+    display: block; /* Or inline-block if preferred */
+    margin: 0 auto 15px auto; /* Center if block, adjust margin-bottom */
+}
+
 
 /* Features & Benefits Section */
 .features-grid {
@@ -264,6 +271,13 @@ main > section {
 .feature-item h4 {
     color: var(--text-primary);
     margin-bottom: 8px;
+}
+
+.feature-icon img.feature-icon-img {
+    max-width: 55px; /* Or a value that matches previous placeholder size */
+    height: auto;
+    display: block; /* Or inline-block if preferred */
+    margin: 0 auto 10px auto; /* Center if block, adjust margin-bottom */
 }
 
 /* Pricing Plans Section */
