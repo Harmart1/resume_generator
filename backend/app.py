@@ -2151,10 +2151,12 @@ def analyze_resume():
 
     if not WATSON_NLP_AVAILABLE or nlu_client is None:
         logger.error("Watson NLU client not configured. Cannot perform resume analysis in /analyze_resume.")
-            return jsonify({"error": "Watson NLU client not configured. Please check server setup."}), 500
+        return jsonify({"error": "Watson NLU client not configured. Please check server setup."}), 500
 
-        try:
-            logger.info(f"Analyzing resume '{filename}' with Watson NLU...")
+    # This try-except block should not be indented under the above if condition.
+    # It is for the NLU analysis itself.
+    try:
+        logger.info(f"Analyzing resume '{filename}' with Watson NLU...")
             response = nlu_client.analyze(
                 text=resume_text,
                 features=Features(
