@@ -54,6 +54,7 @@ from ibm_cloud_sdk_core.api_exception import ApiException
 # For Gemini API integration (text generation and now translation)
 import requests
 import json
+import google.generativeai as genai
 
 
 # For PDF text extraction (attempt pdfplumber first, then PyPDF2 as fallback)
@@ -92,6 +93,7 @@ except Exception as e:
 
 # Load environment variables
 load_dotenv()
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'a-very-secret-key-for-dev')
@@ -130,12 +132,12 @@ if WATSON_NLP_API_KEY and WATSON_NLP_URL:
         )
         nlu_client.set_service_url(WATSON_NLP_URL)
         WATSON_NLP_AVAILABLE = True
-        logger.info("IBM Watson NLU client initialized successfully.")
+        logger.info("Watson NLU client configured successfully.") # UPDATED
     except Exception as e:
-        logger.error(f"Failed to initialize IBM Watson NLU client: {e}")
+        logger.error(f"Error configuring Watson NLU client: {e}") # UPDATED
         WATSON_NLP_AVAILABLE = False
 else:
-    logger.warning("IBM Watson NLP API key or URL not found in environment variables. Watson NLU will be disabled.")
+    logger.warning("Watson NLU API key or URL not found. Watson NLU features will be disabled.") # UPDATED
 
 nlp = None # SpaCy will be loaded only if Watson NLP is not available.
 
@@ -2083,6 +2085,8 @@ def download_word():
 
 @app.route('/analyze_resume', methods=['POST'])
 def analyze_resume():
+    global nlu_client, WATSON_NLP_AVAILABLE # Ensure access to global Watson NLU client
+
     if 'resume' not in request.files:
         logger.error("No resume file part in /analyze_resume request.")
         return jsonify({"error": "No resume file part in the request"}), 400
@@ -2095,97 +2099,294 @@ def analyze_resume():
 
     if file:
         filename = secure_filename(file.filename)
-        # In a real application, you would save or process the file here.
-        # For example:
-        # upload_folder = app.config.get('UPLOAD_FOLDER', 'uploads')
-        # if not os.path.exists(upload_folder):
-        #     os.makedirs(upload_folder)
-        # file.save(os.path.join(upload_folder, filename))
 
-        # Mock AI analysis response as per subtask description
-        mock_analysis = {
-            "message": "File received for analysis", # Message from subtask
-            "filename": filename,
-            "keywords_found": ["python", "javascript", "flask"] # Mock keywords from subtask
-        }
-        logger.info(f"Successfully processed file '{filename}' for /analyze_resume. Sending mock response.")
-        return jsonify(mock_analysis), 200
+        # For this subtask, only process .txt files
+        if not filename.lower().endswith('.txt'):
+            logger.warning(f"File type not supported for /analyze_resume: {filename}. Only .txt is currently supported.")
+            # Future enhancement: Add robust text extraction for PDF/DOCX files.
+            return jsonify({"error": f"File type not supported: {filename}. Only .txt files are currently processed for analysis. PDF/DOCX support is a future enhancement."}), 415
 
-    # This case should ideally not be reached if the checks above are comprehensive
-    logger.error("File object was not valid in /analyze_resume for an unknown reason.")
+        try:
+            resume_text = file.read().decode('utf-8')
+            if not resume_text.strip():
+                logger.warning(f"Uploaded file '{filename}' is empty or contains only whitespace.")
+                return jsonify({"error": "Uploaded file is empty."}), 400
+        except UnicodeDecodeError:
+            logger.error(f"Could not decode file '{filename}' as UTF-8 text.")
+            return jsonify({"error": "Could not decode file. Please ensure it is a plain text file."}), 400
+        except Exception as e:
+            logger.error(f"Error reading file '{filename}': {e}")
+            return jsonify({"error": "Could not read file content."}), 500
+
+        if not WATSON_NLP_AVAILABLE or nlu_client is None:
+            logger.error("Watson NLU client not configured. Cannot perform resume analysis.")
+            return jsonify({"error": "Watson NLU client not configured. Please check server setup."}), 500
+
+        try:
+            logger.info(f"Analyzing resume '{filename}' with Watson NLU...")
+            response = nlu_client.analyze(
+                text=resume_text,
+                features=Features(
+                    keywords=KeywordsOptions(limit=20, sentiment=False, emotion=False),
+                    entities=EntitiesOptions(limit=20, sentiment=False, emotion=False)
+                )
+                # language='en' # Optionally specify language if known, otherwise Watson detects
+            ).get_result()
+
+            keywords = response.get('keywords', [])
+            entities = response.get('entities', [])
+
+            logger.info(f"Successfully analyzed '{filename}' with Watson NLU.")
+            return jsonify({
+                "filename": filename,
+                "message": "Resume analyzed successfully",
+                "keywords": keywords,
+                "entities": entities
+            }), 200
+
+        except ApiException as e:
+            logger.error(f"Watson NLU API error during analysis of '{filename}': {e.code} - {e.message}")
+            return jsonify({"error": f"Watson NLU API error: {e.message}"}), 500
+        except Exception as e:
+            logger.error(f"Unexpected error during Watson NLU analysis of '{filename}': {e}")
+            return jsonify({"error": "Analysis failed due to an unexpected server error."}), 500
+
+    logger.error("File object was not valid in /analyze_resume for an unknown reason (should have been caught earlier).")
     return jsonify({"error": "An unexpected error occurred with the file processing."}), 500
 
 
 @app.route('/match_job', methods=['POST'])
 def match_job():
+    global nlu_client, WATSON_NLP_AVAILABLE, gemini_model # Ensure access to global clients
+
     data = request.get_json()
-    if not data or 'job_description' not in data or not data['job_description'].strip():
-        logger.error("No job description provided in /match_job request.")
-        return jsonify({"error": "No job description provided or empty."}), 400
+    if not data:
+        logger.error("No JSON data received for /match_job.")
+        return jsonify({"error": "No data provided."}), 400
 
-    job_description = data['job_description']
+    job_description = data.get('job_description')
+    resume_keywords_data = data.get('resume_keywords', []) # List of {'text': ..., 'relevance': ...}
+    resume_entities_data = data.get('resume_entities', []) # List of {'type': ..., 'text': ...}
 
-    # Mock AI job matching logic
-    # In a real application, this would involve comparing the job_description
-    # with a resume (either passed in or retrieved from a session/database).
-    # For now, we just acknowledge receipt and give mock results.
+    if not job_description or not job_description.strip():
+        logger.error("Job description not provided in /match_job request.")
+        return jsonify({"error": "Job description is required."}), 400
 
-    mock_match_results = {
-        "message": "Job description received and analyzed.",
-        "match_score": "82%", # Example score
-        "suggestions": [
-            "Emphasize your experience with cloud platforms.",
-            "Detail your contributions to team projects.",
-            "Ensure your skills section lists 'Data Analysis' and 'Agile Methodologies'."
-        ],
-        "positive_keywords": ["Team Player", "Problem Solver", job_description.split(" ")[0] if job_description else "Synergy"], # just an example
-        "missing_keywords": ["Specific Tool X", "Certification Y"] # example
-    }
+    if not resume_keywords_data and not resume_entities_data:
+        logger.warning("Resume keywords and entities are missing from the /match_job request.")
+        # Depending on desired behavior, could return an error or proceed with limited functionality
+        # For now, we'll proceed, but Gemini suggestions might be less effective.
 
-    logger.info(f"Successfully processed job description for /match_job. Sending mock response.")
-    return jsonify(mock_match_results), 200
+    job_desc_keywords_list = []
+    job_desc_entities_list = []
+    job_description_analysis_results = {"keywords": [], "entities": []}
+
+    if not WATSON_NLP_AVAILABLE or nlu_client is None:
+        logger.warning("Watson NLU client not configured. Job description analysis will be skipped for /match_job.")
+        # Proceed without Watson analysis, match score will be affected.
+    else:
+        try:
+            logger.info(f"Analyzing job description with Watson NLU for /match_job...")
+            jd_analysis_response = nlu_client.analyze(
+                text=job_description,
+                features=Features(
+                    keywords=KeywordsOptions(limit=30),
+                    entities=EntitiesOptions(limit=30)
+                )
+            ).get_result()
+            job_desc_keywords_list = jd_analysis_response.get('keywords', [])
+            job_desc_entities_list = jd_analysis_response.get('entities', [])
+            job_description_analysis_results = {
+                "keywords": job_desc_keywords_list,
+                "entities": job_desc_entities_list
+            }
+            logger.info("Job description analysis complete.")
+        except ApiException as e:
+            logger.error(f"Watson NLU API error during job description analysis: {e.code} - {e.message}")
+            # Proceed, but job_description_analysis will be empty or partial
+        except Exception as e:
+            logger.error(f"Unexpected error during Watson NLU job description analysis: {e}")
+            # Proceed
+
+    # Comparison Logic (Heuristic-based)
+    resume_keyword_texts = {kw['text'].lower() for kw in resume_keywords_data if kw.get('text')}
+    # Consider adding entity texts from resume to resume_keyword_texts if appropriate for matching
+    # for entity in resume_entities_data:
+    #     if entity.get('text'):
+    #         resume_keyword_texts.add(entity['text'].lower())
+
+    job_desc_keyword_texts = {kw['text'].lower() for kw in job_desc_keywords_list if kw.get('text')}
+    # Similarly, consider adding entity texts from job description
+    # for entity in job_desc_entities_list:
+    #     if entity.get('text'):
+    #         job_desc_keyword_texts.add(entity['text'].lower())
+
+    common_keywords = resume_keyword_texts.intersection(job_desc_keyword_texts)
+    match_score_percentage = 0
+    if job_desc_keyword_texts: # Avoid division by zero
+        match_score_percentage = round((len(common_keywords) / len(job_desc_keyword_texts)) * 100, 2)
+
+    missing_keywords_in_resume = sorted(list(job_desc_keyword_texts - resume_keyword_texts))
+
+    ai_suggestions_list = ["Suggestions feature temporarily unavailable."]
+    if not gemini_model:
+        logger.warning("Gemini client not configured. Skipping AI suggestions for /match_job.")
+    else:
+        try:
+            # Construct prompt for Gemini
+            resume_skills_summary = ", ".join(list(resume_keyword_texts)[:15]) # Top 15 resume keywords
+            jd_skills_summary = ", ".join(list(job_desc_keyword_texts)[:15]) # Top 15 JD keywords
+
+            prompt_for_gemini = (
+                f"Resume Skills: {resume_skills_summary}\n"
+                f"Job Description Key Skills: {jd_skills_summary}\n"
+                f"Keywords Missing from Resume (but in Job Description): {', '.join(missing_keywords_in_resume[:10])}\n\n"
+                "Based on this, provide 2-3 concise, actionable suggestions for the user to improve their resume to better match this specific job description. Focus on incorporating missing elements or rephrasing existing skills to align with the job's requirements."
+            )
+            logger.info("Generating AI suggestions with Gemini for /match_job...")
+            gemini_response = gemini_model.generate_content(prompt_for_gemini)
+
+            if gemini_response and gemini_response.text:
+                # Simple parsing: split by newline, filter empty. More robust parsing might be needed.
+                ai_suggestions_list = [s.strip() for s in gemini_response.text.split('\n') if s.strip() and not s.strip().startswith(("*", "-"))]
+                if not ai_suggestions_list: # Fallback if splitting results in empty list
+                     ai_suggestions_list = [gemini_response.text.strip()]
+                logger.info("AI suggestions generated successfully.")
+            else:
+                logger.warning("Gemini response for suggestions was empty or invalid.")
+                ai_suggestions_list = ["Could not generate AI suggestions at this time."]
+
+        except Exception as e:
+            logger.error(f"Error during Gemini API call for suggestions: {e}")
+            ai_suggestions_list = ["Error generating AI suggestions."]
+
+    return jsonify({
+        "message": "Job match analysis complete.",
+        "match_score": f"{match_score_percentage}%",
+        "job_description_analysis": job_description_analysis_results,
+        "missing_resume_keywords": missing_keywords_in_resume,
+        "ai_suggestions": ai_suggestions_list
+    }), 200
 
 
 @app.route('/check_ats', methods=['POST'])
 def check_ats():
+    global nlu_client, WATSON_NLP_AVAILABLE, gemini_model # Ensure access to global clients
+
     if 'resume' not in request.files:
         logger.error("No resume file part in /check_ats request.")
         return jsonify({"error": "No resume file part in the request"}), 400
 
     file = request.files['resume']
+    filename = secure_filename(file.filename)
 
     if file.filename == '':
         logger.warning("No file selected in /check_ats request.")
         return jsonify({"error": "No selected file"}), 400
 
-    if file:
-        filename = secure_filename(file.filename)
-        # Placeholder for actual ATS analysis logic
-        # e.g., check font, layout, keywords, section headers
+    ats_suggestions = [
+        "Use standard, readable fonts (e.g., Arial, Calibri, Times New Roman). Font size should be 10-12 points.",
+        "Avoid using tables, columns, or text boxes for critical information like skills or experience, as some ATS may not parse these correctly.",
+        "Ensure your contact information (name, phone, email, LinkedIn URL) is at the top and clearly identifiable.",
+        "Use consistent formatting for dates (e.g., MM/YYYY or Month YYYY) and job titles throughout your resume.",
+        "Spell check and proofread carefully; typos can cause your resume to be filtered out by ATS or viewed negatively by recruiters.",
+        "Submit your resume in a compatible file format, typically .docx or PDF (unless .txt is specifically requested)."
+    ]
+    # Note: Smart suggestions currently only support .txt files. Future enhancement: Add PDF/DOCX parsing.
+    logger.info("Note: ATS check currently only supports .txt files for NLU analysis. Future enhancement: Add PDF/DOCX parsing.")
 
-        mock_ats_suggestions = {
-            "message": f"ATS compatibility check for '{filename}' complete.",
-            "suggestions": [
-                "Use standard fonts like Arial, Calibri, or Times New Roman.",
-                "Avoid using tables or columns for page layout as some ATS struggle to parse them.",
-                "Ensure section headings are clear and common (e.g., 'Experience', 'Education', 'Skills').",
-                "Include keywords relevant to the jobs you are applying for.",
-                "Save your resume as a PDF or .docx for best compatibility, avoid .txt if formatting is important.",
-                "Check for consistent date formatting (e.g., MM/YYYY or Month YYYY)."
-            ],
-            "font_check": "Passed (Mock - Assumed standard font)",
-            "layout_check": "Review (Mock - Suggests avoiding tables/columns)"
-        }
+    if not filename.lower().endswith('.txt'):
+        logger.warning(f"File type not .txt for /check_ats: {filename}. Skipping NLU analysis, providing generic tips.")
+        ats_suggestions.append("Advanced analysis for section detection was skipped as only .txt files are currently processed by NLU here.")
+        # (Gemini refinement could still be attempted on these generic tips if desired)
+    else:
+        try:
+            resume_content_string = file.read().decode('utf-8')
+            if not resume_content_string.strip():
+                logger.warning(f"Uploaded file '{filename}' for ATS check is empty.")
+                return jsonify({"error": "Uploaded resume file is empty."}), 400
 
-        logger.info(f"Successfully processed file '{filename}' for /check_ats. Sending mock ATS suggestions.")
-        return jsonify(mock_ats_suggestions), 200
+            if WATSON_NLP_AVAILABLE and nlu_client:
+                try:
+                    logger.info(f"Analyzing '{filename}' with Watson NLU for ATS check...")
+                    analysis_results = nlu_client.analyze(
+                        text=resume_content_string,
+                        features=Features(
+                            keywords={'limit': 50, 'sentiment': False, 'emotion': False},
+                            entities={'limit': 50, 'sentiment': False, 'emotion': False}
+                            # Optional: categories={'limit': 3}
+                        )
+                    ).get_result()
 
-    logger.error("File object was not valid in /check_ats for an unknown reason.")
-    return jsonify({"error": "An unexpected error occurred with the file processing for ATS check."}), 500
+                    nlu_keywords = [kw['text'].lower() for kw in analysis_results.get('keywords', [])]
+                    # Consider entities for section headings too if keywords are sparse
+                    # nlu_entities_texts = [entity['text'].lower() for entity in analysis_results.get('entities', [])]
+                    # combined_texts_for_sections = set(nlu_keywords + nlu_entities_texts)
+
+                    standard_sections = ["experience", "education", "skills", "contact", "summary", "objective", "projects", "awards", "certifications", "languages", "volunteer"]
+                    found_sections_count = 0
+                    for section in standard_sections:
+                        if any(section in kw for kw in nlu_keywords): # Simple substring check for section presence
+                            found_sections_count +=1
+                        else:
+                            ats_suggestions.append(f"Consider adding a clear '{section.capitalize()}' section if applicable to your experience.")
+
+                    if len(nlu_keywords) < 10 and len(resume_content_string) > 200: # Heuristic for a resume of reasonable length
+                        ats_suggestions.append("Ensure your resume text is machine-readable and not primarily image-based. If your resume is text-based but few keywords were extracted by NLU, review its clarity and keyword optimization for ATS.")
+                    elif found_sections_count < 2 and len(resume_content_string) > 200: # If very few standard sections found
+                         ats_suggestions.append("Your resume seems to be missing several standard sections or they are not clearly identified. Ensure clear headings like 'Experience', 'Education', and 'Skills'.")
+
+
+                except ApiException as e:
+                    logger.error(f"Watson NLU API error during ATS check for '{filename}': {e.code} - {e.message}")
+                    ats_suggestions.append("Could not perform detailed NLU analysis for section detection due to an API error.")
+                except Exception as e:
+                    logger.error(f"Unexpected error during Watson NLU analysis for ATS check: {e}")
+                    ats_suggestions.append("An unexpected error occurred during detailed resume analysis.")
+            else:
+                ats_suggestions.append("Watson NLU client not available for detailed structural analysis. Displaying generic ATS tips.")
+
+        except UnicodeDecodeError:
+            logger.error(f"Could not decode file '{filename}' as UTF-8 text for ATS check.")
+            return jsonify({"error": "Could not decode file. Please ensure it is a plain text file for ATS check."}), 400
+        except Exception as e:
+            logger.error(f"Error reading file '{filename}' for ATS check: {e}")
+            return jsonify({"error": "Could not read file content for ATS check."}), 500
+
+    final_suggestions = ats_suggestions
+    if gemini_model and ats_suggestions: # Check if there are suggestions to refine
+        try:
+            gemini_prompt = "Review the following ATS compatibility suggestions for a resume. Rephrase them to be more encouraging, clear, and actionable for a job seeker. Ensure each suggestion is a separate point. Suggestions:\n" + "\n".join(ats_suggestions)
+            logger.info(f"Refining ATS suggestions for '{filename}' using Gemini...")
+            gemini_response = gemini_model.generate_content(gemini_prompt)
+
+            if gemini_response and gemini_response.text:
+                refined_list = [s.strip().lstrip("-* ").strip() for s in gemini_response.text.split('\n') if s.strip()]
+                if refined_list: # Use refined suggestions if Gemini provided valid output
+                    final_suggestions = refined_list
+                    logger.info("Successfully refined ATS suggestions with Gemini.")
+                else:
+                    logger.warning("Gemini refinement resulted in empty suggestions, using original.")
+            else:
+                logger.warning("Gemini response for ATS suggestion refinement was empty or invalid.")
+        except Exception as e:
+            logger.error(f"Error during Gemini API call for refining ATS suggestions: {e}")
+            # Fallback to using pre-Gemini suggestions is implicit as final_suggestions isn't updated
+
+    return jsonify({
+        "filename": filename,
+        "message": "ATS compatibility check complete.",
+        "suggestions": final_suggestions
+    }), 200
 
 
 @app.route('/translate_resume', methods=['POST'])
 def translate_resume():
+    global gemini_model # Ensure we're using the globally configured model
+    if not gemini_model:
+        logger.error("Gemini client not configured. Cannot perform translation.")
+        return jsonify({"error": "Gemini client not configured. Please check API key."}), 500
+
     data = request.get_json()
     if not data:
         logger.error("No JSON data received for /translate_resume.")
@@ -2193,6 +2394,7 @@ def translate_resume():
 
     resume_text = data.get('resume_text')
     target_language = data.get('target_language')
+    original_text_snippet = resume_text[:100] + "..." if len(resume_text) > 100 else resume_text
 
     if not resume_text or not resume_text.strip():
         logger.error("Resume text not provided for /translate_resume.")
@@ -2202,111 +2404,237 @@ def translate_resume():
         logger.error("Target language not provided for /translate_resume.")
         return jsonify({"error": "Target language is required."}), 400
 
-    # Mock translation logic
-    mock_translated_text = f"[Mock Translation]\nOriginal text: '{resume_text[:50]}...' \nTranslated to '{target_language.upper()}': \nThis is your translated resume text. For a real translation, an actual translation service would be used."
+    identified_language_code = "unknown" # Default
 
-    if target_language == 'es':
-        mock_translated_text = f"[Traducción Simulada]\nTexto original: '{resume_text[:50]}...' \nTraducido a '{target_language.upper()}': \nEste es el texto de su currículum traducido. Para una traducción real, se utilizaría un servicio de traducción."
-    elif target_language == 'fr':
-        mock_translated_text = f"[Traduction Simulée]\nTexte original: '{resume_text[:50]}...' \nTraduit en '{target_language.upper()}': \nCeci est le texte de votre CV traduit. Pour une traduction réelle, un service de traduction serait utilisé."
-    elif target_language == 'de':
-        mock_translated_text = f"[Simulierte Übersetzung]\nOriginaltext: '{resume_text[:50]}...' \nÜbersetzt nach '{target_language.upper()}': \nDies ist Ihr übersetzter Lebenslauftext. Für eine echte Übersetzung würde ein Übersetzungsdienst verwendet."
-    elif target_language == 'zh':
-        mock_translated_text = f"[模拟翻译]\n原文: '{resume_text[:50]}...' \n翻译成 '{target_language.upper()}': \n这是您翻译后的简历文本。对于真正的翻译，将使用实际的翻译服务。"
+    try:
+        # Language Identification Prompt
+        # Shorten text for language ID to avoid excessive token usage if text is very long
+        text_for_id = resume_text[:500]
+        lang_id_prompt = f"Identify the language of the following text and return only the two-letter ISO 639-1 language code (e.g., 'en', 'es', 'fr'). Text: \"{text_for_id}\""
 
+        logger.info(f"Attempting language identification for text snippet: {text_for_id[:50]}...")
+        lang_id_response = gemini_model.generate_content(lang_id_prompt)
 
-    response_data = {
-        "message": "Resume translated successfully (mock response).",
-        "translated_text": mock_translated_text,
-        "target_language": target_language,
-        "original_text_snippet": resume_text[:100] + "..." if len(resume_text) > 100 else resume_text
-    }
+        if lang_id_response and lang_id_response.candidates and lang_id_response.candidates[0].content.parts:
+            identified_language_code = lang_id_response.text.strip().lower()
+            # Basic validation for a two-letter code
+            if not (len(identified_language_code) == 2 and identified_language_code.isalpha()):
+                logger.warning(f"Gemini returned an invalid language code: '{identified_language_code}'. Defaulting to 'unknown'.")
+                identified_language_code = "unknown" # Fallback if not a valid 2-letter code
+            else:
+                logger.info(f"Identified language code: {identified_language_code}")
+        else:
+            logger.warning("Language identification failed or returned empty response.")
+            # Proceed with "unknown" or a default like "en" if preferred
 
-    logger.info(f"Successfully processed resume for translation to '{target_language}'. Sending mock translation.")
-    return jsonify(response_data), 200
+        # Translation Prompt
+        if identified_language_code != "unknown" and identified_language_code != target_language:
+            translation_prompt = f"Translate the following text from {identified_language_code} to {target_language}: {resume_text}"
+        else: # If language ID failed or source is same as target (though translation to same lang might still be useful for rephrasing)
+            translation_prompt = f"Translate the following text to {target_language}: {resume_text}"
+
+        logger.info(f"Attempting translation to {target_language} for text snippet: {resume_text[:50]}...")
+        translation_response = gemini_model.generate_content(translation_prompt)
+
+        if translation_response and translation_response.candidates and translation_response.candidates[0].content.parts:
+            translated_text = translation_response.text.strip()
+            logger.info(f"Translation to {target_language} successful.")
+            return jsonify({
+                "message": "Resume translated successfully.",
+                "original_text_snippet": original_text_snippet,
+                "identified_language_code": identified_language_code,
+                "target_language": target_language,
+                "translated_text": translated_text
+            }), 200
+        else:
+            logger.error("Translation API call did not return expected content.")
+            return jsonify({"error": "Translation failed. API did not return content."}), 500
+
+    except Exception as e:
+        logger.error(f"Error during Gemini API call for translation: {e}")
+        # Check for specific Gemini API error types if the SDK provides them, otherwise generic
+        if "API key not valid" in str(e): # Example of more specific error checking
+             return jsonify({"error": "Translation failed. Invalid Gemini API key."}), 500
+        return jsonify({"error": "Translation failed due to an API error or unexpected issue."}), 500
 
 
 @app.route('/get_smart_suggestions', methods=['POST'])
 def get_smart_suggestions():
-    user_tier = request.form.get('user_tier', 'free') # Get user_tier from FormData
+    global gemini_model # Ensure access to global Gemini model
+
+    user_tier = request.form.get('user_tier', 'free')
     if user_tier != 'premium':
         logger.warning(f"Access denied for /get_smart_suggestions due to user tier: {user_tier}")
         return jsonify({"error": "Access denied. Smart Suggestions is a premium feature. Please upgrade."}), 403
+
+    if not gemini_model:
+        logger.error("Gemini client not configured. Cannot provide smart suggestions.")
+        return jsonify({"error": "Gemini client not configured."}), 500
 
     if 'resume' not in request.files:
         logger.error("No resume file part in /get_smart_suggestions request.")
         return jsonify({"error": "No resume file part in the request"}), 400
 
     file = request.files['resume']
+    filename = secure_filename(file.filename)
 
     if file.filename == '':
         logger.warning("No file selected in /get_smart_suggestions request.")
         return jsonify({"error": "No selected file"}), 400
 
     if file:
-        filename = secure_filename(file.filename)
-        # Placeholder for actual "Jules AI" smart suggestion logic
-        # This would involve more sophisticated NLP and heuristic analysis
+        # For this subtask, only process .txt files for smart suggestions
+        if not filename.lower().endswith('.txt'):
+            logger.warning(f"File type not supported for /get_smart_suggestions: {filename}. Only .txt is currently supported.")
+            logger.info("Note: Smart suggestions currently only support .txt files. Future enhancement: Add robust text extraction for PDF/DOCX.")
+            return jsonify({"error": "Unsupported file type. Please upload a .txt file."}), 415
 
-        mock_smart_suggestions = {
-            "message": f"Smart suggestions generated for '{filename}' (AI Jules).",
-            "suggestions": [
-                "Consider rephrasing your objective statement to be more action-oriented and tailored to specific roles. For example, instead of 'Seeking a challenging position', try 'Results-driven software engineer seeking to leverage expertise in Python and cloud computing to contribute to innovative projects at [Company Name]'.",
-                "Quantify your achievements in the 'Experience' section with numbers and specific outcomes. For instance, 'Managed a team that increased sales by 15% in 6 months' is stronger than 'Managed a team responsible for sales'.",
-                "Add a dedicated 'Projects' section if you have personal or academic projects that showcase relevant skills, especially if you're early in your career.",
-                "Tailor your 'Skills' section for each job application. Research keywords from the job description and incorporate them naturally.",
-                "Consider adding a brief 'Professional Profile' or 'Summary' at the top to give a quick overview of your key qualifications and career goals."
-            ],
-            "confidence_score": "High (Mock)"
-        }
+        resume_content_string = ""
+        try:
+            resume_content_string = file.read().decode('utf-8')
+            if not resume_content_string.strip():
+                logger.warning(f"Uploaded file '{filename}' for smart suggestions is empty.")
+                return jsonify({"error": "Uploaded resume file is empty."}), 400
+        except UnicodeDecodeError:
+            logger.error(f"Could not decode file '{filename}' as UTF-8 text for smart suggestions.")
+            return jsonify({"error": "Could not decode file. Please ensure it is a plain text file."}), 500
+        except Exception as e:
+            logger.error(f"Error reading file '{filename}' for smart suggestions: {e}")
+            return jsonify({"error": "Could not read file content for smart suggestions."}), 500
 
-        logger.info(f"Successfully processed file '{filename}' for /get_smart_suggestions. Sending mock smart suggestions.")
-        return jsonify(mock_smart_suggestions), 200
+        prompt_text = f"""Analyze the following resume text and provide actionable suggestions to improve it. Focus on:
+1. Rephrasing sentences for greater impact and clarity (try to provide specific examples of original vs. suggested phrase).
+2. Identifying opportunities to quantify achievements (suggest where and how to add numbers or metrics).
+3. Recommendations for improving overall structure, flow, or content based on best practices for modern resumes (e.g., sections to add/remove, conciseness).
+4. Ensuring a professional tone throughout the resume.
+Provide at least 3-5 distinct suggestions. Format suggestions clearly, ideally as a list or bullet points.
 
+Resume Text:
+---
+{resume_content_string}
+---"""
+
+        try:
+            logger.info(f"Generating smart suggestions for '{filename}' using Gemini...")
+            response = gemini_model.generate_content(prompt_text)
+
+            suggestions_list = []
+            if response and response.text:
+                # Simple split by newline. Gemini might use markdown for lists.
+                # Filter out empty lines or potential markdown list markers if they are not part of the suggestion.
+                suggestions_list = [s.strip() for s in response.text.split('\n') if s.strip() and not s.strip().startswith(("* ", "- "))]
+                # If the above results in an empty list but there was text, use the whole text as one suggestion.
+                if not suggestions_list and response.text.strip():
+                    suggestions_list = [response.text.strip()]
+
+            logger.info(f"Successfully generated smart suggestions for '{filename}'.")
+            return jsonify({
+                "filename": filename,
+                "message": "Smart suggestions generated successfully.",
+                "suggestions": suggestions_list
+            }), 200
+
+        except Exception as e:
+            logger.error(f"Error during Gemini API call for smart suggestions for '{filename}': {e}")
+            return jsonify({"error": "Failed to generate smart suggestions due to an API error."}), 500
+
+    # This part should ideally not be reached if checks above are correct
     logger.error("File object was not valid in /get_smart_suggestions for an unknown reason.")
     return jsonify({"error": "An unexpected error occurred with the file processing for smart suggestions."}), 500
 
 
 @app.route('/get_job_market_insights', methods=['POST'])
 def get_job_market_insights():
-    user_tier = request.form.get('user_tier', 'free') # Get user_tier from FormData
+    global gemini_model # Ensure access to global Gemini model
+
+    data = request.get_json()
+    if not data:
+        logger.error("No JSON data received for /get_job_market_insights.")
+        return jsonify({"error": "No data provided."}), 400
+
+    user_tier = data.get('user_tier', 'free')
     if user_tier != 'premium':
         logger.warning(f"Access denied for /get_job_market_insights due to user tier: {user_tier}")
         return jsonify({"error": "Access denied. Job Market Insights is a premium feature. Please upgrade."}), 403
 
-    if 'resume' not in request.files:
-        logger.error("No resume file part in /get_job_market_insights request.")
-        return jsonify({"error": "No resume file part in the request"}), 400
+    if not gemini_model:
+        logger.error("Gemini client not configured. Cannot provide job market insights.")
+        return jsonify({"error": "Gemini client not configured."}), 500
 
-    file = request.files['resume']
+    resume_keywords_data = data.get('resume_keywords', [])
+    resume_entities_data = data.get('resume_entities', [])
 
-    if file.filename == '':
-        logger.warning("No file selected in /get_job_market_insights request.")
-        return jsonify({"error": "No selected file"}), 400
+    if not resume_keywords_data and not resume_entities_data:
+        logger.warning("No resume keywords or entities provided for job market insights.")
+        return jsonify({"error": "Could not identify key skills from resume analysis to generate insights. Please analyze your resume first."}), 400
 
-    if file:
-        filename = secure_filename(file.filename)
-        # Placeholder for actual "Jules AI" job market insights logic
-        # This would involve analyzing extracted skills against job market data
+    # Extract skill-like terms
+    identified_skills = set()
+    for kw in resume_keywords_data:
+        if kw.get('text'):
+            identified_skills.add(kw['text'].strip().lower())
+    for entity in resume_entities_data:
+        # Consider filtering by entity type if desired, e.g., 'SKILL', 'TECHNOLOGY'
+        # For now, adding all entity texts to broaden the skill base for Gemini
+        if entity.get('text'):
+            identified_skills.add(entity['text'].strip().lower())
 
-        mock_job_insights = {
-            "message": f"Job market insights generated for '{filename}' (AI Jules).",
-            "insights": [
-                "Skills like 'Cloud Computing (AWS, Azure)', 'Cybersecurity', and 'AI/Machine Learning' are currently experiencing high demand across multiple sectors.",
-                "Consider exploring roles in the 'Renewable Energy' or 'Healthcare Technology' sectors, which are showing significant growth.",
-                "Based on your profile (mock analysis), typical salary expectations in the national market could range from $X0,000 to $Y0,000. This can vary by location and specific role.",
-                "Networking and continuous learning are crucial. Consider certifications in [Relevant Skill Area]."
-            ],
-            "trending_jobs": ["Cloud Solutions Architect", "Cybersecurity Analyst", "AI Specialist", "Healthcare Informatics Manager"],
-            "demand_score_for_top_skill": "High (Mock - e.g., for 'Python')"
-        }
+    unique_skills_list = sorted(list(identified_skills))
 
-        logger.info(f"Successfully processed file '{filename}' for /get_job_market_insights. Sending mock job market insights.")
-        return jsonify(mock_job_insights), 200
+    if not unique_skills_list:
+        logger.info("No significant skills extracted from resume data to generate job market insights.")
+        return jsonify({
+            "message": "No significant skills found in the resume analysis to generate insights.",
+            "insights_text": "Please ensure your resume has been analyzed and contains identifiable skills.",
+            "identified_skills_for_insights": []
+        }), 200
 
-    logger.error("File object was not valid in /get_job_market_insights for an unknown reason.")
-    return jsonify({"error": "An unexpected error occurred with the file processing for job market insights."}), 500
+    # Construct prompt for Gemini
+    skills_string = ", ".join(unique_skills_list)
+    prompt_text = (
+        f"Based on the following list of skills and keywords from a resume: {skills_string}.\n\n"
+        "Provide general insights about potential career paths, related skills that might be valuable to learn, "
+        "and general areas of demand for these skills. Frame this as general guidance based on common knowledge, "
+        "not as real-time, specific job market data. "
+        "Provide insights as a few distinct points or a short, informative paragraph. Make it encouraging."
+    )
 
+    try:
+        logger.info(f"Generating job market insights using Gemini based on skills: {skills_string[:200]}...") # Log first 200 chars of skills
+        response = gemini_model.generate_content(prompt_text)
+
+        insights_text = "No specific insights generated at this time. This could be due to the nature of the skills provided or an issue with the AI model."
+        if response and response.text:
+            insights_text = response.text.strip()
+            logger.info("Successfully generated job market insights using Gemini.")
+        else:
+            logger.warning("Gemini response for job market insights was empty or invalid.")
+
+        return jsonify({
+            "message": "Successfully generated general career and skill insights.",
+            "insights_text": insights_text,
+            "identified_skills_for_insights": unique_skills_list
+        }), 200
+
+    except Exception as e:
+        logger.error(f"Error during Gemini API call for job market insights: {e}")
+        return jsonify({"error": "Failed to generate job market insights due to an API error."}), 500
+
+
+# --- Gemini Client Configuration ---
+# Note: GEMINI_API_KEY is already retrieved after load_dotenv() earlier in the file.
+# This block assumes GEMINI_API_KEY and genai (google.generativeai) are available.
+gemini_model = None
+if GEMINI_API_KEY:
+    try:
+        genai.configure(api_key=GEMINI_API_KEY)
+        gemini_model = genai.GenerativeModel('gemini-pro') # Or other appropriate model
+        logger.info("Gemini client configured successfully.")
+    except Exception as e:
+        logger.error(f"Error configuring Gemini client: {e}")
+        gemini_model = None # Ensure it's None on failure
+else:
+    logger.warning("GEMINI_API_KEY not found. Gemini features will be disabled.")
 
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000))
