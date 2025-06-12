@@ -29,6 +29,7 @@ import traceback
 from datetime import datetime
 from dotenv import load_dotenv
 from typing import List, Dict, Set, Tuple, Optional as TypingOptional # Renamed to avoid conflict
+from functools import wraps
 
 from werkzeug.utils import secure_filename # Explicitly import secure_filename
 
@@ -57,6 +58,7 @@ from ibm_cloud_sdk_core.api_exception import ApiException
 import requests
 import json
 import google.generativeai as genai
+import stripe
 
 
 # For PDF text extraction (attempt pdfplumber first, then PyPDF2 as fallback)
@@ -99,7 +101,31 @@ except Exception as e:
 
 # Load environment variables
 load_dotenv()
+DOMAIN_URL = os.getenv('DOMAIN_URL', 'http://127.0.0.1:5000')
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
+STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY")
+STRIPE_PUBLISHABLE_KEY = os.getenv("STRIPE_PUBLISHABLE_KEY")
+STRIPE_STARTER_PRICE_ID = os.getenv("STRIPE_STARTER_PRICE_ID")
+STRIPE_PRO_PRICE_ID = os.getenv("STRIPE_PRO_PRICE_ID")
+STRIPE_CREDIT_PACK_PRICE_ID = os.getenv("STRIPE_CREDIT_PACK_PRICE_ID")
+STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
+
+stripe.api_key = STRIPE_SECRET_KEY
+
+if STRIPE_SECRET_KEY and STRIPE_SECRET_KEY.startswith('sk_test_'):
+    logger.info("Stripe SDK initialized with a test secret key.")
+elif STRIPE_SECRET_KEY:
+    logger.info("Stripe SDK initialized with a live secret key.")
+else:
+    logger.warning("Stripe secret key not found. Stripe integration will be disabled.")
+
+if not STRIPE_PUBLISHABLE_KEY:
+    logger.warning("Stripe publishable key not found. Frontend checkout might not work.")
+if not STRIPE_STARTER_PRICE_ID or not STRIPE_PRO_PRICE_ID:
+    logger.warning("Stripe Price IDs for Starter/Pro tiers not found. Subscription functionality will be affected.")
+if not STRIPE_WEBHOOK_SECRET:
+    logger.warning("Stripe Webhook Secret not found. Webhook verification will fail.")
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'a-very-secret-key-for-dev')
@@ -118,6 +144,8 @@ class User(db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(128)) # Stores the hashed password
     tier = db.Column(db.String(50), nullable=False, default='free') # e.g., 'free', 'premium'
+    stripe_customer_id = db.Column(db.String(120), nullable=True, unique=True)
+    stripe_subscription_id = db.Column(db.String(120), nullable=True, unique=True)
 
     def __repr__(self):
         return f'<User {self.email}>'
@@ -127,9 +155,101 @@ class User(db.Model):
 # And add methods to the User model like set_password and check_password.
 # For now, this basic structure is sufficient for schema creation.
 
+class UserCredit(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    credits_remaining = db.Column(db.Integer, nullable=False, default=0)
+    last_updated = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user = db.relationship('User', backref=db.backref('credits', lazy=True, uselist=False)) # Define relationship
+
+    def __repr__(self):
+        return f'<UserCredit user_id={self.user_id} credits={self.credits_remaining}>'
+
+class FeatureUsageLog(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    feature_name = db.Column(db.String(100), nullable=False)
+    credits_used = db.Column(db.Integer, nullable=False, default=0) # For features that might use variable credits
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship('User', backref=db.backref('usage_logs', lazy=True)) # Define relationship
+
+    def __repr__(self):
+        return f'<FeatureUsageLog user_id={self.user_id} feature={self.feature_name} time={self.timestamp}>'
+
 app.config['SESSION_TYPE'] = 'filesystem'
 Session(app)
 csrf = CSRFProtect(app)
+
+# --- Tier Access Control Decorator ---
+def tier_required(required_tiers):
+    if isinstance(required_tiers, str):
+        required_tiers = [required_tiers]
+
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            # --- SIMULATION: Get user tier ---
+            # In a real app, this would come from flask_login's current_user or g.user
+            # For simulation, we'll try request.args, then default to 'free'
+            # This also means API-style POST requests need to pass it in form/json data for now
+            simulated_user_tier = 'free' # Default
+            if request.method == 'POST':
+                if request.form and 'user_tier' in request.form:
+                    simulated_user_tier = request.form.get('user_tier')
+                elif request.is_json and request.json and 'user_tier' in request.json:
+                    simulated_user_tier = request.json.get('user_tier')
+                # else: check session if it were set during a login
+            elif request.method == 'GET':
+                    simulated_user_tier = request.args.get('user_tier', 'free')
+
+            # Store it in g for potential use in the route, though direct passing might be cleaner
+            g.user_tier = simulated_user_tier
+            # --- END SIMULATION ---
+
+            # TODO: SIMULATION - Replace with actual user authentication.
+            # In a real application, `g.user_tier` and `g.simulated_user_id` (as g.user.id)
+            # would be derived from a logged-in user session (e.g., using Flask-Login's current_user).
+            # The current method of getting tier/user_id from request parameters/body is for simulation purposes only
+            # and is not secure for a production environment.
+            # SIMULATION: Create a g.simulated_user_id for use in routes
+            # This would typically be g.user.id from a logged-in user object
+            if request.method == 'POST':
+                g.simulated_user_id = request.form.get('user_id_simulation') if request.form else None
+                if not g.simulated_user_id and request.is_json:
+                    g.simulated_user_id = request.json.get('user_id_simulation') if request.json else None
+            elif request.method == 'GET':
+                g.simulated_user_id = request.args.get('user_id_simulation')
+
+            if not g.simulated_user_id: # Fallback if not provided in request
+                g.simulated_user_id = 'simulated_user_for_credits'
+            # Ensure g.user_tier is also set as before
+            g.user_tier = simulated_user_tier
+
+            # Tier hierarchy: Pro includes Starter, Starter includes Free (conceptually for access)
+            allowed = False
+            if 'pro' in required_tiers and simulated_user_tier == 'pro':
+                allowed = True
+            elif 'starter' in required_tiers and simulated_user_tier in ['starter', 'pro']:
+                allowed = True
+            elif 'free' in required_tiers and simulated_user_tier in ['free', 'starter', 'pro']: # Anyone can access free features
+                allowed = True
+
+            # Specific check: If 'free' is the ONLY required tier, then only 'free' users (not paying users)
+            # This is unlikely for this app, usually higher tiers get lower tier features.
+            # The logic above already handles "at least X tier".
+
+            if not allowed:
+                # For API endpoints, return JSON error
+                if request.blueprint or any(ep_path in request.path for ep_path in ['/analyze_resume', '/match_job', '/check_ats', '/translate_resume', '/get_smart_suggestions', '/get_job_market_insights', '/generate_cover_letter']):
+                    return jsonify({"error": f"This feature requires one of the following tiers: {', '.join(required_tiers)}. Your current tier is '{simulated_user_tier}'."}), 403
+                else: # For HTML pages, flash and redirect
+                    flash(f"This feature requires one of the following tiers: {', '.join(required_tiers)}. Please upgrade. (Your simulated tier: '{simulated_user_tier}')", "error")
+                    return redirect(url_for('index')) # Or a dedicated pricing page
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
 
 @app.route('/')
 def serve_homepage():
@@ -1718,8 +1838,26 @@ HTML_TEMPLATE = """
                 <ul class="flex space-x-4 sm:space-x-6 text-base sm:text-lg">
                     <li><a href="#analyzer" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light">Analyzer</a></li>
                     <li><a href="#results" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light">Results</a></li>
+                    <li><a href="#pricing-section" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light">Pricing</a></li>
                 </ul>
             </nav>
+            <!-- Conceptual User Status (for when real auth is added)
+            <div class="text-sm text-secondary-light ml-auto">
+                Logged in as: <span id="simulated-user-email">user@example.com</span>
+                (Tier: <span id="simulated-user-tier">Free</span>) | Credits: <span id="simulated-user-credits">0</span>
+                <button onclick="logout()" class="ml-2 text-tech-blue hover:underline">Logout</button>
+            </div>
+            -->
+            <div class="text-sm text-secondary-light ml-auto p-2 bg-gray-700 rounded">
+                SIMULATED: User: <input type="text" id="sim_user_id_input" value="user123" class="bg-gray-600 text-white text-xs p-1 rounded w-20">
+                Tier:
+                <select id="sim_tier_select" class="bg-gray-600 text-white text-xs p-1 rounded">
+                    <option value="free">Free</option>
+                    <option value="starter">Starter</option>
+                    <option value="pro">Pro</option>
+                </select>
+                <button onclick="updateSimulatedUserDisplay()" class="text-xs p-1 bg-tech-blue rounded hover:bg-electric-cyan">Set</button>
+            </div>
         </div>
     </header>
 
@@ -1825,10 +1963,61 @@ HTML_TEMPLATE = """
                 </div>
 
                 <div class="text-center pt-4">
-                    {{ form.submit(class="btn-glow btn-primary inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 font-bold rounded-full shadow-lg text-white text-lg sm:text-xl transition duration-300 ease-in-out transform hover:scale-105 w-full sm:w-auto") }}
+                    <button type="button" onclick="submitMainFormWithSimulation()" class="btn-glow btn-primary inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 font-bold rounded-full shadow-lg text-white text-lg sm:text-xl transition duration-300 ease-in-out transform hover:scale-105 w-full sm:w-auto">Analyze and Optimize Resume</button>
                 </div>
             </form>
+            <div class="mt-6 text-center text-sm text-secondary-light">
+                <p><strong class="text-electric-cyan">Free Tier:</strong> Basic analysis, 1 "Quick ATS Check" (simulated monthly), limited suggestions.</p>
+                <p><strong class="text-neon-purple">Starter Tier:</strong> Unlimited basic analysis & ATS Checks, Smart Bullet Points, 1 "Deep Dive" credit/month.</p>
+                <p><strong class="text-tech-blue">Pro Tier:</strong> All Starter features, Unlimited "Deep Dives", AI Cover Letter drafts.</p>
+            </div>
         </div>
+
+          <div id="pricing-section" class="glass-card p-6 sm:p-8 md:p-10 my-10 sm:my-12">
+              <h2 class="text-3xl sm:text-4xl font-sora font-extrabold text-electric-cyan mb-8 text-center">Our Plans</h2>
+              <div class="grid md:grid-cols-3 gap-6">
+                  <!-- Free Tier -->
+                  <div class="border border-gray-700 rounded-lg p-6 bg-gray-800 bg-opacity-50">
+                      <h3 class="text-2xl font-bold text-primary-light mb-2">Free</h3>
+                      <p class="text-3xl font-bold text-electric-cyan mb-4">$0</p>
+                      <ul class="space-y-2 text-secondary-light mb-6">
+                          <li>✓ 1 Resume Upload + Quick ATS Check / month (simulated)</li>
+                          <li>✓ Basic Job Match Suggestions</li>
+                          <li>- Watermarked PDF Download (conceptual)</li>
+                      </ul>
+                      <button class="w-full btn-disabled p-3 rounded-lg">Current Plan (Simulated)</button>
+                  </div>
+                  <!-- Starter Tier -->
+                  <div class="border border-gray-700 rounded-lg p-6 bg-gray-800 bg-opacity-50">
+                      <h3 class="text-2xl font-bold text-primary-light mb-2">Starter</h3>
+                      <p class="text-3xl font-bold text-neon-purple mb-4">$9 <span class="text-sm">/mo</span></p>
+                      <ul class="space-y-2 text-secondary-light mb-6">
+                          <li>✓ Unlimited Uploads & ATS Checks</li>
+                          <li>✓ Full PDF/DOCX Exports</li>
+                          <li>✓ Smart Bullet-Point Suggestions</li>
+                          <li>✓ 1 "Deep Dive" AI Analysis Credit / month</li>
+                      </ul>
+                      <button onclick="redirectToCheckout(STRIPE_STARTER_PRICE_ID_JS_VAR)" class="w-full btn-glow btn-primary p-3 rounded-lg">Subscribe to Starter</button>
+                  </div>
+                  <!-- Pro Tier -->
+                  <div class="border border-gray-700 rounded-lg p-6 bg-gray-800 bg-opacity-50">
+                      <h3 class="text-2xl font-bold text-primary-light mb-2">Pro</h3>
+                      <p class="text-3xl font-bold text-tech-blue mb-4">$19 <span class="text-sm">/mo</span></p>
+                      <ul class="space-y-2 text-secondary-light mb-6">
+                          <li>✓ All Starter Features</li>
+                          <li>✓ Unlimited "Deep Dives"</li>
+                          <li>✓ AI Cover Letter Drafts</li>
+                          <li>✓ Priority Email Support (conceptual)</li>
+                      </ul>
+                      <button onclick="redirectToCheckout(STRIPE_PRO_PRICE_ID_JS_VAR)" class="w-full btn-glow btn-primary p-3 rounded-lg" style="background: linear-gradient(45deg, #8A2BE2, #007BFF);">Subscribe to Pro</button>
+                  </div>
+              </div>
+              <div class="mt-8 text-center">
+                  <h3 class="text-xl font-bold text-primary-light mb-3">Need More Credits?</h3>
+                  <p class="text-secondary-light mb-4">Purchase additional "Deep Dive" credits for your Starter plan.</p>
+                  <button onclick="redirectToCheckout(STRIPE_CREDIT_PACK_PRICE_ID_JS_VAR)" class="btn-glow btn-download px-6 py-3 rounded-lg">Buy 5 Credits for $10</button>
+              </div>
+          </div>
 
         {% if preview %}
             <div id="results" class="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-10 mb-10 sm:mb-12">
@@ -1940,6 +2129,114 @@ HTML_TEMPLATE = """
             <p class="text-xs sm:text-sm mt-2 text-secondary-light font-inter">Crafted with cutting-edge AI for your career success. 🚀</p>
         </div>
     </footer>
+    <script>
+        // Make Stripe Price IDs available to JS (these will be {{ ... }} in Flask template)
+        const STRIPE_STARTER_PRICE_ID_JS_VAR = "{{ STRIPE_STARTER_PRICE_ID_TEMPLATE_VAR }}";
+        const STRIPE_PRO_PRICE_ID_JS_VAR = "{{ STRIPE_PRO_PRICE_ID_TEMPLATE_VAR }}";
+        const STRIPE_CREDIT_PACK_PRICE_ID_JS_VAR = "{{ STRIPE_CREDIT_PACK_PRICE_ID_TEMPLATE_VAR }}";
+
+        let currentSimulatedUserId = 'user123'; // Default
+        let currentSimulatedTier = 'free';
+
+        function updateSimulatedUserDisplay() {
+            currentSimulatedUserId = document.getElementById('sim_user_id_input').value || 'user123';
+            currentSimulatedTier = document.getElementById('sim_tier_select').value || 'free';
+            // Could update a visible display here if one existed like the commented out one
+            console.log(`Simulated User ID set to: ${currentSimulatedUserId}, Tier: ${currentSimulatedTier}`);
+            alert(`Simulated user set to ID: ${currentSimulatedUserId}, Tier: ${currentSimulatedTier}. Some features might require form resubmission or page reload to reflect changes in simulated server-side checks.`);
+        }
+
+        async function redirectToCheckout(priceId) {
+            if (!priceId || priceId.includes("YOUR_")) {
+                alert("Stripe Price ID is not configured correctly for this button.");
+                return;
+            }
+            console.log(`Redirecting to checkout for price_id: ${priceId} and user: ${currentSimulatedUserId}`);
+            try {
+                const response = await fetch('/create-checkout-session', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ price_id: priceId, user_id_simulation: currentSimulatedUserId })
+                });
+                const session = await response.json();
+                if (session.url) {
+                    window.location.href = session.url;
+                } else if (session.error) {
+                    alert('Error creating checkout session: ' + session.error);
+                    console.error('Checkout session error:', session.error);
+                }
+            } catch (error) {
+                alert('Failed to initiate checkout. See console for details.');
+                console.error('redirectToCheckout error:', error);
+            }
+        }
+
+        // Placeholder for feature access simulation or actual API calls with simulated data
+        async function simulateFeatureAccess(requiredTier, featureName) {
+            alert(`Simulating access to '${featureName}' for tier '${currentSimulatedTier}'. Required: '${requiredTier}'.`);
+            // Example: try to call an actual endpoint with simulated data
+            if (featureName === 'generate_cover_letter') {
+                try {
+                    const response = await fetch('/generate_cover_letter', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ user_id_simulation: currentSimulatedUserId, user_tier: currentSimulatedTier, some_data: 'test' })
+                    });
+                    const result = await response.json();
+                    alert(JSON.stringify(result));
+                } catch (error) {
+                    console.error('Error simulating feature access:', error);
+                    alert('Error calling feature endpoint.');
+                }
+            }
+        }
+
+        // Function to handle the main form submission with simulated data
+        function submitMainFormWithSimulation() {
+              const formElement = document.querySelector('form'); // Assumes one main form
+              if (!formElement) {
+                  alert('Main form not found!');
+                  return;
+              }
+              // Add simulated tier and user_id as hidden inputs before submitting
+              let tierInput = formElement.querySelector('input[name="user_tier"]');
+              if (!tierInput) {
+                  tierInput = document.createElement('input');
+                  tierInput.type = 'hidden';
+                  tierInput.name = 'user_tier';
+                  formElement.appendChild(tierInput);
+              }
+              tierInput.value = currentSimulatedTier;
+
+              let userIdInput = formElement.querySelector('input[name="user_id_simulation"]');
+              if (!userIdInput) {
+                  userIdInput = document.createElement('input');
+                  userIdInput.type = 'hidden';
+                  userIdInput.name = 'user_id_simulation';
+                  formElement.appendChild(userIdInput);
+              }
+              userIdInput.value = currentSimulatedUserId;
+
+              // Now submit the form
+              // formElement.submit(); // This would be a full page reload
+              // Instead, for SPA-like feel with current setup, it might be better to handle via fetch if index() POST can return JSON.
+              // For now, alert and log. The tier_required decorator on POST index() isn't implemented yet.
+              // alert(`Main form would be submitted with User ID: ${currentSimulatedUserId}, Tier: ${currentSimulatedTier}. This part needs backend handling on the main form route.`);
+              // console.log(`Submitting main form with User ID: ${currentSimulatedUserId}, Tier: ${currentSimulatedTier}`);
+              // Actually, the main index() POST doesn't have tier checks yet.
+              // The feature-specific API calls like /get_smart_suggestions are separate.
+              // So, this function might not be strictly needed if main form processing is always "free" for the initial parse.
+              // Let's keep it for now for completeness of simulation.
+              formElement.submit(); // Proceed with actual form submission for now
+        }
+
+        // Initialize simulated user display on load
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('sim_user_id_input').value = currentSimulatedUserId;
+            document.getElementById('sim_tier_select').value = currentSimulatedTier;
+        });
+
+    </script>
 </body>
 </html>
 """
@@ -2138,9 +2435,13 @@ def index():
                                 word_available=word_available,
                                 now=datetime.now(),
                                 detected_language=detected_language, # Pass detected_language from the last processing or default
-                                target_language=form.target_language.data) # Pass current form value for consistency
+                                target_language=form.target_language.data, # Pass current form value for consistency
+                                STRIPE_STARTER_PRICE_ID_TEMPLATE_VAR=STRIPE_STARTER_PRICE_ID,
+                                STRIPE_PRO_PRICE_ID_TEMPLATE_VAR=STRIPE_PRO_PRICE_ID,
+                                STRIPE_CREDIT_PACK_PRICE_ID_TEMPLATE_VAR=STRIPE_CREDIT_PACK_PRICE_ID)
 
 @app.route('/download-word')
+@tier_required(['starter', 'pro'])
 def download_word():
     word_file_bytes = session.get('word_file')
     if word_file_bytes:
@@ -2371,6 +2672,7 @@ def match_job():
 
 
 @app.route('/check_ats', methods=['POST'])
+@tier_required(['free'])
 def check_ats():
     global nlu_client, WATSON_NLP_AVAILABLE, gemini_model # Ensure access to global clients
 
@@ -2561,13 +2863,14 @@ def translate_resume():
 
 
 @app.route('/get_smart_suggestions', methods=['POST'])
+@tier_required(['starter', 'pro'])
 def get_smart_suggestions():
     global gemini_model # Ensure access to global Gemini model
 
-    user_tier = request.form.get('user_tier', 'free')
-    if user_tier != 'premium':
-        logger.warning(f"Access denied for /get_smart_suggestions due to user tier: {user_tier}")
-        return jsonify({"error": "Access denied. Smart Suggestions is a premium feature. Please upgrade."}), 403
+    # user_tier = request.form.get('user_tier', 'free') # Handled by decorator
+    # if user_tier != 'premium': # Handled by decorator
+    #     logger.warning(f"Access denied for /get_smart_suggestions due to user_tier: {user_tier}")
+    #     return jsonify({"error": "Access denied. Smart Suggestions is a premium feature. Please upgrade."}), 403
 
     if not gemini_model:
         logger.error("Gemini client not configured. Cannot provide smart suggestions.")
@@ -2652,18 +2955,58 @@ Resume Text:
 
 
 @app.route('/get_job_market_insights', methods=['POST'])
+@tier_required(['starter', 'pro']) # Ensures g.user_tier and g.simulated_user_id are set
 def get_job_market_insights():
-    global gemini_model # Ensure access to global Gemini model
+    # global gemini_model # Already global
+    # data = request.get_json() # Original logic for getting data
+    # user_tier = data.get('user_tier', 'free') # Old tier check, remove this as decorator handles it
 
+    # New logic based on decorator's g values
+    current_simulated_tier = getattr(g, 'user_tier', 'free')
+    simulated_user_id_email_prefix = getattr(g, 'simulated_user_id', None)
+
+    if not simulated_user_id_email_prefix:
+        return jsonify({"error": "Simulated user ID not found. Please include 'user_id_simulation' in your request."}), 400
+
+    # SIMULATION: Find user by the simulated ID (which we'll treat as email prefix)
+    user = User.query.filter_by(email=f"{simulated_user_id_email_prefix}@example.com").first()
+
+    if not user:
+        # If user doesn't exist, it's tricky. For simulation, we might deny or create.
+        # Let's assume webhook should have created the user. If not, deny.
+        logger.warning(f"Simulated user with email prefix {simulated_user_id_email_prefix} not found during credit check.")
+        return jsonify({"error": "Simulated user not found. Ensure user exists via webhook simulation."}), 404
+
+    if current_simulated_tier == 'starter':
+        user_credits = UserCredit.query.filter_by(user_id=user.id).first()
+        if not user_credits or user_credits.credits_remaining <= 0:
+            # Log this attempt
+            usage_log_no_credit = FeatureUsageLog(user_id=user.id, feature_name='get_job_market_insights_attempt', credits_used=0)
+            db.session.add(usage_log_no_credit)
+            db.session.commit()
+            return jsonify({"error": "You have no 'deep dive' credits remaining. Upgrade to Pro or purchase a credit pack."}), 403
+
+        # Consume credit
+        user_credits.credits_remaining -= 1
+        usage_log = FeatureUsageLog(user_id=user.id, feature_name='get_job_market_insights', credits_used=1)
+        db.session.add(usage_log)
+        # db.session.commit() # Commit will happen with the main feature logic or at end of request
+        logger.info(f"Starter tier user {user.email} consumed 1 credit for job market insights. Remaining: {user_credits.credits_remaining}")
+
+    elif current_simulated_tier == 'pro':
+        # Pro tier has unlimited access, but we can still log usage for analytics
+        usage_log_pro = FeatureUsageLog(user_id=user.id, feature_name='get_job_market_insights', credits_used=0) # 0 credits used for pro
+        db.session.add(usage_log_pro)
+        logger.info(f"Pro tier user {user.email} accessed job market insights (unlimited).")
+
+    # Original feature logic (ensure data is correctly sourced from request)
     data = request.get_json()
-    if not data:
+    if not data: # This check might be redundant if POST and decorator runs, but good for safety
         logger.error("No JSON data received for /get_job_market_insights.")
         return jsonify({"error": "No data provided."}), 400
 
-    user_tier = data.get('user_tier', 'free')
-    if user_tier != 'premium':
-        logger.warning(f"Access denied for /get_job_market_insights due to user tier: {user_tier}")
-        return jsonify({"error": "Access denied. Job Market Insights is a premium feature. Please upgrade."}), 403
+    # The old tier check `if user_tier != 'premium'` is removed as decorator handles access.
+    # The `user_tier` variable from `data.get('user_tier', 'free')` should not be used for logic anymore.
 
     if not gemini_model:
         logger.error("Gemini client not configured. Cannot provide job market insights.")
@@ -2672,32 +3015,30 @@ def get_job_market_insights():
     resume_keywords_data = data.get('resume_keywords', [])
     resume_entities_data = data.get('resume_entities', [])
 
-    if not resume_keywords_data and not resume_entities_data:
-        logger.warning("No resume keywords or entities provided for job market insights.")
-        return jsonify({"error": "Could not identify key skills from resume analysis to generate insights. Please analyze your resume first."}), 400
+    # ... (rest of the original /get_job_market_insights logic for calling Gemini) ...
+    # Ensure to commit db.session changes at the end if the Gemini call is successful
+    # For example, after successfully getting insights:
+    # try:
+    #    ... (Gemini call) ...
+    #    db.session.commit() # Commit credit change and usage log
+    #    return jsonify(...)
+    # except Exception as e:
+    #    db.session.rollback() # Rollback if Gemini or other logic fails
+    #    logger.error(...)
+    #    return jsonify(...)
+    # This part is simplified for the subtask: assume the commit happens after successful processing.
 
-    # Extract skill-like terms
+    # --- Placeholder for the rest of the original function's logic ---
     identified_skills = set()
     for kw in resume_keywords_data:
-        if kw.get('text'):
-            identified_skills.add(kw['text'].strip().lower())
+        if kw.get('text'): identified_skills.add(kw['text'].strip().lower())
     for entity in resume_entities_data:
-        # Consider filtering by entity type if desired, e.g., 'SKILL', 'TECHNOLOGY'
-        # For now, adding all entity texts to broaden the skill base for Gemini
-        if entity.get('text'):
-            identified_skills.add(entity['text'].strip().lower())
-
+        if entity.get('text'): identified_skills.add(entity['text'].strip().lower())
     unique_skills_list = sorted(list(identified_skills))
-
     if not unique_skills_list:
-        logger.info("No significant skills extracted from resume data to generate job market insights.")
-        return jsonify({
-            "message": "No significant skills found in the resume analysis to generate insights.",
-            "insights_text": "Please ensure your resume has been analyzed and contains identifiable skills.",
-            "identified_skills_for_insights": []
-        }), 200
+        db.session.rollback() # Rollback credit usage if no skills to process
+        return jsonify({"message": "No skills to process for insights.", "insights_text": "", "identified_skills_for_insights": []}), 200
 
-    # Construct prompt for Gemini
     skills_string = ", ".join(unique_skills_list)
     prompt_text = (
         f"Based on the following list of skills and keywords from a resume: {skills_string}.\n\n"
@@ -2706,28 +3047,23 @@ def get_job_market_insights():
         "not as real-time, specific job market data. "
         "Provide insights as a few distinct points or a short, informative paragraph. Make it encouraging."
     )
-
     try:
-        logger.info(f"Generating job market insights using Gemini based on skills: {skills_string[:200]}...") # Log first 200 chars of skills
+        logger.info(f"Generating job market insights using Gemini based on skills: {skills_string[:200]}...")
         response = gemini_model.generate_content(prompt_text)
+        insights_text = "No specific insights generated."
+        if response and response.text: insights_text = response.text.strip()
 
-        insights_text = "No specific insights generated at this time. This could be due to the nature of the skills provided or an issue with the AI model."
-        if response and response.text:
-            insights_text = response.text.strip()
-            logger.info("Successfully generated job market insights using Gemini.")
-        else:
-            logger.warning("Gemini response for job market insights was empty or invalid.")
-
+        db.session.commit() # Commit credit consumption and logging
         return jsonify({
             "message": "Successfully generated general career and skill insights.",
             "insights_text": insights_text,
             "identified_skills_for_insights": unique_skills_list
         }), 200
-
     except Exception as e:
+        db.session.rollback()
         logger.error(f"Error during Gemini API call for job market insights: {e}")
         return jsonify({"error": "Failed to generate job market insights due to an API error."}), 500
-
+    # --- End of placeholder for original function's logic ---
 
 # --- Gemini Client Configuration ---
 # Note: GEMINI_API_KEY is already retrieved after load_dotenv() earlier in the file.
@@ -2743,6 +3079,205 @@ if GEMINI_API_KEY:
         gemini_model = None # Ensure it's None on failure
 else:
     logger.warning("GEMINI_API_KEY not found. Gemini features will be disabled.")
+
+@app.route('/create-checkout-session', methods=['POST'])
+def create_checkout_session():
+    data = request.get_json()
+    price_id = data.get('price_id')
+    # SIMULATION: In a real app, user_id would come from the logged-in user.
+    # For now, client sends a simulation or we generate one.
+    # TODO: SIMULATION - Replace with actual authenticated user ID.
+    # `user_id_simulation` is used here because there's no actual user login system.
+    # In production, this should be the ID of the currently authenticated user.
+    # This ID is passed to Stripe as `client_reference_id`.
+    user_id_simulation = data.get('user_id_simulation', 'simulated_user_123')
+
+    if not price_id:
+        return jsonify({'error': 'Price ID is required'}), 400
+
+    try:
+        checkout_session = stripe.checkout.Session.create(
+            client_reference_id=user_id_simulation,
+            line_items=[{
+                'price': price_id,
+                'quantity': 1,
+            }],
+            mode='subscription' if price_id in [STRIPE_STARTER_PRICE_ID, STRIPE_PRO_PRICE_ID] else 'payment', # 'payment' for one-time credit packs
+            success_url=DOMAIN_URL + url_for('index', payment='success', session_id='{CHECKOUT_SESSION_ID}', _external=False) + '&sim_user=' + user_id_simulation, # Pass sim_user back
+            cancel_url=DOMAIN_URL + url_for('index', payment='cancel', _external=False),
+        )
+        # For 'payment' mode (credit packs), we might need to handle it differently if it's not a subscription.
+        # The example assumes credit packs might also be set up as 'payment' mode subscriptions if they grant ongoing access to something,
+        # or just 'payment' if it's a one-time purchase. The provided plan implies "sell tokens", so 'payment' mode is more likely for credits.
+
+        return jsonify({'sessionId': checkout_session.id, 'url': checkout_session.url})
+    except Exception as e:
+        logger.error(f"Error creating Stripe checkout session: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/stripe_webhook', methods=['POST'])
+def stripe_webhook():
+    payload = request.data
+    sig_header = request.headers.get('Stripe-Signature')
+    event = None
+
+    if not STRIPE_WEBHOOK_SECRET:
+        logger.error("Stripe webhook secret is not configured.")
+        return jsonify({'error': 'Webhook secret not configured'}), 500
+
+    try:
+        event = stripe.Webhook.construct_event(
+            payload, sig_header, STRIPE_WEBHOOK_SECRET
+        )
+    except ValueError as e: # Invalid payload
+        logger.error(f"Invalid webhook payload: {e}")
+        return jsonify({'error': 'Invalid payload'}), 400
+    except stripe.error.SignatureVerificationError as e: # Invalid signature
+        logger.error(f"Webhook signature verification failed: {e}")
+        return jsonify({'error': 'Invalid signature'}), 400
+    except Exception as e:
+        logger.error(f"Webhook construction error: {e}")
+        return jsonify({'error': 'Webhook error'}), 500
+
+
+    # Handle the event
+    if event['type'] == 'checkout.session.completed':
+        session = event['data']['object']
+        # `client_reference_id` was set during checkout session creation.
+        # TODO: SIMULATION - This relies on user_id_simulation passed during checkout.
+        user_id_simulation = session.get('client_reference_id')
+        stripe_customer_id = session.get('customer')
+        stripe_subscription_id = session.get('subscription') # This is for subscriptions
+        payment_intent_id = session.get('payment_intent') # This is for one-time payments
+
+        logger.info(f"Checkout session completed for simulated user: {user_id_simulation}")
+        logger.info(f"Stripe Customer ID: {stripe_customer_id}, Subscription ID: {stripe_subscription_id}, Payment Intent ID: {payment_intent_id}")
+
+        # SIMULATION: Find or create user
+        # TODO: SIMULATION - User lookup and creation logic is simplified.
+        # In a production system, user retrieval would be based on the authenticated user context
+        # or a more robust mapping from `client_reference_id` or `stripe_customer_id`
+        # to an existing user in your database. New user creation would typically occur
+        # during a separate registration step, not directly in the webhook without prior context.
+        # The creation of a new User here with a simulated email and password_hash is purely for
+        # making the simulation work end-to-end without a real registration flow.
+        user = User.query.filter_by(email=f"{user_id_simulation}@example.com").first() # Simulate finding user by an email
+        if not user:
+            logger.info(f"Simulated user {user_id_simulation} not found. Creating one for simulation.")
+            # In a real app, user creation/retrieval is complex.
+            # Hashing passwords is not done here as it's simulation.
+            user = User(email=f"{user_id_simulation}@example.com", password_hash="simulated_hash")
+            # Assign a default tier or determine from product
+
+        user.stripe_customer_id = stripe_customer_id
+
+        # Determine if it was a subscription or a one-time payment (e.g., credit pack)
+        # TODO: SIMULATION - User tier and credit updates are performed on the simulated/retrieved user.
+        # Ensure atomicity and error handling in a production system.
+        if stripe_subscription_id: # It's a subscription
+            user.stripe_subscription_id = stripe_subscription_id
+            # Determine tier from the price_id associated with the subscription
+            # This requires fetching the subscription or line items if not directly available
+            try:
+                line_items = stripe.checkout.Session.list_line_items(session.id, limit=1)
+                price_id = line_items.data[0].price.id
+                if price_id == STRIPE_STARTER_PRICE_ID:
+                    user.tier = 'starter'
+                    # Grant initial credit for Starter tier
+                    user_credits = UserCredit.query.filter_by(user_id=user.id).first()
+                    if not user_credits:
+                        user_credits = UserCredit(user_id=user.id)
+                        db.session.add(user_credits)
+                    user_credits.credits_remaining = 1 # Grant 1 credit for Starter tier
+                    user_credits.last_updated = datetime.utcnow()
+                    logger.info(f"Initialized/Reset credits for Starter tier user {user.email} to 1.")
+                elif price_id == STRIPE_PRO_PRICE_ID:
+                    user.tier = 'pro'
+                else:
+                    logger.warning(f"Unknown subscription price_id {price_id} in checkout session.")
+                logger.info(f"Simulated user {user_id_simulation} tier updated to {user.tier}")
+            except Exception as e:
+                logger.error(f"Error fetching line items to determine tier: {e}")
+
+        elif payment_intent_id: # It's a one-time payment (likely credit pack)
+            try:
+                line_items = stripe.checkout.Session.list_line_items(session.id, limit=1)
+                price_id = line_items.data[0].price.id
+                if user and price_id == STRIPE_CREDIT_PACK_PRICE_ID: # Make sure user object exists
+                    user_credits = UserCredit.query.filter_by(user_id=user.id).first()
+                    if not user_credits:
+                        user_credits = UserCredit(user_id=user.id, credits_remaining=0)
+                        db.session.add(user_credits)
+                    credits_to_add = 5 # This should be configured based on the price_id if multiple packs exist
+                    user_credits.credits_remaining += credits_to_add
+                    user_credits.last_updated = datetime.utcnow()
+                    logger.info(f"Added {credits_to_add} credits to simulated user {user.email}. New balance: {user_credits.credits_remaining}")
+                else:
+                    logger.warning(f"Unknown one-time payment price_id {price_id} in checkout session or user not found.")
+            except Exception as e:
+                logger.error(f"Error fetching line items for one-time payment: {e}")
+
+        db.session.add(user) # Add if new, or session handles updates
+        try:
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"Database error during webhook processing for checkout.session.completed: {e}")
+
+
+    elif event['type'] == 'invoice.payment_succeeded':
+        invoice = event['data']['object']
+        stripe_customer_id = invoice.get('customer')
+        stripe_subscription_id = invoice.get('subscription')
+        # Potentially update subscription status or grant credits if it's a recurring credit model
+        logger.info(f"Invoice payment succeeded for customer {stripe_customer_id}, subscription {stripe_subscription_id}")
+        # Find user by stripe_customer_id
+        user = User.query.filter_by(stripe_customer_id=stripe_customer_id).first()
+        if user:
+            # Ensure tier is still active, or grant monthly credits if applicable
+            if user.stripe_subscription_id == stripe_subscription_id:
+                # Example: if it's a Starter plan that gets monthly credits
+                # This logic needs to be robust against multiple webhook deliveries
+                # if user.tier == 'starter':
+                #    # Add monthly credits for starter plan, ensure idempotency
+                #    pass
+                logger.info(f"Subscription {stripe_subscription_id} for user {user.email} payment successful. Tier: {user.tier}")
+            else:
+                logger.warning(f"Invoice for customer {stripe_customer_id} linked to subscription {stripe_subscription_id}, but user {user.email} has a different subscription {user.stripe_subscription_id}")
+        else:
+            logger.warning(f"User not found for stripe_customer_id {stripe_customer_id} from invoice.payment_succeeded.")
+
+
+    elif event['type'] == 'invoice.payment_failed':
+        invoice = event['data']['object']
+        stripe_customer_id = invoice.get('customer')
+        logger.warning(f"Invoice payment failed for customer {stripe_customer_id}. Consider tier downgrade logic.")
+        # Potentially downgrade user's tier or revoke access
+        user = User.query.filter_by(stripe_customer_id=stripe_customer_id).first()
+        if user:
+            # user.tier = 'free' # Example downgrade
+            # user.stripe_subscription_id = None # Clear subscription ID
+            # db.session.commit()
+            logger.info(f"Simulated downgrade for user {user.email} due to payment failure.")
+
+
+    else:
+        logger.info(f"Unhandled Stripe event type: {event['type']}")
+
+    return jsonify({'status': 'success'}), 200
+
+@app.route('/generate_cover_letter', methods=['POST'])
+@tier_required('pro')
+def generate_cover_letter():
+    # Simulate getting data, user_tier is already in g if needed
+    # user_tier = g.user_tier
+    # For now, just a placeholder response
+    # In future, this would call a Gemini function similar to other AI features
+    logger.info(f"Cover letter generation requested for (simulated) tier: {g.user_tier}")
+    return jsonify({
+        "message": "Cover letter generation endpoint for Pro tier.",
+        "cover_letter_draft": "This is a placeholder for an AI-generated cover letter."
+    }), 200
 
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000))

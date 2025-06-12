@@ -15,3 +15,4 @@ Werkzeug==2.3.7 # Dependency of Flask, but good to be explicit
 google-generativeai
 Flask-SQLAlchemy
 Flask-Migrate
+stripe>=2.0,<3.0
