@@ -67,8 +67,8 @@ a:hover {
     margin: 0 auto;
 }
 
-#main-header .logo-link img#homepageLogo {
-    height: 70px;
+#main-header .logo-link img#homepageRevisumeImage {
+    height: 100px; /* Increased size */
     width: auto;
     vertical-align: middle;
 }
