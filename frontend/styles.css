@@ -1,59 +1,187 @@
-/* General Styles */
+/* Add Roboto font from Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap');
+
+/* Reset default browser styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
 body {
-    font-family: 'Arial', sans-serif;
-    background: linear-gradient(135deg, #1a1a2e, #16213e);
-    color: white;
-    text-align: center;
+    font-family: 'Roboto', sans-serif;
+    background: linear-gradient(to right, #74ebd5, #ACB6E5); /* New gradient for a softer look */
+    color: #333; /* Darker text for better contrast on light glass */
+    line-height: 1.6;
     padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
 }
 
-/* Header */
 header {
-    padding: 20px;
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.25); /* Slightly more opaque for header readability */
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px); /* Safari support */
+    border-radius: 15px; /* Softer corners */
+    padding: 25px 30px;
+    margin-bottom: 30px;
+    width: 100%;
+    max-width: 700px; /* Slightly narrower */
+    text-align: center;
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37); /* More pronounced shadow */
+    border: 1px solid rgba(255, 255, 255, 0.18);
 }
 
-/* Upload Section */
-.upload-section {
-    padding: 30px;
-    background: rgba(255, 255, 255, 0.2);
+header h1 {
+    font-size: 2.3em; /* Slightly reduced */
+    color: #2c3e50; /* Darker heading for contrast */
+    margin-bottom: 8px;
+}
+
+header p {
+    font-size: 1.1em; /* Slightly reduced */
+    color: #34495e; /* Darker subheading for contrast */
+}
+
+main {
+    width: 100%;
+    max-width: 700px;
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+section {
+    background: rgba(255, 255, 255, 0.2); /* Standard glass effect */
     backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px); /* Safari support */
     border-radius: 15px;
-    margin-top: 20px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    padding: 25px;
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+    border: 1px solid rgba(255, 255, 255, 0.18);
 }
 
-/* AI Analysis Section */
-#analysis-results {
-    padding: 20px;
-    margin-top: 20px;
-    border-radius: 10px;
-    background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(8px);
+section h2 {
+    font-size: 1.7em; /* Slightly reduced */
+    color: #2c3e50; /* Darker heading for contrast */
+    margin-bottom: 20px; /* More space below heading */
+    text-align: center;
 }
 
-/* Buttons */
-button {
+input[type="file"] {
+    display: block;
+    margin: 0 auto 20px auto; /* Center the input */
+    padding: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 8px; /* Softer corners */
+    background: rgba(255, 255, 255, 0.1); /* Lighter background */
+    color: #333; /* Darker text for readability */
+    width: 90%; /* Responsive width */
+    max-width: 400px; /* Max width for larger screens */
+}
+
+input[type="file"]::file-selector-button {
+    background-color: #5DADE2; /* A calm blue */
+    color: white;
     padding: 10px 20px;
     border: none;
-    background: #ff8c00;
-    color: white;
-    font-size: 16px;
-    border-radius: 5px;
+    border-radius: 8px;
     cursor: pointer;
-    transition: 0.3s ease-in-out;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    font-weight: bold;
+}
+
+input[type="file"]::file-selector-button:hover {
+    background-color: #3498DB; /* Darker blue on hover */
+    transform: translateY(-1px);
+}
+
+button {
+    background-color: #5DADE2; /* A calm blue */
+    color: white;
+    padding: 12px 25px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.05em; /* Slightly larger font */
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    display: block; /* Make button a block element */
+    margin: 0 auto; /* Center the button */
+    font-weight: bold;
 }
 
 button:hover {
-    background: #e07a00;
+    background-color: #3498DB; /* Darker blue on hover */
+    transform: translateY(-2px); /* Subtle lift */
+}
+
+button:active {
+    transform: translateY(0); /* Click effect */
+}
+
+#analysis-results p {
+    color: #34495e; /* Darker text for contrast */
+    font-size: 1.05em;
+    min-height: 50px;
+    text-align: center; /* Center placeholder text */
+    padding: 10px;
+    background: rgba(0,0,0,0.05); /* Slight background for the text area */
+    border-radius: 8px;
 }
 
 /* Responsive Design */
 @media (max-width: 768px) {
-    .upload-section, #analysis-results {
-        width: 90%;
-        margin: auto;
+    body {
+        padding: 15px;
+    }
+    header {
+        padding: 20px;
+        max-width: 95%;
+    }
+    main {
+        max-width: 95%;
+    }
+    header h1 {
+        font-size: 2em;
+    }
+    header p {
+        font-size: 1em;
+    }
+    section h2 {
+        font-size: 1.5em;
+    }
+    button {
+        padding: 10px 20px;
+        font-size: 1em;
+    }
+    input[type="file"] {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    header {
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+    section {
+        padding: 15px;
+    }
+    header h1 {
+        font-size: 1.8em;
+    }
+    header p {
+        font-size: 0.9em;
+    }
+    section h2 {
+        font-size: 1.3em;
+    }
+    input[type="file"]::file-selector-button {
+        padding: 8px 15px;
+    }
+    button {
+        width: 100%; /* Full width button on small screens */
     }
 }
