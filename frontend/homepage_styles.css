@@ -1,61 +1,76 @@
-/* Styles for Revisume.ai Homepage */
+/* Styles for Revisume.ai Homepage - Aligned with App Theme */
 
 :root {
-    --primary-accent: #5D3FD3; /* Deep futuristic purple */
-    --background-main: #1A1A2E; /* Dark navy */
-    --secondary-accent: #FF8C00; /* Vivid orange - for CTAs */
-    --text-primary: #EAEAEA; /* Soft white */
-    --text-secondary: #B1B1B1; /* Light gray */
-    --success-confirm: #21D19F; /* Neon teal */
-    --error-alert: #D32145; /* Deep red */
-    --glass-background: rgba(40, 40, 70, 0.3); /* Darker glass for better contrast on dark bg */
-    --glass-border: rgba(255, 255, 255, 0.15);
-    --input-background: rgba(255, 255, 255, 0.08);
+    /* App's Dark Theme Palette */
+    --primary-accent: #007BFF; /* text-tech-blue */
+    --secondary-accent: #00D8FF; /* text-electric-cyan */
+    --tertiary-accent: #8A2BE2; /* text-neon-purple */
+
+    --background-main: #1A1A2E; /* Dark blue-purple */
+    --background-gradient-end: #0F0F1A; /* Very dark blue for gradient */
+
+    --text-primary: #E0E0E0; /* Light gray for main text */
+    --text-secondary: #A0AEC0; /* Medium-light gray for secondary text */
+
+    --glass-background: rgba(26, 26, 46, 0.7); /* Darker, more opaque for cards */
+    --glass-border: rgba(0, 216, 255, 0.3); /* Brighter, more visible cyan border */
+    --input-background: rgba(15, 15, 26, 0.8); /* Very dark inner for inputs */
+
+    --success-confirm: #69F0AE; /* Light green */
+    --error-alert: #FF7043; /* Orange-red */
+
+    /* Fonts from HTML_TEMPLATE */
+    --font-main: 'Inter', sans-serif;
+    --font-headings: 'Sora', sans-serif;
+    --font-special: 'Space Grotesk', sans-serif;
 }
 
 html, body {
     margin: 0;
     padding: 0;
-    font-family: 'Roboto', 'Arial', sans-serif; /* Changed to Roboto, common sans-serif */
-    background-color: var(--background-main);
+    font-family: var(--font-main);
+    background: linear-gradient(135deg, var(--background-main) 0%, var(--background-gradient-end) 100%);
     color: var(--text-primary);
-    line-height: 1.6;
+    line-height: 1.7;
     scroll-behavior: smooth;
 }
 
 h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-headings);
     color: var(--text-primary);
     margin-top: 0;
-    margin-bottom: 0.75em;
+    margin-bottom: 0.8em;
+    font-weight: 700;
 }
 
-h1 { font-size: 2.8em; font-weight: 700;}
-h2 { font-size: 2.2em; font-weight: 600;}
-h3 { font-size: 1.5em; font-weight: 600;} /* Adjusted H3 for better hierarchy */
-h4 { font-size: 1.2em; font-weight: 600;} /* Adjusted H4 */
+h1 { font-size: 2.8em; text-shadow: 1px 1px 5px rgba(0,0,0,0.5); }
+h2 { font-size: 2.4em; margin-bottom: 1.2em; }
+h3 { font-size: 1.6em; }
+h4 { font-size: 1.3em; }
 
 p {
     color: var(--text-secondary);
-    margin-bottom: 1em;
+    margin-bottom: 1.2em;
 }
 
 a {
     color: var(--secondary-accent);
     text-decoration: none;
+    transition: color 0.3s ease;
 }
 
 a:hover {
+    color: var(--primary-accent);
     text-decoration: underline;
-    color: var(--success-confirm);
 }
 
 /* Main Header and Footer Styling */
 #main-header, #page-footer {
-    padding: 1em 5%;
-    background-color: rgba(15, 15, 30, 0.7); /* Slightly more opaque header/footer */
+    padding: 1em 5%; /* Adjusted padding */
+    background-color: rgba(15, 15, 26, 0.85);
     text-align: center;
     border-bottom: 1px solid var(--glass-border);
-    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
 }
 
 #main-header .header-content-wrapper {
@@ -63,459 +78,451 @@ a:hover {
     justify-content: space-between;
     align-items: center;
     width: 100%;
-    max-width: 1200px;
+    max-width: 1300px;
     margin: 0 auto;
 }
 
 #main-header .logo-link img#homepageRevisumeImage {
-    height: 100px; /* Increased size */
+    height: 45px; /* Slightly smaller logo */
     width: auto;
     vertical-align: middle;
 }
-
-/* #main-header nav { */ /* Nav is now a direct child of header-content-wrapper */
-    /* No specific styles needed here if ul is flex */
-/* } */
-
-/* #main-header nav span {  */ /* Removed as logo is now an image */
-    /* font-size: 1.8em;
-    font-weight: bold;
-    color: var(--text-primary); */
-/* } */
 
 #main-header nav ul {
     list-style: none;
     padding: 0;
     margin: 0;
     display: flex;
-    align-items: center; /* Vertically align items if they have different heights */
+    align-items: center;
 }
 
-#main-header nav ul li { /* Added to target li for spacing */
-    margin-left: 25px; /* Increased spacing between nav items */
+#main-header nav ul li {
+    margin-left: 25px; /* Adjusted spacing */
 }
 
 #main-header nav ul li a {
-    /* margin: 0 15px; */ /* Margin now on li */
     color: var(--text-primary);
-    font-weight: bold;
+    font-family: var(--font-headings);
+    font-weight: 600;
     font-size: 1em;
-    padding: 8px 12px; /* Adjusted padding for better click area */
-    border-radius: 4px;
+    padding: 8px 12px; /* Adjusted padding */
+    border-radius: 6px;
     transition: background-color 0.3s ease, color 0.3s ease;
 }
-#main-header nav ul li a:hover {
+#main-header nav ul li a:hover,
+#main-header nav ul li a.active {
     background-color: var(--primary-accent);
-    color: var(--text-primary);
+    color: #FFFFFF;
     text-decoration: none;
 }
 
-#main-header nav ul li a.button-nav { /* For Sign Up button in nav */
-    background-color: var(--secondary-accent);
-    color: var(--button-text-dark, var(--background-main));
-    padding: 8px 15px;
-    border-radius: 5px;
-    font-weight: bold;
-    transition: background-color 0.3s ease, color 0.3s ease;
+#main-header nav ul li a.button-nav {
+    background: linear-gradient(45deg, var(--primary-accent), var(--secondary-accent));
+    color: #FFFFFF;
+    font-weight: 700;
+    box-shadow: 0 2px 8px rgba(0, 216, 255, 0.3);
 }
 #main-header nav ul li a.button-nav:hover {
-    background-color: var(--primary-accent);
-    color: var(--text-primary);
-    text-decoration: none;
+    background: linear-gradient(45deg, var(--secondary-accent), var(--primary-accent));
+    box-shadow: 0 4px 12px rgba(0, 216, 255, 0.5);
+    transform: translateY(-1px);
 }
-
 
 #page-footer {
     border-top: 1px solid var(--glass-border);
     border-bottom: none;
-    margin-top: 40px;
-    padding: 2em 5%;
+    margin-top: 40px; /* Reduced margin */
+    padding: 2em 5%; /* Adjusted padding */
 }
-
 
 /* Section Styling (General) */
 main > section {
-    padding: 50px 5%;
-    margin: 0 auto 30px auto;
-    max-width: 1100px;
-    border-radius: 15px;
+    padding: 50px 5%; /* Adjusted padding */
+    margin: 0 auto 30px auto; /* Adjusted margin */
+    max-width: 1200px;
+    border-radius: 15px; /* Adjusted border-radius */
     background: var(--glass-background);
     border: 1px solid var(--glass-border);
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    box-shadow: 0 10px 35px rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
 }
 
+/* Hero Section */
 #hero {
     text-align: center;
-    padding: 80px 5%;
-    background: linear-gradient(135deg, var(--background-main) 0%, var(--primary-accent) 70%, var(--secondary-accent) 100%);
+    padding: 80px 5%; /* Adjusted padding */
+    background: none;
+    background-color: var(--background-main);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
     border: none;
     box-shadow: none;
     border-radius: 0;
-    margin-bottom: 30px;
+    margin-bottom: 30px; /* Adjusted margin */
     max-width: none;
+    position: relative;
+    overflow: hidden;
 }
 
 #hero h1 {
-    font-size: 3em;
-    color: var(--text-primary);
-    margin-bottom: 0.5em;
-    font-weight: bold;
-    text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+    font-family: var(--font-special);
+    font-size: 3em; /* Adjusted font size */
+    color: #FFFFFF;
+    margin-bottom: 0.5em; /* Adjusted margin */
+    font-weight: 700;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    position: relative; z-index: 1;
 }
 
 #hero p {
-    font-size: 1.3em;
+    font-size: 1.25em; /* Adjusted font size */
     color: var(--text-primary);
-    margin-bottom: 2em;
-    max-width: 700px;
+    margin-bottom: 2em; /* Adjusted margin */
+    max-width: 700px; /* Adjusted max-width */
     margin-left: auto;
     margin-right: auto;
+    position: relative; z-index: 1;
 }
-#hero div button { /* Targeting buttons inside the hero's div wrapper */
-    margin: 10px;
+#hero div {
+    position: relative; z-index: 1;
 }
-
+#hero div .button {
+    margin: 10px 12px; /* Adjusted margin */
+    padding: 12px 30px; /* Adjusted padding */
+    font-size: 1.1em; /* Adjusted font size */
+}
 
 /* Button Styling */
-.button, button, a.button { /* Ensuring 'a.button' is included */
-    background-color: var(--secondary-accent);
-    color: var(--text-primary);
-    padding: 12px 25px;
+.button, button, a.button {
+    background: linear-gradient(45deg, var(--primary-accent), var(--secondary-accent));
+    color: #FFFFFF;
+    padding: 12px 25px; /* Adjusted padding */
     border: none;
-    border-radius: 5px;
-    font-size: 1.1em;
+    border-radius: 8px;
+    font-size: 1em; /* Adjusted font size */
+    font-family: var(--font-headings);
+    font-weight: 700;
     cursor: pointer;
     text-transform: uppercase;
-    font-weight: bold;
     margin: 5px;
-    transition: background-color 0.3s ease, transform 0.2s ease;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    display: inline-block; /* Important for anchor tags to behave like buttons */
-    text-align: center; /* If not inherited, to center text in anchor */
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+    display: inline-block;
+    text-align: center;
 }
 
-.button:hover, button:hover, a.button:hover { /* Ensuring 'a.button:hover' is included */
-    background-color: #FFAC47;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-    color: var(--text-primary); /* Explicitly set for anchor hover state */
-    text-decoration: none; /* Remove underline on hover for button-styled anchors */
-}
-
-.button.primary, button.primary, a.button.primary { /* Ensuring 'a.button.primary' is included */
-     background-color: var(--primary-accent);
-     color: var(--text-primary);
-}
-.button.primary:hover, button.primary:hover, a.button.primary:hover { /* Ensuring 'a.button.primary:hover' is included */
-    background-color: #7658D1;
-    color: var(--text-primary); /* Explicitly set for anchor hover state */
+.button:hover, button:hover, a.button:hover {
+    background: linear-gradient(45deg, var(--secondary-accent), var(--primary-accent));
+    box-shadow: 0 6px 20px rgba(0, 216, 255, 0.5);
+    transform: translateY(-2px) scale(1.02);
+    color: #FFFFFF;
+    text-decoration: none;
 }
 
 /* How It Works Section */
+#how-it-works h2, #features h2, #pricing h2, #account-creation h2 {
+    text-align: center;
+    margin-bottom: 50px; /* Adjusted margin */
+    font-size: 2.2em; /* Adjusted font size */
+    color: var(--secondary-accent);
+    font-family: var(--font-special);
+}
 .steps-container {
     display: flex;
     justify-content: space-around;
     text-align: center;
-    gap: 25px;
+    gap: 25px; /* Adjusted gap */
     flex-wrap: wrap;
-    margin-bottom: 30px;
+    margin-bottom: 25px; /* Adjusted margin */
 }
 .step {
-    flex-basis: calc(33.333% - 20px); /* Adjust for gap */
-    min-width: 250px; /* Minimum width before wrapping */
-    padding: 20px;
-    background: rgba(255, 255, 255, 0.03);
-    border-radius: 10px;
+    flex-basis: calc(33.333% - 20px); /* Adjusted flex-basis */
+    min-width: 260px; /* Adjusted min-width */
+    padding: 20px; /* Adjusted padding */
+    background: rgba(15, 15, 26, 0.5);
+    border-radius: 12px;
     border: 1px solid var(--glass-border);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.step:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 216, 255, 0.2);
 }
 .step-icon {
-    font-size: 2.5em;
-    margin-bottom: 15px;
-    color: var(--primary-accent);
-    /* In a real scenario, replace text with actual SVG/font icons */
+    margin-bottom: 15px; /* Adjusted margin */
+}
+.step-icon img.step-icon-img {
+    max-width: 45px; /* Adjusted max-width */
+    height: auto;
+    display: block;
+    margin: 0 auto 10px auto; /* Adjusted margin */
+    filter: drop-shadow(0 0 8px var(--secondary-accent));
 }
 .step h3 {
-    color: var(--text-primary); /* Ensure heading color */
-    margin-bottom: 10px;
+    color: var(--secondary-accent);
+    margin-bottom: 10px; /* Adjusted margin */
+    font-size: 1.3em; /* Adjusted font size */
 }
-
-.step-icon img.step-icon-img {
-    max-width: 45px; /* Or a value that matches previous placeholder size */
-    height: auto;
-    display: block; /* Or inline-block if preferred */
-    margin: 0 auto 15px auto; /* Center if block, adjust margin-bottom */
-}
-
+.step p { font-size: 0.95em; }
 
 /* Features & Benefits Section */
 .features-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Responsive grid */
-    gap: 25px;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Adjusted minmax */
+    gap: 25px; /* Adjusted gap */
 }
 .feature-item {
-    padding: 20px;
-    background: rgba(255, 255, 255, 0.03);
-    border-radius: 10px;
+    padding: 20px; /* Adjusted padding */
+    background: rgba(15, 15, 26, 0.5);
+    border-radius: 12px;
     border: 1px solid var(--glass-border);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.feature-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 216, 255, 0.2);
 }
 .feature-icon {
-    font-size: 2em;
-    margin-bottom: 10px;
-    color: var(--secondary-accent);
+    margin-bottom: 12px; /* Adjusted margin */
+}
+.feature-icon img.feature-icon-img {
+    max-width: 50px; /* Adjusted max-width */
+    height: auto;
+    display: block;
+    margin: 0 auto 8px auto; /* Adjusted margin */
+    filter: drop-shadow(0 0 8px var(--primary-accent));
 }
 .feature-item h4 {
-    color: var(--text-primary);
-    margin-bottom: 8px;
+    color: var(--primary-accent);
+    margin-bottom: 8px; /* Adjusted margin */
+    font-size: 1.25em; /* Adjusted font size */
 }
+.feature-item p { font-size: 0.95em; }
 
-.feature-icon img.feature-icon-img {
-    max-width: 55px; /* Or a value that matches previous placeholder size */
-    height: auto;
-    display: block; /* Or inline-block if preferred */
-    margin: 0 auto 10px auto; /* Center if block, adjust margin-bottom */
-}
 
 /* Pricing Plans Section */
 .pricing-grid {
     display: flex;
     justify-content: space-around;
-    gap: 25px;
+    gap: 25px; /* Adjusted gap */
     flex-wrap: wrap;
-    align-items: stretch; /* Align items by height */
+    align-items: stretch;
 }
 .pricing-tier {
-    flex-basis: calc(33.333% - 20px);
-    min-width: 280px;
-    padding: 25px;
+    flex-basis: calc(33.333% - 20px); /* Adjusted flex-basis */
+    min-width: 280px; /* Adjusted min-width */
+    padding: 25px; /* Adjusted padding */
     border: 1px solid var(--glass-border);
-    border-radius: 10px;
+    border-radius: 15px;
     text-align: center;
     background: var(--glass-background);
     display: flex;
     flex-direction: column;
-    justify-content: space-between; /* Pushes button to bottom */
+    justify-content: space-between;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.pricing-tier:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
 }
 .pricing-tier h3 {
-    color: var(--primary-accent);
-    font-size: 1.6em;
+    color: var(--tertiary-accent);
+    font-size: 1.6em; /* Adjusted font size */
+    font-family: var(--font-special);
 }
 .pricing-tier .price-tag {
-    font-size: 1.8em;
+    font-size: 1.8em; /* Adjusted font size */
     font-weight: bold;
-    margin: 15px 0;
+    margin: 15px 0; /* Adjusted margin */
     color: var(--text-primary);
+    font-family: var(--font-headings);
+}
+.pricing-tier .price-tag span.text-sm {
+    font-size: 0.6em;
+    color: var(--text-secondary);
 }
 .pricing-tier ul {
     list-style: none;
     padding: 0;
-    margin: 20px 0;
+    margin: 20px 0; /* Adjusted margin */
     text-align: left;
-    flex-grow: 1; /* Allows ul to take available space */
+    flex-grow: 1;
 }
 .pricing-tier ul li {
-    margin-bottom: 10px;
+    margin-bottom: 10px; /* Adjusted margin */
     color: var(--text-secondary);
-    padding-left: 20px;
+    padding-left: 22px; /* Adjusted padding */
     position: relative;
+    font-size: 1em; /* Adjusted font size */
 }
-.pricing-tier ul li::before { /* Custom bullet */
-    content: '✓'; /* Checkmark */
+.pricing-tier ul li::before {
+    content: '✓';
     color: var(--success-confirm);
     position: absolute;
     left: 0;
+    font-weight: bold;
 }
 .pricing-tier.premium-tier {
     border-color: var(--secondary-accent);
-    box-shadow: 0 0 20px rgba(255, 140, 0, 0.3); /* Orange glow */
-    transform: scale(1.03); /* Slightly larger */
+    box-shadow: 0 0 25px rgba(0, 216, 255, 0.4);
 }
 .pricing-tier .button {
-    width: calc(100% - 40px); /* Adjust width based on padding */
+    width: calc(100% - 40px); /* Adjusted width */
+    margin-left: auto;
+    margin-right: auto;
+    padding: 10px 18px; /* Adjusted padding */
+}
+
+/* Account Creation Section */
+#account-creation {
+    background: linear-gradient(135deg, var(--primary-accent) 0%, var(--tertiary-accent) 100%);
+}
+#account-creation h2 {
+    color: #FFFFFF;
+    font-family: var(--font-special);
+}
+#account-creation p {
+    color: var(--text-primary);
+    text-align: center;
+    max-width: 600px;
     margin-left: auto;
     margin-right: auto;
 }
-
-
-/* Account Creation Section */
 #signup-form {
-    max-width: 500px;
-    margin: 0 auto 30px auto;
-    padding: 20px;
-    background: rgba(255, 255, 255, 0.03);
-    border-radius: 8px;
+    max-width: 500px; /* Adjusted max-width */
+    margin: 0 auto 25px auto; /* Adjusted margin */
+    padding: 25px; /* Adjusted padding */
+    background: var(--input-background);
+    border-radius: 12px;
+    border: 1px solid var(--glass-border);
 }
 #signup-form .form-group {
-    margin-bottom: 20px;
+    margin-bottom: 20px; /* Adjusted margin */
 }
 #signup-form label {
     display: block;
-    margin-bottom: 8px;
-    color: var(--text-secondary);
-    font-weight: bold;
+    margin-bottom: 8px; /* Adjusted margin */
+    color: var(--secondary-accent);
+    font-weight: 600;
+    font-size: 1em; /* Adjusted font size */
 }
 #signup-form input[type="email"],
 #signup-form input[type="password"] {
     width: 100%;
-    padding: 12px;
-    border-radius: 4px;
+    padding: 12px; /* Adjusted padding */
+    border-radius: 6px;
     border: 1px solid var(--glass-border);
-    background-color: var(--input-background);
+    background-color: rgba(26, 26, 46, 0.8);
     color: var(--text-primary);
     font-size: 1em;
+    box-sizing: border-box;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 #signup-form input[type="email"]:focus,
 #signup-form input[type="password"]:focus {
     outline: none;
-    border-color: var(--primary-accent);
-    box-shadow: 0 0 5px var(--primary-accent);
+    border-color: var(--secondary-accent);
+    box-shadow: 0 0 10px rgba(0, 216, 255, 0.5);
+}
+#signup-form .button.primary {
+    width: 100%;
+    padding: 14px; /* Adjusted padding */
+    font-size: 1.1em; /* Adjusted font size */
 }
 
 .sso-options {
     text-align: center;
-    margin-bottom: 20px;
+    margin-bottom: 20px; /* Adjusted margin */
 }
 .sso-options p {
-    margin-bottom: 10px;
-}
-.sso-options .button { /* General SSO button */
-    margin: 5px;
-    background-color: transparent;
-    border: 1px solid var(--primary-accent);
-    color: var(--primary-accent);
-}
-.sso-options .button:hover {
-    background-color: var(--primary-accent);
+    margin-bottom: 12px; /* Adjusted margin */
     color: var(--text-primary);
 }
-.sso-google { /* Specific color if needed, or keep generic */ }
-.sso-linkedin { /* Specific color if needed, or keep generic */ }
+.sso-options .button {
+    margin: 6px; /* Adjusted margin */
+    background-color: transparent;
+    border: 2px solid var(--secondary-accent);
+    color: var(--secondary-accent);
+    padding: 8px 18px; /* Adjusted padding */
+}
+.sso-options .button:hover {
+    background-color: var(--secondary-accent);
+    color: var(--background-main);
+}
 
 .login-prompt {
     text-align: center;
-    margin-top: 20px;
+    margin-top: 20px; /* Adjusted margin */
 }
 .login-prompt a {
-    font-weight: bold;
+    font-weight: 700;
     color: var(--secondary-accent);
 }
-
-
-/* Section Titles General */
-#how-it-works h2, #features h2, #pricing h2, #account-creation h2 {
-    text-align: center;
-    margin-bottom: 50px; /* More space below section titles */
-    font-weight: 700; /* Bolder section titles */
+.login-prompt a:hover {
+    color: #FFFFFF;
 }
-
 
 /* Footer Content */
 .footer-content {
-    max-width: 1200px;
+    max-width: 1300px;
     margin: 0 auto;
 }
 .footer-links {
-    margin-bottom: 15px;
+    margin-bottom: 15px; /* Adjusted margin */
 }
 .footer-links a {
-    margin: 0 10px;
+    margin: 0 10px; /* Adjusted margin */
     color: var(--text-secondary);
+    font-size: 0.9em; /* Adjusted font size */
 }
 .footer-links a:hover {
     color: var(--secondary-accent);
 }
 .social-media-links {
-    margin-bottom: 15px;
+    margin-bottom: 15px; /* Adjusted margin */
 }
 .social-media-links a {
-    margin: 0 8px;
-    font-size: 1.2em; /* Placeholder for icon size */
+    margin: 0 8px; /* Adjusted margin */
+    font-size: 1.2em; /* Adjusted font size */
     color: var(--text-secondary);
 }
 .social-media-links a:hover {
     color: var(--primary-accent);
 }
 #page-footer p {
-    font-size: 0.9em;
+    font-size: 0.85em; /* Adjusted font size */
     color: var(--text-secondary);
 }
 
-
-/* Responsive Typography and Layout (Basic) */
-@media (max-width: 768px) {
+/* Responsive Adjustments */
+@media (max-width: 992px) { /* Tablet */
     h1 { font-size: 2.2em; }
-    h2 { font-size: 1.8em; }
-    h3 { font-size: 1.3em; } /* Adjusted H3 */
-    h4 { font-size: 1.1em; } /* Adjusted H4 */
-
-    #hero { padding: 60px 5%; }
+    h2 { font-size: 1.9em; }
     #hero h1 { font-size: 2.5em; }
-    #hero p { font-size: 1.1em; }
-
-    #main-header nav { /* No longer direct child of main-header for flex */
-        /* flex-direction: column; */ /* This will be on .header-content-wrapper */
-    }
-    /* #main-header nav span { */ /* Logo is an image now */
-        /* margin-bottom: 10px; */
-    /* } */
-    /* Nav items already stack due to .header-content-wrapper: column */
-    /* #main-header nav ul {
-        flex-direction: column;
-        align-items: center;
-    } */
-    /* #main-header nav ul li {
-        margin-bottom: 8px;
-    } */
-    /* #main-header nav ul li a {
-        margin: 0;
-    } */
+    #hero p { font-size: 1.15em; }
 
     .steps-container, .pricing-grid {
-        flex-direction: column; /* Stack items */
+        flex-direction: column; /* Stack items earlier */
         align-items: center;
     }
     .step, .pricing-tier {
-        flex-basis: 90%; /* Allow them to take more width when stacked */
-        margin-bottom: 20px; /* Add margin for stacked items */
+        flex-basis: 80%; /* Allow them to be wider when stacked */
+        max-width: 450px; /* But not too wide */
+        margin-bottom: 20px;
     }
-    .features-grid { /* Ensure features also stack if they were grid based */
-        grid-template-columns: 1fr;
+     .feature-item { /* Features can still be two columns if space allows */
+        flex-basis: calc(50% - 20px);
     }
 }
 
-@media (max-width: 600px) { /* Intermediate breakpoint for larger phones / small tablets */
-    main > section {
-        padding: 30px 4%; /* Adjust padding for sections */
-    }
-    #hero {
-        padding: 50px 4%;
-    }
-    #hero h1 {
-        font-size: 2.3em;
-    }
-    #hero p {
-        font-size: 1.1em;
-    }
-    #hero div button { /* Wrapper for hero buttons */
-        display: block;
-        width: 70%;
-        margin: 10px auto;
-        padding: 12px; /* Ensure buttons are easy to tap */
-    }
-
-    #main-header .header-content-wrapper { /* Apply stacking to the wrapper */
+@media (max-width: 768px) { /* Large Mobile / Small Tablet */
+    #main-header .header-content-wrapper {
         flex-direction: column;
         align-items: center;
     }
-    #main-header .logo-link img#homepageLogo {
-        height: 40px;
-        margin-bottom: 15px; /* Increased space when stacked */
-    }
-    #main-header nav { /* Ensure nav takes full width for centered items */
+    #main-header nav {
+        margin-top: 15px;
         width: 100%;
     }
     #main-header nav ul {
@@ -524,102 +531,118 @@ main > section {
         width: 100%;
     }
     #main-header nav ul li {
-        margin: 8px 0; /* Vertical margin for stacked items */
-        width: 100%; /* Make li take full width for centered text/button */
-        text-align: center;
-    }
-     #main-header nav ul li a.button-nav { /* Specific for button in nav */
-        display: inline-block; /* Allow padding and auto width */
-        width: auto;
-        padding: 10px 25px; /* Make button more prominent */
-    }
-    /* #main-header nav a:last-child {
-        border-bottom: none;
-    } */
-     /* #main-header nav ul {
+        margin: 8px 0;
         width: 100%;
-    } */
-
-
-    .steps-container {
-        flex-direction: column;
-        align-items: center;
     }
-    .step {
-        flex-basis: 95%; /* Full width for stacked steps */
-        width: 95%;
-        margin-bottom: 15px;
+    #main-header nav ul li a {
+        display: block; /* Make nav links full width for easier tapping */
+        text-align: center;
+        padding: 10px;
     }
 
+
+    #hero { padding: 60px 4%; }
+    #hero h1 { font-size: 2.2em; }
+    #hero p { font-size: 1.1em; }
+    #hero div .button { padding: 12px 25px; font-size: 1em; margin: 8px auto; }
+
+    .step, .pricing-tier, .feature-item { /* All stack fully */
+        flex-basis: 100%;
+        max-width: 400px; /* Limit max width on mobile for stacked items */
+        margin-left: auto;
+        margin-right: auto;
+        margin-bottom: 20px;
+    }
     .features-grid {
-        grid-template-columns: 1fr; /* Single column */
-        gap: 20px;
+        grid-template-columns: 1fr;
     }
-
-    .pricing-grid {
-        flex-direction: column;
-        align-items: center;
+    #how-it-works h2, #features h2, #pricing h2, #account-creation h2 {
+        font-size: 2em;
+        margin-bottom: 30px;
     }
-    .pricing-tier {
-        flex-basis: 95%; /* Full width for stacked tiers */
-        width: 95%;
-        margin-bottom: 15px;
-    }
-
-    #signup-form input[type="email"],
-    #signup-form input[type="password"] {
-        /* width: calc(100% - 22px); /* Adjust if box-sizing is border-box */
-        width: 100%; /* Simpler if box-sizing is border-box */
-    }
-    .sso-options .button {
-        display: block;
-        width: 70%;
-        margin: 10px auto;
-    }
+    .pricing-tier .button { width: 80%; } /* Ensure pricing buttons are not overly wide */
 }
 
-
-@media (max-width: 480px) {
-    h1 { font-size: 2em; }
+@media (max-width: 480px) { /* Small Mobile */
+    h1 { font-size: 1.8em; }
     h2 { font-size: 1.6em; }
-    h3 { font-size: 1.2em; }
-    h4 { font-size: 1.0em; }
+    h3 { font-size: 1.3em; }
+    h4 { font-size: 1.1em; }
+    p, .step p, .feature-item p, .pricing-tier ul li { font-size: 0.9em; } /* Smaller base paragraph text */
+
 
     main > section {
-        padding: 20px 3%; /* Further reduce padding */
+        padding: 30px 4%; /* Reduced padding for sections */
+        border-radius: 10px;
     }
 
-    #hero { padding: 40px 3%; } /* Adjusted padding */
-    #hero h1 { font-size: 2em; } /* Specific size for hero on mobile */
-    #hero p { font-size: 1em; } /* Specific size for hero on mobile */
-    #hero div button { /* Wrapper for hero buttons */
-        width: 85%; /* Make buttons slightly wider on small mobile */
-        padding: 12px; /* Ensure buttons are easy to tap */
-    }
+    #hero { padding: 50px 4%; }
+    #hero h1 { font-size: 1.9em; }
+    #hero p { font-size: 1em; }
+    #hero div .button { width: 90%; padding: 12px 20px; font-size: 0.95em; }
 
-    .button, button {
-        padding: 10px 18px; /* Slightly smaller buttons */
-        font-size: 0.95em; /* Adjust font for very small screens */
+    .button, button, a.button {
+        padding: 10px 18px; /* Smaller buttons */
+        font-size: 0.95em;
+        width: 100%; /* Make all general buttons full width */
+        margin-left: 0; margin-right: 0;
     }
+    #hero div .button { width: 80%; margin: 8px auto; } /* Hero buttons slightly less than full */
+
+    #signup-form { padding: 20px; }
+    #signup-form .form-group { margin-bottom: 15px; }
+    #signup-form label { font-size: 0.95em; margin-bottom: 6px;}
+    #signup-form input[type="email"],
+    #signup-form input[type="password"] { padding: 10px; }
     #signup-form .button.primary {
-        width: 100%;
         padding: 12px;
-        font-size: 1em; /* Keep signup button font size reasonable */
+        font-size: 1em;
     }
     .sso-options .button {
         width: 85%;
+        padding: 8px 15px;
+        font-size: 0.9em;
     }
 
+    #main-header .logo-link img#homepageRevisumeImage {
+        height: 35px;
+    }
     #main-header nav ul li a {
-        font-size: 0.9em; /* Slightly smaller nav links */
+        font-size: 0.95em;
         padding: 8px;
     }
 
     .footer-links a {
         display: block;
         margin-bottom: 8px;
+        font-size: 0.85em;
     }
-    .footer-links a:last-child {
-        margin-bottom: 0;
-    }
+    #page-footer p { font-size: 0.8em; }
+
+    /* Optionally disable hero gradient animation on very small screens if performance is a concern */
+    /* #hero::before { animation: none; background: var(--background-main); } */
+}
+
+/* Hero Background Animation */
+@keyframes subtleGradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+#hero::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(270deg, var(--background-main), var(--primary-accent), var(--tertiary-accent), var(--background-main));
+    background-size: 400% 400%;
+    animation: subtleGradientShift 25s ease infinite;
+    z-index: 0;
+    opacity: 0.7;
+}
+
+/* Ensure content is above the pseudo-element */
+#hero > * {
+    position: relative;
+    z-index: 1;
 }
