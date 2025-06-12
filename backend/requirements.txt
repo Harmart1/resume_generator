@@ -16,3 +16,6 @@ google-generativeai
 Flask-SQLAlchemy
 Flask-Migrate
 stripe>=2.0,<3.0
+Flask-Login
+Flask-Bcrypt
+email-validator # Added for WTForms email validation

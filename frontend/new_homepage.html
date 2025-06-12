@@ -17,8 +17,9 @@
                     <li><a href="#how-it-works">How It Works</a></li>
                     <li><a href="#features">Features</a></li>
                     <li><a href="#pricing">Pricing</a></li>
-                    <li><a href="index.html">App</a></li>
-                    <li><a href="#account-creation" class="button-nav">Sign Up</a></li>
+                    <li><a href="/">App</a></li>
+                    <li><a href="/register" class="button-nav">Register</a></li>
+                    <li><a href="/login" class="button-nav">Login</a></li>
                 </ul>
             </nav>
         </div>
@@ -29,8 +30,8 @@
             <h1>Upgrade Your Resume with AI-Powered Precision</h1>
             <p>Maximize job opportunities with smart optimization. Craft the perfect resume that lands you interviews. Effortless, intelligent, and fast.</p>
             <div> <!-- Wrapper for buttons -->
-                <a href="index.html" class="button primary">Get Started (Free)</a>
-                <a href="#pricing" class="button">Explore Premium</a> <!-- Changed to link to pricing section -->
+                <a href="/register" class="button primary">Get Started (Free)</a>
+                <a href="#pricing" class="button">Explore Plans</a>
             </div>
             <!-- TODO: Implement background animation -->
         </section>
@@ -104,28 +105,37 @@
                     <h3>Free Tier</h3>
                     <p class="price-tag">Free Forever</p>
                     <ul>
-                        <li>Basic AI Resume Analysis</li>
-                        <li>Keyword & Entity Extraction</li>
-                        <li>1 Full Optimization Report / month</li>
-                        <li>Limited AI Suggestions</li>
+                        <li>✓ Basic Resume Analysis</li>
+                        <li>✓ Keyword Extraction</li>
+                        <li>✓ Limited AI Suggestions</li>
+                        <li>✓ 1 Full Report / month (Simulated)</li>
                     </ul>
-                    <a href="index.html" class="button">Sign Up & Get Started</a>
+                    <a href="/register" class="button">Sign Up & Get Started</a>
                 </div>
-                <div class="pricing-tier premium-tier">
-                    <h3>Premium Plan</h3>
-                    <p class="price-tag">$10 / month</p>
+                <div class="pricing-tier premium-tier"> <!-- Represents Starter Plan -->
+                    <h3>Starter Plan</h3>
+                    <p class="price-tag">$9 <span class="text-sm">/mo</span></p>
                     <ul>
-                        <li>All Free Tier Features, Plus:</li>
-                        <li>Advanced AI Resume Suggestions (AI Jules)</li>
-                        <li>Unlimited Full Optimization Reports</li>
-                        <li>Job Description Matching Analysis</li>
-                        <li>ATS Compatibility Enhancements</li>
-                        <li>Resume Translation (Multiple Languages)</li>
-                        <li>Job Market Insights</li>
+                        <li>✓ All Free Tier Features, Plus:</li>
+                        <li>✓ Unlimited Basic Analysis & ATS Checks</li>
+                        <li>✓ Full PDF/DOCX Exports</li>
+                        <li>✓ Smart Bullet-Point Suggestions</li>
+                        <li>✓ 1 "Deep Dive" AI Analysis Credit / month</li>
                     </ul>
-                    <button class="button primary">Go Premium</button>
+                    <a href="/register" class="button primary">Get Starter</a>
                 </div>
-                <div class="pricing-tier">
+                <div class="pricing-tier"> <!-- Represents Pro Plan -->
+                    <h3>Pro Plan</h3>
+                    <p class="price-tag">$19 <span class="text-sm">/mo</span></p>
+                    <ul>
+                        <li>✓ All Starter Features, Plus:</li>
+                        <li>✓ Unlimited "Deep Dives"</li>
+                        <li>✓ AI Cover Letter Drafts</li>
+                        <li>✓ Priority Email Support (Conceptual)</li>
+                    </ul>
+                    <a href="/register" class="button">Get Pro</a>
+                </div>
+                 <div class="pricing-tier enterprise-tier"> <!-- Represents Enterprise -->
                     <h3>Recruiter / Enterprise</h3>
                     <p class="price-tag">Custom</p>
                     <ul>
@@ -135,15 +145,18 @@
                         <li>API Access for Integrations</li>
                         <li>Dedicated Support</li>
                     </ul>
-                    <button class="button">Contact Sales</button>
+                    <a href="mailto:sales@revisume.ai?subject=Enterprise Inquiry" class="button">Contact Sales</a>
                 </div>
+            </div>
+            <div class="text-center mt-8">
+                 <p class="text-text-secondary">Users will be redirected to register or log in, then can choose their plan from the application dashboard.</p>
             </div>
         </section>
 
         <section id="account-creation">
             <h2>Ready to Elevate Your Career?</h2>
             <p>Join Revisume.ai today and transform your job application process.</p>
-            <form id="signup-form">
+            <form id="signup-form" action="/register" method="POST">
                 <div class="form-group">
                     <label for="hp-email">Email Address:</label>
                     <input type="email" id="hp-email" name="email" placeholder="you@example.com" required>
@@ -154,7 +167,7 @@
                 </div>
                 <div class="form-group">
                     <label for="hp-confirm-password">Confirm Password:</label>
-                    <input type="password" id="hp-confirm-password" name="confirm-password" placeholder="Re-enter password" required>
+                    <input type="password" id="hp-confirm-password" name="confirm_password" placeholder="Re-enter password" required>
                 </div>
                 <button type="submit" class="button primary">Create Free Account</button>
             </form>
@@ -164,7 +177,7 @@
                 <button class="button sso-linkedin">[in] Sign Up with LinkedIn</button>
                 <!-- TODO: Implement SSO functionality -->
             </div>
-            <p class="login-prompt">Already have an account? <a href="index.html">Log In</a></p>
+            <p class="login-prompt">Already have an account? <a href="/login">Log In</a></p>
         </section>
     </main>
 
