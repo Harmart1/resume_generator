@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Us - Revisume</title>
+    <link rel="stylesheet" href="/homepage_styles.css"> <!-- Use homepage styles for consistency -->
+    <style>
+        /* Additional styles specific to contact page if needed */
+        .contact-form-container {
+            max-width: 700px;
+            margin: 40px auto;
+            padding: 30px;
+            background: var(--glass-background, rgba(40, 40, 70, 0.3)); /* Fallback if CSS var not loaded */
+            border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.15));
+            border-radius: 15px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+        .contact-form-container h1 {
+            text-align: center;
+            color: var(--text-primary, #EAEAEA);
+            margin-bottom: 30px;
+            font-size: 2.2em; /* Match homepage h2 */
+            font-weight: 600; /* Match homepage h2 */
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-secondary, #B1B1B1);
+            font-weight: bold;
+        }
+        .form-group input[type="text"],
+        .form-group input[type="email"],
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border-radius: 5px;
+            border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.15));
+            background-color: var(--input-background, rgba(255, 255, 255, 0.08));
+            color: var(--text-primary, #EAEAEA);
+            font-size: 1em;
+            box-sizing: border-box; /* Ensure padding doesn't expand width */
+        }
+        .form-group textarea {
+            min-height: 150px;
+            resize: vertical;
+        }
+        .form-group input[type="text"]:focus,
+        .form-group input[type="email"]:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary-accent, #5D3FD3);
+            box-shadow: 0 0 5px var(--primary-accent, #5D3FD3);
+        }
+        .submit-button { /* Using a class for the submit button */
+            display: block;
+            width: 100%;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 5px;
+            background-color: var(--secondary-accent, #FF8C00);
+            color: var(--text-primary, #EAEAEA);
+            font-size: 1.1em;
+            font-weight: bold;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+        .submit-button:hover {
+            background-color: #FFAC47; /* Darker orange */
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <header id="main-header">
+        <div class="header-content-wrapper">
+            <a href="/" class="logo-link"> <!-- Link to homepage -->
+                <img src="/static/revisume.jpg" alt="Revisume Logo" id="homepageLogo" style="max-height: 50px;"> <!-- Adjusted max-height -->
+            </a>
+            <nav>
+                <ul>
+                    <li><a href="/#how-it-works">How It Works</a></li> <!-- Link to homepage sections -->
+                    <li><a href="/#features">Features</a></li>
+                    <li><a href="/#pricing">Pricing</a></li>
+                    <li><a href="/index.html">App</a></li>
+                    <li><a href="/#account-creation" class="button-nav">Sign Up</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <div class="contact-form-container">
+            <h1>Contact Us</h1>
+            <form id="contactForm" method="POST" action="/submit_contact_form"> <!-- Action will be defined in Flask -->
+                <div class="form-group">
+                    <label for="name">Name</label>
+                    <input type="text" id="name" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="message">Message</label>
+                    <textarea id="message" name="message" required></textarea>
+                </div>
+                <button type="submit" class="submit-button">Send Message</button>
+            </form>
+        </div>
+    </main>
+
+    <footer id="page-footer">
+        <div class="footer-content">
+            <div class="footer-links">
+                <a href="#">About Us</a> |
+                <a href="#">FAQ</a> |
+                <a href="/contact.html">Contact Us</a> | <!-- Link to self -->
+                <a href="#">Privacy Policy</a> |
+                <a href="#">Terms of Service</a>
+            </div>
+            <div class="social-media-links">
+                <a href="#">[Fb]</a>
+                <a href="#">[Tw]</a>
+                <a href="#">[Li]</a>
+            </div>
+            <p>&copy; {{ now_year }} Revisume. All rights reserved. AI for a smarter resume.</p> <!-- Assuming now_year will be passed by Flask or use a static year -->
+        </div>
+    </footer>
+</body>
+</html>
