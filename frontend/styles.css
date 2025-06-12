@@ -1,5 +1,6 @@
 /* APP PAGE STYLES (styles.css) */
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Sora:wght@400;600;700&display=swap');
 
 :root {
     --primary-accent: #5D3FD3; /* Deep futuristic purple */
@@ -9,7 +10,7 @@
     --text-secondary: #B1B1B1; /* Light gray */
     --success-confirm: #21D19F; /* Neon teal */
     --error-alert: #D32145; /* Deep red */
-    --glass-background: rgba(40, 40, 70, 0.25); /* Darker, slightly more opaque glass for app */
+    --glass-background: rgba(40, 40, 70, 0.3); /* Darker, slightly more opaque glass for app */
     --glass-border: rgba(255, 255, 255, 0.15); /* Brighter border for contrast */
     --input-background: rgba(255, 255, 255, 0.08);
     --button-text-dark: #1A1A2E; /* For light buttons like secondary-accent */
@@ -27,7 +28,7 @@ html, body {
 }
 
 body {
-    font-family: 'Roboto', sans-serif;
+    font-family: 'Inter', sans-serif;
     background-color: var(--background-main);
     /* Optional: Add subtle gradient if desired, but solid dark often works well for apps */
     /* background: linear-gradient(to bottom right, var(--background-main), #2a2a3e); */
@@ -45,10 +46,10 @@ h1, h2, h3, h4, h5, h6 {
     margin-bottom: 0.5em; /* Consistent bottom margin */
 }
 h1 { font-size: 2em; }
-h2 { font-size: 1.7em; } /* Existing .glass-container h2 */
-h3 { font-size: 1.4em; } /* Existing .results-box h3 / general h3 */
-h4 { font-size: 1.2em; } /* Existing .results-box h4 */
-h5 { font-size: 1.0em; } /* Existing .results-box h5 */
+h2 { font-size: 1.7em; } /* Existing .glass-container h2 / general h2 */
+h3 { font-size: 1.5em; font-weight: 600; } /* Existing .results-box h3 / general h3 */
+h4 { font-size: 1.2em; } /* Existing .results-box h4 / general h4 */
+h5 { font-size: 1.0em; } /* Existing .results-box h5 / general h5 */
 
 p, label { /* Apply to labels as well */
     color: var(--text-secondary);
@@ -126,9 +127,11 @@ main {
 }
 
 .glass-container h2 { /* Section titles */
-    font-size: 1.7em;
-    color: var(--text-primary); /* Brighter for titles */
-    margin-bottom: 20px;
+    font-family: 'Sora', sans-serif;
+    font-size: 2.0em; /* Increased from 1.7em, slightly less than homepage's 2.2em for internal page hierarchy */
+    font-weight: 600; /* Added for consistency */
+    color: var(--text-primary);
+    margin-bottom: 25px; /* Increased from 20px */
     text-align: center;
 }
 
@@ -167,21 +170,25 @@ main {
 
 /* General Button Styling (inside .glass-container) */
 .glass-container button {
-    background-color: var(--primary-accent); /* Primary buttons use primary accent */
+    background-color: var(--secondary-accent); /* Default to secondary like homepage */
     color: var(--text-primary);
     padding: 12px 25px;
     border: none;
-    border-radius: 8px;
-    font-size: 1.05em;
+    border-radius: 5px; /* Match homepage */
+    font-size: 1.1em; /* Match homepage */
     cursor: pointer;
-    transition: background-color 0.3s ease, transform 0.2s ease;
-    display: block;
-    margin: 20px auto 10px auto; /* Adjusted margin */
+    text-transform: uppercase; /* Match homepage */
     font-weight: bold;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2); /* Added from homepage for consistency */
+    display: block; /* Keep as block for app layout or make inline-block if needed */
+    margin: 20px auto 10px auto;
 }
 .glass-container button:hover {
-    background-color: #4B31A5; /* Darker shade of primary */
+    background-color: #FFAC47; /* Matches homepage default button hover */
     transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3); /* Matches homepage */
+    /* color: var(--text-primary); Ensure text color remains if needed */
 }
 .glass-container button:active {
     transform: translateY(0);
@@ -195,6 +202,16 @@ main {
 }
 #subscribeButton:hover {
     background-color: #1AA882; /* Darker teal */
+}
+
+.glass-container button.button-primary-app {
+    background-color: var(--primary-accent);
+    color: var(--text-primary); /* Ensure text color if not inherited */
+}
+
+.glass-container button.button-primary-app:hover {
+    background-color: #7658D1; /* Matches homepage primary button hover */
+    color: var(--text-primary); /* Ensure text color */
 }
 
 
