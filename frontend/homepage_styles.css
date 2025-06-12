@@ -1,0 +1,573 @@
+/* Styles for Revisume.ai Homepage */
+
+:root {
+    --primary-accent: #5D3FD3; /* Deep futuristic purple */
+    --background-main: #1A1A2E; /* Dark navy */
+    --secondary-accent: #FF8C00; /* Vivid orange - for CTAs */
+    --text-primary: #EAEAEA; /* Soft white */
+    --text-secondary: #B1B1B1; /* Light gray */
+    --success-confirm: #21D19F; /* Neon teal */
+    --error-alert: #D32145; /* Deep red */
+    --glass-background: rgba(40, 40, 70, 0.3); /* Darker glass for better contrast on dark bg */
+    --glass-border: rgba(255, 255, 255, 0.15);
+    --input-background: rgba(255, 255, 255, 0.08);
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Roboto', 'Arial', sans-serif; /* Changed to Roboto, common sans-serif */
+    background-color: var(--background-main);
+    color: var(--text-primary);
+    line-height: 1.6;
+    scroll-behavior: smooth;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    color: var(--text-primary);
+    margin-top: 0;
+    margin-bottom: 0.75em;
+}
+
+h1 { font-size: 2.8em; font-weight: 700;}
+h2 { font-size: 2.2em; font-weight: 600;}
+h3 { font-size: 1.5em; font-weight: 600;} /* Adjusted H3 for better hierarchy */
+h4 { font-size: 1.2em; font-weight: 600;} /* Adjusted H4 */
+
+p {
+    color: var(--text-secondary);
+    margin-bottom: 1em;
+}
+
+a {
+    color: var(--secondary-accent);
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+    color: var(--success-confirm);
+}
+
+/* Main Header and Footer Styling */
+#main-header, #page-footer {
+    padding: 1em 5%;
+    background-color: rgba(15, 15, 30, 0.7); /* Slightly more opaque header/footer */
+    text-align: center;
+    border-bottom: 1px solid var(--glass-border);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+}
+
+#page-footer {
+    border-top: 1px solid var(--glass-border);
+    border-bottom: none;
+    margin-top: 40px;
+    padding: 2em 5%;
+}
+
+#main-header nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+#main-header nav span {
+    font-size: 1.8em;
+    font-weight: bold;
+    color: var(--text-primary);
+}
+
+#main-header nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+}
+
+#main-header nav ul li a {
+    margin: 0 15px;
+    color: var(--text-primary);
+    font-weight: bold;
+    font-size: 1em;
+    padding: 5px 10px;
+    border-radius: 4px;
+    transition: background-color 0.3s ease;
+}
+#main-header nav ul li a:hover {
+    background-color: var(--primary-accent);
+    color: var(--text-primary);
+    text-decoration: none;
+}
+
+
+/* Section Styling (General) */
+main > section {
+    padding: 50px 5%;
+    margin: 0 auto 30px auto;
+    max-width: 1100px;
+    border-radius: 15px;
+    background: var(--glass-background);
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+#hero {
+    text-align: center;
+    padding: 80px 5%;
+    background: linear-gradient(135deg, var(--background-main) 0%, var(--primary-accent) 70%, var(--secondary-accent) 100%);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: none;
+    box-shadow: none;
+    border-radius: 0;
+    margin-bottom: 30px;
+    max-width: none;
+}
+
+#hero h1 {
+    font-size: 3em;
+    color: var(--text-primary);
+    margin-bottom: 0.5em;
+    font-weight: bold;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+}
+
+#hero p {
+    font-size: 1.3em;
+    color: var(--text-primary);
+    margin-bottom: 2em;
+    max-width: 700px;
+    margin-left: auto;
+    margin-right: auto;
+}
+#hero div button { /* Targeting buttons inside the hero's div wrapper */
+    margin: 10px;
+}
+
+
+/* Button Styling */
+.button, button {
+    background-color: var(--secondary-accent);
+    color: var(--text-primary);
+    padding: 12px 25px;
+    border: none;
+    border-radius: 5px;
+    font-size: 1.1em;
+    cursor: pointer;
+    text-transform: uppercase;
+    font-weight: bold;
+    margin: 5px;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.button:hover, button:hover {
+    background-color: #FFAC47;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+
+.button.primary, button.primary {
+     background-color: var(--primary-accent);
+     color: var(--text-primary);
+}
+.button.primary:hover, button.primary:hover {
+    background-color: #7658D1;
+}
+
+/* How It Works Section */
+.steps-container {
+    display: flex;
+    justify-content: space-around;
+    text-align: center;
+    gap: 25px;
+    flex-wrap: wrap;
+    margin-bottom: 30px;
+}
+.step {
+    flex-basis: calc(33.333% - 20px); /* Adjust for gap */
+    min-width: 250px; /* Minimum width before wrapping */
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 10px;
+    border: 1px solid var(--glass-border);
+}
+.step-icon {
+    font-size: 2.5em;
+    margin-bottom: 15px;
+    color: var(--primary-accent);
+    /* In a real scenario, replace text with actual SVG/font icons */
+}
+.step h3 {
+    color: var(--text-primary); /* Ensure heading color */
+    margin-bottom: 10px;
+}
+
+/* Drag & Drop Placeholder */
+#homepage-drag-drop-area {
+    padding: 30px;
+    margin-top: 30px;
+    border: 2px dashed var(--primary-accent);
+    border-radius: 10px;
+    text-align: center;
+    background-color: rgba(93, 63, 211, 0.05);
+    cursor: pointer;
+}
+#homepage-drag-drop-area p {
+    color: var(--text-secondary);
+    margin: 5px 0;
+}
+#homepage-drag-drop-area p small {
+    font-size: 0.85em;
+}
+
+
+/* Features & Benefits Section */
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Responsive grid */
+    gap: 25px;
+}
+.feature-item {
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 10px;
+    border: 1px solid var(--glass-border);
+}
+.feature-icon {
+    font-size: 2em;
+    margin-bottom: 10px;
+    color: var(--secondary-accent);
+}
+.feature-item h4 {
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+
+/* Pricing Plans Section */
+.pricing-grid {
+    display: flex;
+    justify-content: space-around;
+    gap: 25px;
+    flex-wrap: wrap;
+    align-items: stretch; /* Align items by height */
+}
+.pricing-tier {
+    flex-basis: calc(33.333% - 20px);
+    min-width: 280px;
+    padding: 25px;
+    border: 1px solid var(--glass-border);
+    border-radius: 10px;
+    text-align: center;
+    background: var(--glass-background);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between; /* Pushes button to bottom */
+}
+.pricing-tier h3 {
+    color: var(--primary-accent);
+    font-size: 1.6em;
+}
+.pricing-tier .price-tag {
+    font-size: 1.8em;
+    font-weight: bold;
+    margin: 15px 0;
+    color: var(--text-primary);
+}
+.pricing-tier ul {
+    list-style: none;
+    padding: 0;
+    margin: 20px 0;
+    text-align: left;
+    flex-grow: 1; /* Allows ul to take available space */
+}
+.pricing-tier ul li {
+    margin-bottom: 10px;
+    color: var(--text-secondary);
+    padding-left: 20px;
+    position: relative;
+}
+.pricing-tier ul li::before { /* Custom bullet */
+    content: '✓'; /* Checkmark */
+    color: var(--success-confirm);
+    position: absolute;
+    left: 0;
+}
+.pricing-tier.premium-tier {
+    border-color: var(--secondary-accent);
+    box-shadow: 0 0 20px rgba(255, 140, 0, 0.3); /* Orange glow */
+    transform: scale(1.03); /* Slightly larger */
+}
+.pricing-tier .button {
+    width: calc(100% - 40px); /* Adjust width based on padding */
+    margin-left: auto;
+    margin-right: auto;
+}
+
+
+/* Account Creation Section */
+#signup-form {
+    max-width: 500px;
+    margin: 0 auto 30px auto;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+}
+#signup-form .form-group {
+    margin-bottom: 20px;
+}
+#signup-form label {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--text-secondary);
+    font-weight: bold;
+}
+#signup-form input[type="email"],
+#signup-form input[type="password"] {
+    width: 100%;
+    padding: 12px;
+    border-radius: 4px;
+    border: 1px solid var(--glass-border);
+    background-color: var(--input-background);
+    color: var(--text-primary);
+    font-size: 1em;
+}
+#signup-form input[type="email"]:focus,
+#signup-form input[type="password"]:focus {
+    outline: none;
+    border-color: var(--primary-accent);
+    box-shadow: 0 0 5px var(--primary-accent);
+}
+
+.sso-options {
+    text-align: center;
+    margin-bottom: 20px;
+}
+.sso-options p {
+    margin-bottom: 10px;
+}
+.sso-options .button { /* General SSO button */
+    margin: 5px;
+    background-color: transparent;
+    border: 1px solid var(--primary-accent);
+    color: var(--primary-accent);
+}
+.sso-options .button:hover {
+    background-color: var(--primary-accent);
+    color: var(--text-primary);
+}
+.sso-google { /* Specific color if needed, or keep generic */ }
+.sso-linkedin { /* Specific color if needed, or keep generic */ }
+
+.login-prompt {
+    text-align: center;
+    margin-top: 20px;
+}
+.login-prompt a {
+    font-weight: bold;
+    color: var(--secondary-accent);
+}
+
+
+/* Section Titles General */
+#how-it-works h2, #features h2, #pricing h2, #account-creation h2 {
+    text-align: center;
+    margin-bottom: 50px; /* More space below section titles */
+    font-weight: 700; /* Bolder section titles */
+}
+
+
+/* Footer Content */
+.footer-content {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+.footer-links {
+    margin-bottom: 15px;
+}
+.footer-links a {
+    margin: 0 10px;
+    color: var(--text-secondary);
+}
+.footer-links a:hover {
+    color: var(--secondary-accent);
+}
+.social-media-links {
+    margin-bottom: 15px;
+}
+.social-media-links a {
+    margin: 0 8px;
+    font-size: 1.2em; /* Placeholder for icon size */
+    color: var(--text-secondary);
+}
+.social-media-links a:hover {
+    color: var(--primary-accent);
+}
+#page-footer p {
+    font-size: 0.9em;
+    color: var(--text-secondary);
+}
+
+
+/* Responsive Typography and Layout (Basic) */
+@media (max-width: 768px) {
+    h1 { font-size: 2.2em; }
+    h2 { font-size: 1.8em; }
+    h3 { font-size: 1.3em; } /* Adjusted H3 */
+    h4 { font-size: 1.1em; } /* Adjusted H4 */
+
+    #hero { padding: 60px 5%; }
+    #hero h1 { font-size: 2.5em; }
+    #hero p { font-size: 1.1em; }
+
+    #main-header nav {
+        flex-direction: column;
+    }
+    #main-header nav span { /* Logo placeholder */
+        margin-bottom: 10px;
+    }
+    #main-header nav ul {
+        flex-direction: column; /* Stack nav items on smaller screens */
+        align-items: center;
+    }
+    #main-header nav ul li {
+        margin-bottom: 8px; /* Space between stacked nav items */
+    }
+    #main-header nav ul li a {
+        margin: 0; /* Reset horizontal margin */
+        /* Further styling for stacked links can be added if needed */
+    }
+
+    .steps-container, .pricing-grid {
+        flex-direction: column; /* Stack items */
+        align-items: center;
+    }
+    .step, .pricing-tier {
+        flex-basis: 90%; /* Allow them to take more width when stacked */
+        margin-bottom: 20px; /* Add margin for stacked items */
+    }
+    .features-grid { /* Ensure features also stack if they were grid based */
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 600px) { /* Intermediate breakpoint for larger phones / small tablets */
+    main > section {
+        padding: 30px 4%; /* Adjust padding for sections */
+    }
+    #hero {
+        padding: 50px 4%;
+    }
+    #hero h1 {
+        font-size: 2.3em;
+    }
+    #hero p {
+        font-size: 1.1em;
+    }
+    #hero div button { /* Wrapper for hero buttons */
+        display: block;
+        width: 70%;
+        margin: 10px auto;
+        padding: 12px; /* Ensure buttons are easy to tap */
+    }
+
+    #main-header nav a { /* For nav links if they need more specific stacking */
+        display: block;
+        margin: 8px 0;
+        padding: 10px;
+        border-bottom: 1px solid var(--glass-border);
+    }
+    #main-header nav a:last-child {
+        border-bottom: none;
+    }
+     #main-header nav ul { /* Ensure full width for stacked items if needed */
+        width: 100%;
+    }
+
+
+    .steps-container {
+        flex-direction: column;
+        align-items: center;
+    }
+    .step {
+        flex-basis: 95%; /* Full width for stacked steps */
+        width: 95%;
+        margin-bottom: 15px;
+    }
+
+    .features-grid {
+        grid-template-columns: 1fr; /* Single column */
+        gap: 20px;
+    }
+
+    .pricing-grid {
+        flex-direction: column;
+        align-items: center;
+    }
+    .pricing-tier {
+        flex-basis: 95%; /* Full width for stacked tiers */
+        width: 95%;
+        margin-bottom: 15px;
+    }
+
+    #signup-form input[type="email"],
+    #signup-form input[type="password"] {
+        /* width: calc(100% - 22px); /* Adjust if box-sizing is border-box */
+        width: 100%; /* Simpler if box-sizing is border-box */
+    }
+    .sso-options .button {
+        display: block;
+        width: 70%;
+        margin: 10px auto;
+    }
+}
+
+
+@media (max-width: 480px) {
+    h1 { font-size: 2em; }
+    h2 { font-size: 1.6em; }
+    h3 { font-size: 1.2em; }
+    h4 { font-size: 1.0em; }
+
+    main > section {
+        padding: 20px 3%; /* Further reduce padding */
+    }
+
+    #hero { padding: 40px 3%; } /* Adjusted padding */
+    #hero h1 { font-size: 2em; } /* Specific size for hero on mobile */
+    #hero p { font-size: 1em; } /* Specific size for hero on mobile */
+    #hero div button { /* Wrapper for hero buttons */
+        width: 85%; /* Make buttons slightly wider on small mobile */
+        padding: 12px; /* Ensure buttons are easy to tap */
+    }
+
+    .button, button {
+        padding: 10px 18px; /* Slightly smaller buttons */
+        font-size: 0.95em; /* Adjust font for very small screens */
+    }
+    #signup-form .button.primary {
+        width: 100%;
+        padding: 12px;
+        font-size: 1em; /* Keep signup button font size reasonable */
+    }
+    .sso-options .button {
+        width: 85%;
+    }
+
+    #main-header nav ul li a {
+        font-size: 0.9em; /* Slightly smaller nav links */
+        padding: 8px;
+    }
+
+    .footer-links a {
+        display: block;
+        margin-bottom: 8px;
+    }
+    .footer-links a:last-child {
+        margin-bottom: 0;
+    }
+}

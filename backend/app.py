@@ -2091,47 +2091,66 @@ def download_word():
 def analyze_resume():
     global nlu_client, WATSON_NLP_AVAILABLE # Ensure access to global Watson NLU client
 
-    if 'resume' not in request.files:
-        logger.error("No resume file part in /analyze_resume request.")
-        return jsonify({"error": "No resume file part in the request"}), 400
+    resume_content_string = None
+    filename = "pasted_text.txt" # Default filename for pasted text
 
-    file = request.files['resume']
+    if request.content_type.startswith('application/json'):
+        data = request.get_json()
+        if not data:
+            logger.error("No JSON data received for /analyze_resume with application/json content type.")
+            return jsonify({"error": "No JSON data received."}), 400
+        resume_content_string = data.get('resume_text')
+        filename = data.get('filename', 'pasted_text.txt') # Use provided filename or default
+        if not resume_content_string or not resume_content_string.strip():
+            logger.warning("Empty resume_text received in JSON payload for /analyze_resume.")
+            return jsonify({"error": "resume_text cannot be empty."}), 400
+    elif request.content_type.startswith('multipart/form-data'):
+        if 'resume' not in request.files:
+            logger.error("No resume file part in /analyze_resume request (form-data).")
+            return jsonify({"error": "No resume file part in the request"}), 400
 
-    if file.filename == '':
-        logger.warning("No file selected in /analyze_resume request.")
-        return jsonify({"error": "No selected file"}), 400
+        file = request.files['resume']
+        if file.filename == '':
+            logger.warning("No file selected in /analyze_resume request (form-data).")
+            return jsonify({"error": "No selected file"}), 400
 
-    if file:
-        filename = secure_filename(file.filename)
-        resume_content_string = None
+        if file:
+            filename = secure_filename(file.filename)
+            if filename.lower().endswith('.pdf'):
+                resume_content_string = extract_text_from_pdf(file)
+            elif filename.lower().endswith('.docx'):
+                resume_content_string = extract_text_from_docx(file)
+            elif filename.lower().endswith('.txt'):
+                try:
+                    file.seek(0)
+                    resume_content_string = file.read().decode('utf-8')
+                except Exception as e:
+                    logger.error(f"Error reading .txt file {filename} in /analyze_resume: {e}")
+                    return jsonify({"error": f"Error reading text file: {filename}"}), 500
+            else:
+                logger.warning(f"Unsupported file type uploaded to /analyze_resume (form-data): {filename}")
+                return jsonify({"error": "Unsupported file type. Please upload a .txt, .pdf, or .docx file."}), 415
 
-        if filename.lower().endswith('.pdf'):
-            resume_content_string = extract_text_from_pdf(file)
-        elif filename.lower().endswith('.docx'):
-            resume_content_string = extract_text_from_docx(file)
-        elif filename.lower().endswith('.txt'):
-            try:
-                file.seek(0)
-                resume_content_string = file.read().decode('utf-8')
-            except Exception as e:
-                logger.error(f"Error reading .txt file {filename}: {e}")
-                return jsonify({"error": f"Error reading text file: {filename}"}), 500
-        else:
-            logger.warning(f"Unsupported file type uploaded to /analyze_resume: {filename}")
-            return jsonify({"error": "Unsupported file type. Please upload a .txt, .pdf, or .docx file."}), 415
+            if resume_content_string is None: # Indicates extraction failure for PDF/DOCX
+                logger.error(f"Failed to extract text from uploaded file {filename} in /analyze_resume.")
+                return jsonify({"error": f"Failed to extract text from {filename}."}), 500
+    else:
+        logger.error(f"Unsupported content type for /analyze_resume: {request.content_type}")
+        return jsonify({"error": "Unsupported content type."}), 415
 
-        if resume_content_string is None:
-            logger.error(f"Failed to extract text from {filename} in /analyze_resume.")
-            return jsonify({"error": f"Failed to extract text from {filename}."}), 500
-        if not resume_content_string.strip():
-            logger.warning(f"No text content found in {filename} after extraction in /analyze_resume.")
-            return jsonify({"error": f"No text content found in {filename}."}), 400
+    # Common validation for extracted/received text
+    if resume_content_string is None: # Should be caught by specific handlers, but as a safeguard
+        logger.error("Resume content string is None before NLU analysis in /analyze_resume, this should not happen.")
+        return jsonify({"error": "Failed to process resume content."}), 500
+    if not resume_content_string.strip():
+        logger.warning(f"No text content found in '{filename}' after processing in /analyze_resume.")
+        return jsonify({"error": f"No text content found in {filename}."}), 400
 
-        # Ensure resume_text is the extracted string for subsequent logic
-        resume_text = resume_content_string
+    # Ensure resume_text is the extracted/received string for subsequent logic
+    resume_text = resume_content_string
 
-        if not WATSON_NLP_AVAILABLE or nlu_client is None:
-            logger.error("Watson NLU client not configured. Cannot perform resume analysis in /analyze_resume.")
+    if not WATSON_NLP_AVAILABLE or nlu_client is None:
+        logger.error("Watson NLU client not configured. Cannot perform resume analysis in /analyze_resume.")
             return jsonify({"error": "Watson NLU client not configured. Please check server setup."}), 500
 
         try:

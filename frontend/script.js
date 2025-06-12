@@ -44,117 +44,165 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     const analyzeButton = document.getElementById('analyzeButton');
-    const resumeUploadInput = document.getElementById('resumeUpload');
+    const resumeUploadInput = document.getElementById('resumeUpload'); // Note: Task mentions resumeUploadInput, ensure this ID is correct in HTML if used.
     const resultsDisplay = document.getElementById('results-display');
+    const resumeTextInput = document.getElementById('resumeTextInput');
+    const analyzeTextButton = document.getElementById('analyzeTextButton');
+    const dropZone = document.querySelector('.upload-section'); // Target the whole upload section as the drop zone
+
+    // Common function to perform resume analysis (used by both file upload and text input)
+    async function performResumeAnalysis(payload, isJsonPayload, buttonElement, originalButtonText, loadingText) {
+        buttonElement.disabled = true;
+        buttonElement.textContent = loadingText;
+        resultsDisplay.innerHTML = ''; // Clear previous results
+        resultsDisplay.style.color = '#333'; // Default text color for messages
+
+        try {
+            const fetchOptions = {
+                method: 'POST',
+                body: isJsonPayload ? JSON.stringify(payload) : payload,
+            };
+            if (isJsonPayload) {
+                fetchOptions.headers = { 'Content-Type': 'application/json' };
+            }
+
+            const response = await fetch('/analyze_resume', fetchOptions);
+
+            if (response.ok) {
+                const data = await response.json();
+                let resultsHTML = `<h3>Resume Analysis for ${data.filename}</h3>`;
+                resultsHTML += `<p><strong>Message:</strong> ${data.message}</p>`;
+
+                if (data.keywords && data.keywords.length > 0) {
+                    resultsHTML += `<h4>Keywords</h4><ul>`;
+                    data.keywords.forEach(kw => {
+                        resultsHTML += `<li><strong>${kw.text}</strong> (Relevance: ${kw.relevance ? kw.relevance.toFixed(2) : 'N/A'})</li>`;
+                    });
+                    resultsHTML += `</ul>`;
+                } else {
+                    resultsHTML += `<p>No keywords extracted.</p>`;
+                }
+
+                if (data.entities && data.entities.length > 0) {
+                    resultsHTML += `<h4>Entities</h4><ul>`;
+                    data.entities.forEach(entity => {
+                        resultsHTML += `<li><strong>${entity.type}:</strong> ${entity.text} (Relevance: ${entity.relevance ? entity.relevance.toFixed(2) : 'N/A'})</li>`;
+                    });
+                    resultsHTML += `</ul>`;
+                } else {
+                    resultsHTML += `<p>No entities extracted.</p>`;
+                }
+
+                resultsDisplay.innerHTML = resultsHTML;
+                resultsDisplay.style.color = 'initial';
+
+                lastResumeAnalysisData = {
+                    keywords: data.keywords || [],
+                    entities: data.entities || []
+                };
+                console.log("Stored resume analysis data:", lastResumeAnalysisData);
+            } else {
+                lastResumeAnalysisData = null;
+                let errorMessage = `Error: ${response.status} ${response.statusText}`;
+                try {
+                    const errorData = await response.json();
+                    if (errorData && errorData.error) {
+                        errorMessage = errorData.error;
+                    }
+                } catch (e) {
+                    console.error("Failed to parse error JSON for /analyze_resume:", e);
+                }
+                resultsDisplay.innerHTML = `<p class="error-message">${errorMessage}</p>`;
+            }
+        } catch (error) {
+            console.error('Fetch error for /analyze_resume:', error);
+            resultsDisplay.innerHTML = `<p class="error-message">A network error occurred, or the server is unreachable. Please try again later.</p>`;
+        } finally {
+            buttonElement.disabled = false;
+            buttonElement.textContent = originalButtonText;
+        }
+    }
 
     if (analyzeButton) {
         analyzeButton.addEventListener('click', async () => {
             const originalButtonText = analyzeButton.textContent;
-            analyzeButton.disabled = true;
-            analyzeButton.textContent = 'Analyzing...';
-            resultsDisplay.innerHTML = ''; // Clear previous results
 
             if (!resumeUploadInput || !resumeUploadInput.files || resumeUploadInput.files.length === 0) {
-                resultsDisplay.textContent = 'Please select a resume file first.';
-                resultsDisplay.style.color = 'red';
+                resultsDisplay.innerHTML = '<p class="error-message">Please select a resume file first.</p>';
                 return;
             }
-
             const file = resumeUploadInput.files[0];
             const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
-
             if (!allowedTypes.includes(file.type)) {
-                resultsDisplay.textContent = 'Invalid file type. Please upload a PDF, DOC, DOCX, or TXT file.';
-                resultsDisplay.style.color = 'red';
+                resultsDisplay.innerHTML = '<p class="error-message">Invalid file type. Please upload a PDF, DOC, DOCX, or TXT file.</p>';
                 return;
             }
+            const formData = new FormData();
+            formData.append('resume', file);
+
+            performResumeAnalysis(formData, false, analyzeButton, originalButtonText, 'Analyzing...');
+        });
+    }
+
+    // Drag and Drop Functionality for Resume Analysis
+    if (dropZone) {
+        dropZone.addEventListener('dragover', (event) => {
+            event.preventDefault(); // Necessary to allow dropping
+            dropZone.classList.add('drop-zone-active');
+        });
+
+        dropZone.addEventListener('dragleave', (event) => {
+            dropZone.classList.remove('drop-zone-active');
+        });
+
+        dropZone.addEventListener('drop', async (event) => {
+            event.preventDefault(); // Prevent default browser action (opening file)
+            dropZone.classList.remove('drop-zone-active');
+
+            const files = event.dataTransfer.files;
+
+            if (files.length === 0) {
+                resultsDisplay.innerHTML = '<p class="error-message">No files dropped.</p>';
+                return;
+            }
+            if (files.length > 1) {
+                resultsDisplay.innerHTML = '<p class="error-message">Please drop only one file at a time.</p>';
+                return;
+            }
+
+            const file = files[0];
+
+            // Basic client-side file type validation (optional, backend also validates)
+            const allowedExtensions = ['.pdf', '.docx', '.txt'];
+            const fileExtension = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+            if (!allowedExtensions.includes(fileExtension)) {
+                 resultsDisplay.innerHTML = `<p class="error-message">Invalid file type: ${file.name}. Please upload .txt, .pdf, or .docx.</p>`;
+                 return;
+            }
+
+            const originalButtonText = analyzeButton.textContent; // Use analyzeButton's text for consistency
 
             const formData = new FormData();
             formData.append('resume', file);
 
-            // resultsDisplay.textContent = 'Analyzing...'; // Already handled by button text
-            resultsDisplay.style.color = '#333'; // Default text color for messages
+            // Call the existing common analysis function
+            // Pass analyzeButton itself, its original text, and a specific loading message for dropped files
+            await performResumeAnalysis(formData, false, analyzeButton, originalButtonText, 'Analyzing Dropped File...');
+        });
+    }
 
-            try {
-                // Validation moved after button state change, ensure finally block handles re-enable
-                if (!resumeUploadInput || !resumeUploadInput.files || resumeUploadInput.files.length === 0) {
-                    resultsDisplay.textContent = 'Please select a resume file first.';
-                    resultsDisplay.style.color = 'red';
-                    // No early return, allow finally to run
-                    throw new Error("Validation: No file selected."); // Throw error to be caught by catch and run finally
-                }
+    if (analyzeTextButton) {
+        analyzeTextButton.addEventListener('click', async () => {
+            const originalButtonText = analyzeTextButton.textContent;
+            const resumeText = resumeTextInput.value.trim();
 
-                const file = resumeUploadInput.files[0];
-                const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
-
-                if (!allowedTypes.includes(file.type)) {
-                    resultsDisplay.textContent = 'Invalid file type. Please upload a PDF, DOC, DOCX, or TXT file.';
-                    resultsDisplay.style.color = 'red';
-                    throw new Error("Validation: Invalid file type."); // Throw error
-                }
-
-                const formData = new FormData();
-                formData.append('resume', file);
-
-                const response = await fetch('/analyze_resume', {
-                    method: 'POST',
-                    body: formData,
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    let resultsHTML = `<h3>Resume Analysis for ${data.filename}</h3>`;
-                    resultsHTML += `<p><strong>Message:</strong> ${data.message}</p>`;
-
-                    if (data.keywords && data.keywords.length > 0) {
-                        resultsHTML += `<h4>Keywords</h4><ul>`; // Removed colon for consistency
-                        data.keywords.forEach(kw => {
-                            resultsHTML += `<li><strong>${kw.text}</strong> (Relevance: ${kw.relevance ? kw.relevance.toFixed(2) : 'N/A'})</li>`;
-                        });
-                        resultsHTML += `</ul>`;
-                    } else {
-                        resultsHTML += `<p>No keywords extracted.</p>`;
-                    }
-
-                    if (data.entities && data.entities.length > 0) {
-                        resultsHTML += `<h4>Entities</h4><ul>`; // Removed colon
-                        data.entities.forEach(entity => {
-                            resultsHTML += `<li><strong>${entity.type}:</strong> ${entity.text} (Relevance: ${entity.relevance ? entity.relevance.toFixed(2) : 'N/A'})</li>`;
-                        });
-                        resultsHTML += `</ul>`;
-                    } else {
-                        resultsHTML += `<p>No entities extracted.</p>`;
-                    }
-
-                    resultsDisplay.innerHTML = resultsHTML;
-                    resultsDisplay.style.color = 'initial'; // Reset color to default
-
-                    // Store keywords and entities for Job Match feature
-                    lastResumeAnalysisData = {
-                        keywords: data.keywords || [],
-                        entities: data.entities || []
-                    };
-                    console.log("Stored resume analysis data:", lastResumeAnalysisData);
-                } else {
-                    lastResumeAnalysisData = null; // Clear on error
-                    let errorMessage = `Error: ${response.status} ${response.statusText}`;
-                    try {
-                        const errorData = await response.json();
-                        if (errorData && errorData.error) {
-                            errorMessage = errorData.error;
-                        }
-                    } catch (e) {
-                        console.error("Failed to parse error JSON for analyze_resume:", e);
-                    }
-                    resultsDisplay.innerHTML = `<p class="error-message">${errorMessage}</p>`;
-                }
-            } catch (error) {
-                console.error('Fetch error for analyze_resume:', error);
-                resultsDisplay.innerHTML = `<p class="error-message">A network error occurred, or the server is unreachable. Please try again later.</p>`;
-            } finally {
-                analyzeButton.disabled = false;
-                analyzeButton.textContent = originalButtonText;
+            if (!resumeText) {
+                resultsDisplay.innerHTML = '<p class="error-message">Please paste some resume text to analyze.</p>';
+                return;
             }
+
+            const jsonData = { resume_text: resumeText, filename: "pasted_resume.txt" };
+            performResumeAnalysis(jsonData, true, analyzeTextButton, originalButtonText, 'Analyzing Text...');
         });
     }
 
