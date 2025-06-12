@@ -2178,11 +2178,11 @@ def analyze_resume():
         }), 200
 
     except ApiException as e:
-            logger.error(f"Watson NLU API error during analysis of '{filename}': {e.code} - {e.message}")
-            return jsonify({"error": f"Watson NLU API error: {e.message}"}), 500
-        except Exception as e:
-            logger.error(f"Unexpected error during Watson NLU analysis of '{filename}': {e}")
-            return jsonify({"error": "Analysis failed due to an unexpected server error."}), 500
+        logger.error(f"Watson NLU API error during analysis of '{filename}': {e.code} - {e.message}")
+        return jsonify({"error": f"Watson NLU API error: {e.message}"}), 500
+    except Exception as e:
+        logger.error(f"Unexpected error during Watson NLU analysis of '{filename}': {e}")
+        return jsonify({"error": "Analysis failed due to an unexpected server error."}), 500
 
     logger.error("File object was not valid in /analyze_resume for an unknown reason (should have been caught earlier).")
     return jsonify({"error": "An unexpected error occurred with the file processing."}), 500
