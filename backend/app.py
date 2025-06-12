@@ -4,6 +4,8 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 from flask import Flask, request, render_template_string, send_file, flash, redirect, url_for, session, g, jsonify, send_from_directory
+from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
 from flask_wtf import FlaskForm
 from flask_wtf.csrf import CSRFProtect
 from flask_session import Session
@@ -101,6 +103,15 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'a-very-secret-key-for-dev')
+
+# Database Configuration
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL') or \
+                                         'sqlite:///' + os.path.join(os.path.abspath(os.path.dirname(__file__)), '../instance/site.db')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False # Suppress a warning
+
+db = SQLAlchemy(app)
+migrate = Migrate(app, db)
+
 app.config['SESSION_TYPE'] = 'filesystem'
 Session(app)
 csrf = CSRFProtect(app)
