@@ -1,4 +1,15 @@
 def generate_resume_section_prompt(section_type, user_input, industry):
+    """Generate AI prompts with ATS optimization"""
+    ats_keywords = {
+        'technology': "Python, Java, AWS, Agile, DevOps, CI/CD, Kubernetes",
+        'marketing': "SEO, SEM, ROI, KPI, CRM, Google Analytics, Content Strategy",
+        'academic': "Peer Review, Curriculum Development, Research Methodology, Pedagogy",
+        'legal': "Litigation, Compliance, Contract Law, Legal Research, Deposition",
+        'healthcare': "HIPAA, EHR, Patient Care, Clinical Documentation, ICD-10",
+        'finance': "ROI, Forecasting, Financial Modeling, GAAP, Risk Management"
+    }
+    
+    industry_keywords = ats_keywords.get(industry, "")def generate_resume_section_prompt(section_type, user_input, industry):
     """Generate AI prompts for different resume sections"""
     industry_tips = {
         'technology': "Focus on technical skills, projects, and quantifiable achievements",
@@ -11,18 +22,19 @@ def generate_resume_section_prompt(section_type, user_input, industry):
     
     prompts = {
         'summary': f"""
-        Generate a professional resume summary for a {industry} professional with these details:
-        - Key skills: {user_input.get('technical_skills', '')}
-        - Experience: {user_input.get('experience_years', 0)} years
-        - Career focus: {user_input.get('career_focus', '')}
+        Generate an ATS-optimized professional resume summary for a {industry} professional.
+        Incorporate these keywords: {industry_keywords}
         
         Guidelines:
-        - Keep it to 3-4 sentences
-        - Include industry keywords: {industry_tips.get(industry, '')}
-        - Optimize for ATS systems
+        - Include 3-5 industry-specific keywords
+        - Keep to 3-4 sentences
         - Start with strongest selling point
-        """,
-        
+        - Highlight {user_input.get('years_experience', 3)} years of experience
+        - Focus on: {user_input.get('career_focus', '')}
+        """
+    }
+    return prompts.get(section_type, "")
+           
         'experience': f"""
         Refine this job description for a resume in the {industry} industry:
         Original: {user_input['achievements']}
