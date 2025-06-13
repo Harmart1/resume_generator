@@ -1,22 +1,23 @@
-from flask import Blueprint, render_template, request, session, redirect, url_for
-from .forms import IndustryForm, PersonalForm, ExperienceForm, SkillsForm, EducationForm, AdditionalForm
-from .utils.prompt_engine import generate_resume_section_prompt
-from .utils.industry_templates import get_industry_template
-from config.resume_builder_config import ResumeBuilderConfig
-import requests
-import json
-
-bp = Blueprint('resume_builder', __name__, 
-               template_folder='../../../frontend/templates/resume_builder',
-               static_folder='../../../frontend/static')
-
-config = ResumeBuilderConfig()
+# ... existing imports ...
+from .utils import translation  # NEW
+from .utils.translation import detect_language, translate_text  # NEW
 
 @bp.route('/resume-builder', methods=['GET'])
 def start():
     session.clear()
-    return redirect(url_for('resume_builder.step1_industry'))
+    return redirect(url_for('resume_builder.step0_language'))  # NEW first step
 
+# NEW Language selection step
+@bp.route('/step0', methods=['GET', 'POST'])
+def step0_language():
+    form = LanguageForm()
+    if form.validate_on_submit():
+        session['input_lang'] = form.input_language.data
+        session['output_lang'] = form.output_language.data
+        return redirect(url_for('resume_builder.step1_industry'))
+    return render_template('resume_builder/step0_language.html', form=form)
+
+# Updated industry step
 @bp.route('/step1', methods=['GET', 'POST'])
 def step1_industry():
     form = IndustryForm()
@@ -25,22 +26,7 @@ def step1_industry():
         return redirect(url_for('resume_builder.step2_personal'))
     return render_template('resume_builder/step1_industry.html', form=form)
 
-@bp.route('/step2', methods=['GET', 'POST'])
-def step2_personal():
-    form = PersonalForm()
-    if form.validate_on_submit():
-        session['personal'] = {
-            'full_name': form.full_name.data,
-            'email': form.email.data,
-            'phone': form.phone.data,
-            'location': form.location.data,
-            'linkedin': form.linkedin.data,
-            'portfolio': form.portfolio.data,
-            'summary': form.summary.data
-        }
-        return redirect(url_for('resume_builder.step3_experience'))
-    return render_template('resume_builder/step2_personal.html', form=form)
-
+# Updated experience handler with translation
 @bp.route('/step3', methods=['GET', 'POST'])
 def step3_experience():
     form = ExperienceForm()
@@ -48,10 +34,31 @@ def step3_experience():
     
     if form.validate_on_submit():
         if form.submit.data:  # Add button clicked
+            # Get languages
+            input_lang = session.get('input_lang', 'auto')
+            output_lang = session.get('output_lang', 'en')
+            
+            # Detect language if needed
+            if input_lang == 'auto':
+                input_lang = translation.detect_language(form.achievements.data)
+            
+            # Translate if needed
+            achievements = form.achievements.data
+            if input_lang != output_lang:
+                achievements = translation.translate_text(
+                    form.achievements.data, 
+                    target_lang=output_lang,
+                    source_lang=input_lang
+                )
+            
             # Generate refined achievements with AI
             prompt = generate_resume_section_prompt(
                 'experience',
-                {'achievements': form.achievements.data},
+                {
+                    'achievements': achievements,
+                    'job_title': form.job_title.data,
+                    'industry': session.get('industry', 'technology')
+                },
                 session.get('industry', 'technology')
             )
             
@@ -75,72 +82,16 @@ def step3_experience():
                           form=form, 
                           experiences=experiences)
 
-@bp.route('/step4', methods=['GET', 'POST'])
-def step4_skills():
-    form = SkillsForm()
-    if form.validate_on_submit():
-        session['skills'] = {
-            'technical_skills': form.technical_skills.data,
-            'soft_skills': form.soft_skills.data,
-            'certifications': form.certifications.data
-        }
-        return redirect(url_for('resume_builder.step5_education'))
-    return render_template('resume_builder/step4_skills.html', form=form)
-
-@bp.route('/step5', methods=['GET', 'POST'])
-def step5_education():
-    form = EducationForm()
-    education = session.get('education', [])
-    
-    if form.validate_on_submit():
-        if form.submit.data:  # Add button clicked
-            education.append({
-                'institution': form.institution.data,
-                'degree': form.degree.data,
-                'field_of_study': form.field_of_study.data,
-                'graduation_year': form.graduation_year.data
-            })
-            session['education'] = education
-            return redirect(url_for('resume_builder.step5_education'))
-        
-        elif form.continue_btn.data:  # Continue button clicked
-            return redirect(url_for('resume_builder.step6_additional'))
-    
-    return render_template('resume_builder/step5_education.html', 
-                          form=form, 
-                          education=education)
-
-@bp.route('/step6', methods=['GET', 'POST'])
-def step6_additional():
-    form = AdditionalForm()
-    if form.validate_on_submit():
-        session['additional'] = {
-            'projects': form.projects.data,
-            'languages': form.languages.data,
-            'volunteer': form.volunteer.data
-        }
-        
-        # Generate professional summary if not provided
-        if not session['personal'].get('summary'):
-            prompt = generate_resume_section_prompt(
-                'summary',
-                {
-                    'technical_skills': session['skills']['technical_skills'],
-                    'experience_years': len(session['experiences']),
-                    'career_focus': session['industry']
-                },
-                session['industry']
-            )
-            session['personal']['summary'] = generate_with_mistral(prompt)
-        
-        return redirect(url_for('resume_builder.preview'))
-    
-    return render_template('resume_builder/step6_additional.html', form=form)
-
+# Updated preview handler
 @bp.route('/preview', methods=['GET'])
 def preview():
     industry = session.get('industry', 'technology')
+    output_lang = session.get('output_lang', 'en')
     industry_css = get_industry_template(industry)
+    
+    # Get translated section titles
+    from .utils.translation import SECTION_TITLES
+    section_titles = SECTION_TITLES.get(output_lang, SECTION_TITLES['en'])
     
     return render_template('resume_builder/preview.html',
                            personal=session.get('personal', {}),
@@ -148,26 +99,6 @@ def preview():
                            skills=session.get('skills', {}),
                            education=session.get('education', []),
                            additional=session.get('additional', {}),
-                           industry_css=industry_css)
-
-def generate_with_mistral(prompt):
-    """Generate content using Mistral API"""
-    headers = {
-        "Authorization": f"Bearer {config.MISTRAL_API_KEY}",
-        "Content-Type": "application/json"
-    }
-    
-    payload = {
-        "model": "mistral-large-latest",
-        "messages": [{"role": "user", "content": prompt}],
-        "temperature": 0.5,
-        "max_tokens": 500
-    }
-    
-    try:
-        response = requests.post(config.MISTRAL_API_URL, headers=headers, json=payload, timeout=30)
-        response.raise_for_status()
-        return response.json()["choices"][0]["message"]["content"]
-    except Exception as e:
-        print(f"Error generating content: {e}")
-        return ""
+                           industry_css=industry_css,
+                           section_titles=section_titles,  # NEW
+                           lang=output_lang)  # NEW
