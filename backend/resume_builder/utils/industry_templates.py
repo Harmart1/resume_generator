@@ -1,14 +1,36 @@
 def get_industry_template(industry):
-    """Return CSS template for different industries"""
+    """Return enhanced industry-specific designs"""
     templates = {
         'technology': """
-            /* Tech Industry Styles */
-            .resume-header { background-color: #f8f9fa; border-bottom: 2px solid #6f42c1; }
-            h1 { color: #6f42c1; }
-            .section-title { border-bottom: 1px solid #6f42c1; }
-            .skill-badge { background-color: #e9ecef; color: #6f42c1; }
-        """,
-        
+            /* Tech Industry - Modern, Clean */
+            .resume-header { 
+                background: linear-gradient(135deg, #6f42c1 0%, #3a1c71 100%);
+                color: white;
+                padding: 30px;
+                border-radius: 10px 10px 0 0;
+            }
+            .desired-title {
+                font-size: 1.2rem;
+                color: #d8c7ff;
+                margin-top: 10px;
+            }
+            h1 { color: white; border: none; }
+            .contact-info a { color: #d8c7ff; }
+            .section-title { 
+                color: #6f42c1; 
+                border-bottom: 2px solid #6f42c1;
+                padding-bottom: 5px;
+            }
+            .skill-badge { 
+                background-color: #f0e6ff; 
+                color: #6f42c1;
+                font-weight: 600;
+            }
+          
+        # ... other industry designs ...
+        """Return CSS template for different industries"""
+    templates = {
+      
         'marketing': """
             /* Marketing Industry Styles */
             .resume-header { background-color: #f8f9fa; border-bottom: 2px solid #20c997; }
@@ -34,10 +56,30 @@ def get_industry_template(industry):
         """,
         
         'default': """
-            /* Default Resume Styles */
-            .resume-header { background-color: #f8f9fa; border-bottom: 2px solid #8B0000; }
-            h1 { color: #8B0000; }
-            .section-title { border-bottom: 1px solid #8B0000; }
+            /* Professional Default */
+            .resume-header { 
+                background: linear-gradient(135deg, #8B0000 0%, #5a0000 100%);
+                color: white;
+                padding: 30px;
+                border-radius: 10px 10px 0 0;
+            }
+            .desired-title {
+                font-size: 1.2rem;
+                color: #ffd8d8;
+                margin-top: 10px;
+            }
+            h1 { color: white; border: none; }
+            .contact-info a { color: #ffd8d8; }
+            .section-title { 
+                color: #8B0000; 
+                border-bottom: 2px solid #8B0000;
+                padding-bottom: 5px;
+            }
+            .skill-badge { 
+                background-color: #ffe6e6; 
+                color: #8B0000;
+                font-weight: 600;
+            }
         """
     }
     return templates.get(industry, templates['default'])
