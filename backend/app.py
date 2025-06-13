@@ -35,6 +35,11 @@ from werkzeug.utils import secure_filename # Explicitly import secure_filename
 from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user, login_required
 from flask_bcrypt import Bcrypt
 
+from backend.resume_builder import bp as resume_builder_bp
+from backend.cover_letter import bp as cover_letter_bp
+
+app.register_blueprint(resume_builder_bp, url_prefix='/resume-builder')
+app.register_blueprint(cover_letter_bp, url_prefix='/cover-letter')
 
 # For language detection
 try:
