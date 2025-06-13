@@ -76,3 +76,78 @@ def translate_text(text, target_lang='en', source_lang=None):
     except Exception as e:
         print(f"Translation error: {str(e)}")
         return text
+
+SECTION_TITLES = {
+    'en': {
+        'summary': 'Professional Summary',
+        'experience': 'Work Experience',
+        'skills': 'Skills',
+        'education': 'Education',
+        'projects': 'Projects',
+        'languages': 'Languages',
+        'volunteer': 'Volunteer Experience',
+        'contact': 'Contact',
+        'download': 'Download as PDF',
+        'create_another': 'Create Another Resume'
+    },
+    'es': {
+        'summary': 'Resumen Profesional',
+        'experience': 'Experiencia Laboral',
+        'skills': 'Habilidades',
+        'education': 'Educación',
+        'projects': 'Proyectos',
+        'languages': 'Idiomas',
+        'volunteer': 'Experiencia Voluntaria',
+        'contact': 'Contacto',
+        'download': 'Descargar como PDF',
+        'create_another': 'Crear otro currículum'
+    },
+    'fr': {
+        'summary': 'Résumé Professionnel',
+        'experience': 'Expérience Professionnelle',
+        'skills': 'Compétences',
+        'education': 'Éducation',
+        'projects': 'Projets',
+        'languages': 'Langues',
+        'volunteer': 'Bénévolat',
+        'contact': 'Contact',
+        'download': 'Télécharger en PDF',
+        'create_another': 'Créer un autre CV'
+    },
+    'de': {
+        'summary': 'Professionelle Zusammenfassung',
+        'experience': 'Berufserfahrung',
+        'skills': 'Fähigkeiten',
+        'education': 'Ausbildung',
+        'projects': 'Projekte',
+        'languages': 'Sprachen',
+        'volunteer': 'Ehrenamtliche Tätigkeit',
+        'contact': 'Kontakt',
+        'download': 'Als PDF herunterladen',
+        'create_another': 'Weiteren Lebenslauf erstellen'
+    },
+    'zh': {
+        'summary': '专业摘要',
+        'experience': '工作经验',
+        'skills': '技能',
+        'education': '教育背景',
+        'projects': '项目',
+        'languages': '语言',
+        'volunteer': '志愿者经历',
+        'contact': '联系方式',
+        'download': '下载PDF',
+        'create_another': '创建另一个简历'
+    },
+    'ja': {
+        'summary': 'プロフェッショナルサマリー',
+        'experience': '職務経験',
+        'skills': 'スキル',
+        'education': '学歴',
+        'projects': 'プロジェクト',
+        'languages': '言語',
+        'volunteer': 'ボランティア経験',
+        'contact': '連絡先',
+        'download': 'PDFでダウンロード',
+        'create_another': '別の履歴書を作成'
+    }
+}
