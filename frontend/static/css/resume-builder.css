@@ -1,0 +1,108 @@
+/* Resume Builder Specific Styles */
+.resume-builder-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 30px;
+}
+
+.step-card {
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    padding: 30px;
+    margin-bottom: 30px;
+}
+
+.step-header {
+    color: #8B0000;
+    border-bottom: 2px solid #8B0000;
+    padding-bottom: 15px;
+    margin-bottom: 25px;
+}
+
+.step-indicator {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 30px;
+}
+
+.step {
+    text-align: center;
+    flex: 1;
+    padding: 10px;
+    border-bottom: 3px solid #dee2e6;
+    color: #6c757d;
+}
+
+.step.active {
+    border-bottom: 3px solid #8B0000;
+    color: #8B0000;
+    font-weight: bold;
+}
+
+/* Resume Preview Styles */
+.resume-preview {
+    font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif;
+    font-size: 11pt;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: white;
+    box-shadow: 0 0 20px rgba(0,0,0,0.1);
+}
+
+.resume-header {
+    padding: 20px;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.resume-header h1 {
+    margin-bottom: 10px;
+}
+
+.contact-info {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.section {
+    margin-bottom: 20px;
+}
+
+.section-title {
+    padding-bottom: 5px;
+    margin-bottom: 10px;
+    font-variant: small-caps;
+}
+
+.job-item, .education-item {
+    margin-bottom: 15px;
+}
+
+.job-header, .education-header {
+    display: flex;
+    justify-content: space-between;
+}
+
+.job-title {
+    font-weight: bold;
+}
+
+.company {
+    font-style: italic;
+}
+
+.skills-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.skill-badge {
+    padding: 5px 10px;
+    border-radius: 4px;
+}
