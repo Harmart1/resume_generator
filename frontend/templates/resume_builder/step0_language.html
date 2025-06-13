@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="resume-builder-container">
+    <div class="step-indicator">
+        <div class="step active">1. Language</div>
+        <div class="step">2. Industry</div>
+        <div class="step">3. Personal</div>
+        <div class="step">4. Experience</div>
+        <div class="step">5. Skills</div>
+        <div class="step">6. Education</div>
+        <div class="step">7. Additional</div>
+    </div>
+    
+    <div class="step-card">
+        <h2 class="step-header">Select Languages</h2>
+        <p class="mb-4">Choose your input language and the language for your final resume. 
+        You can enter information in your native language, and we'll translate it professionally.</p>
+        
+        <form method="POST">
+            {{ form.hidden_tag() }}
+            
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        {{ form.input_language.label(class="form-label") }}
+                        {{ form.input_language(class="form-select") }}
+                        <div class="form-text">Select the language you'll use to input information</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        {{ form.output_language.label(class="form-label") }}
+                        {{ form.output_language(class="form-select") }}
+                        <div class="form-text">Select your resume output language</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="d-grid">
+                {{ form.submit(class="btn btn-primary btn-lg") }}
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
