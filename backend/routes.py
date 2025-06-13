@@ -114,3 +114,30 @@ def generate_with_mistral(prompt):
     except Exception as e:
         current_app.logger.error(f"Error generating cover letter: {str(e)}")
         return None
+
+@bp.route('/save-progress', methods=['POST'])
+def save_progress():
+    """Save resume progress to database"""
+    resume_data = {
+        'personal': session.get('personal', {}),
+        'experiences': session.get('experiences', []),
+        'skills': session.get('skills', {}),
+        'education': session.get('education', []),
+        'additional': session.get('additional', {}),
+        'industry': session.get('industry', 'technology'),
+        'languages': {
+            'input': session.get('input_lang', 'auto'),
+            'output': session.get('output_lang', 'en')
+        }
+    }
+    
+    # Generate unique resume ID
+    resume_id = str(uuid.uuid4())
+    
+    # Save to database (pseudo-code)
+    db.save_resume(resume_id, resume_data)
+    
+    return jsonify({
+        'resume_id': resume_id,
+        'message': 'Progress saved successfully'
+    })
