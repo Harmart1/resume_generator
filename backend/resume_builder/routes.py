@@ -102,3 +102,24 @@ def preview():
                            industry_css=industry_css,
                            section_titles=section_titles,  # NEW
                            lang=output_lang)  # NEW
+    @bp.route('/get-recommendations', methods=['POST'])
+
+    def get_recommendations():
+    """Get AI-powered resume suggestions"""
+    data = request.json
+    industry = data.get('industry', 'technology')
+    
+    prompt = f"""
+    As a professional career advisor specializing in {industry} resumes, provide 3 concrete suggestions 
+    to improve this resume content: {data['content']}
+    
+    Guidelines:
+    - Focus on ATS optimization
+    - Suggest industry-specific keywords
+    - Recommend quantifiable achievements
+    - Keep suggestions actionable
+    - Format as a bulleted list
+    """
+    
+    recommendations = generate_with_mistral(prompt)
+    return jsonify({'recommendations': recommendations})
