@@ -168,6 +168,7 @@ class UserCredit(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     credits_remaining = db.Column(db.Integer, nullable=False, default=0)
     last_updated = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    last_free_cover_letter_date = db.Column(db.DateTime, nullable=True, default=None) # New field
 
     user = db.relationship('User', backref=db.backref('credits', lazy=True, uselist=False))
 
