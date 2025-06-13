@@ -112,7 +112,15 @@
             {% endif %}
         </div>
         {% endif %}
-        
+
+        <div class="language-options mb-4">
+    <label>Download in:</label>
+    <a href="?lang=en" class="btn btn-sm btn-outline-primary">English</a>
+    <a href="?lang=es" class="btn btn-sm btn-outline-primary">Spanish</a>
+    <a href="?lang=fr" class="btn btn-sm btn-outline-primary">French</a>
+    <a href="?lang=de" class="btn btn-sm btn-outline-primary">German</a>
+    <a href="?lang=zh" class="btn btn-sm btn-outline-primary">Chinese</a>
+</div>
         <div class="text-center mt-5">
             <button onclick="window.print()" class="btn btn-primary">Download as PDF</button>
             <a href="{{ url_for('resume_builder.start') }}" class="btn btn-secondary">Create Another Resume</a>
