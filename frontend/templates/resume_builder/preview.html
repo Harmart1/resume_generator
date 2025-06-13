@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume Preview</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/resume-builder.css') }}">
+    <style>
+        {{ industry_css|safe }}
+    </style>
+</head>
+<body>
+    <div class="resume-preview">
+        <div class="resume-header">
+            <h1>{{ personal.full_name }}</h1>
+            <div class="contact-info">
+                {% if personal.email %}<span>{{ personal.email }}</span>{% endif %}
+                {% if personal.phone %}<span>{{ personal.phone }}</span>{% endif %}
+                {% if personal.location %}<span>{{ personal.location }}</span>{% endif %}
+                {% if personal.linkedin %}<span><a href="{{ personal.linkedin }}">LinkedIn</a></span>{% endif %}
+                {% if personal.portfolio %}<span><a href="{{ personal.portfolio }}">Portfolio</a></span>{% endif %}
+            </div>
+        </div>
+        
+        {% if personal.summary %}
+        <div class="section">
+            <h2 class="section-title">Professional Summary</h2>
+            <p>{{ personal.summary }}</p>
+        </div>
+        {% endif %}
+        
+        {% if experiences %}
+        <div class="section">
+            <h2 class="section-title">Work Experience</h2>
+            {% for job in experiences %}
+            <div class="job-item">
+                <div class="job-header">
+                    <div>
+                        <span class="job-title">{{ job.job_title }}</span>
+                        <span class="company">{{ job.company }}</span>
+                    </div>
+                    <div class="date">
+                        {{ job.start_date }} - {{ job.end_date or 'Present' }}
+                    </div>
+                </div>
+                <div class="job-location">{{ job.location }}</div>
+                <div class="achievements">
+                    {{ job.achievements|safe }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        {% if skills %}
+        <div class="section">
+            <h2 class="section-title">Skills</h2>
+            {% if skills.technical_skills %}
+            <div class="skills-container">
+                {% for skill in skills.technical_skills.split(',') %}
+                <span class="skill-badge">{{ skill.strip() }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            {% if skills.soft_skills %}
+            <p><strong>Soft Skills:</strong> {{ skills.soft_skills }}</p>
+            {% endif %}
+            
+            {% if skills.certifications %}
+            <p><strong>Certifications:</strong> {{ skills.certifications }}</p>
+            {% endif %}
+        </div>
+        {% endif %}
+        
+        {% if education %}
+        <div class="section">
+            <h2 class="section-title">Education</h2>
+            {% for edu in education %}
+            <div class="education-item">
+                <div class="education-header">
+                    <div>
+                        <span class="degree">{{ edu.degree }}</span>
+                        <span class="institution">{{ edu.institution }}</span>
+                    </div>
+                    <div class="date">{{ edu.graduation_year }}</div>
+                </div>
+                {% if edu.field_of_study %}
+                <div class="field-of-study">{{ edu.field_of_study }}</div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        {% if additional %}
+        <div class="section">
+            {% if additional.projects %}
+            <h2 class="section-title">Projects</h2>
+            <p>{{ additional.projects }}</p>
+            {% endif %}
+            
+            {% if additional.languages %}
+            <h2 class="section-title">Languages</h2>
+            <p>{{ additional.languages }}</p>
+            {% endif %}
+            
+            {% if additional.volunteer %}
+            <h2 class="section-title">Volunteer Experience</h2>
+            <p>{{ additional.volunteer }}</p>
+            {% endif %}
+        </div>
+        {% endif %}
+        
+        <div class="text-center mt-5">
+            <button onclick="window.print()" class="btn btn-primary">Download as PDF</button>
+            <a href="{{ url_for('resume_builder.start') }}" class="btn btn-secondary">Create Another Resume</a>
+        </div>
+    </div>
+</body>
+</html>
