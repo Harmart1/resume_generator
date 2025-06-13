@@ -1,14 +1,21 @@
 # ... existing imports ...
 from .utils import translation  # NEW
 from .utils.translation import detect_language, translate_text  # NEW
+from flask_login import login_required
+from backend.app import tier_required
+from . import bp # Import bp from the local __init__.py
 
 @bp.route('/resume-builder', methods=['GET'])
+@login_required
+@tier_required('free')
 def start():
     session.clear()
     return redirect(url_for('resume_builder.step0_language'))  # NEW first step
 
 # NEW Language selection step
 @bp.route('/step0', methods=['GET', 'POST'])
+@login_required
+@tier_required('free')
 def step0_language():
     form = LanguageForm()
     if form.validate_on_submit():
@@ -19,6 +26,8 @@ def step0_language():
 
 # Updated industry step
 @bp.route('/step1', methods=['GET', 'POST'])
+@login_required
+@tier_required('free')
 def step1_industry():
     form = IndustryForm()
     if form.validate_on_submit():
@@ -84,6 +93,8 @@ def step3_experience():
 
 # Updated preview handler
 @bp.route('/preview', methods=['GET'])
+@login_required
+@tier_required('free')
 def preview():
     industry = session.get('industry', 'technology')
     output_lang = session.get('output_lang', 'en')
@@ -102,9 +113,11 @@ def preview():
                            industry_css=industry_css,
                            section_titles=section_titles,  # NEW
                            lang=output_lang)  # NEW
-    @bp.route('/get-recommendations', methods=['POST'])
 
-    def get_recommendations():
+@bp.route('/get-recommendations', methods=['POST'])
+@login_required
+@tier_required('starter')
+def get_recommendations():
     """Get AI-powered resume suggestions"""
     data = request.json
     industry = data.get('industry', 'technology')

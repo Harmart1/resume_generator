@@ -1,0 +1,220 @@
+{% extends "app_base.html" %}
+
+{% block title %}Resume Analyzer & Optimizer - Revisume.ai{% endblock %}
+
+{% block content %}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="mb-6 sm:mb-8">
+                {% for category, message in messages %}
+                    <div class="flash-message {{ category }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <div id="analyzer" class="glass-card p-4 sm:p-6 md:p-10 mb-10 sm:mb-12">
+        <h2 class="text-2xl sm:text-3xl md:text-4xl font-sora font-extrabold text-electric-cyan mb-4 sm:mb-6 text-center leading-tight">Optimize Your Resume for Success</h2>
+        <p class="text-center text-secondary-light mb-6 sm:mb-8 max-w-2xl mx-auto text-sm sm:text-base md:text-lg">Paste your resume and an optional job description below, or upload files, for AI-powered analysis and optimization.</p>
+
+        <form method="POST" action="{{ url_for('index') }}" enctype="multipart/form-data" class="space-y-6 sm:space-y-8">
+            {{ form.csrf_token }}
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+                <div>
+                    {{ form.resume_text.label(class="block text-md sm:text-lg md:text-xl font-sora font-semibold text-tech-blue mb-2") }}
+                    {{ form.resume_text(class="w-full p-3 sm:p-4 rounded-lg shadow-inner focus:ring-electric-cyan focus:border-electric-cyan transition duration-200 resize-y glass-card-inner border border-electric-cyan border-opacity-30 text-primary-light placeholder-secondary-light", style="min-height: 150px; sm:min-height: 160px;") }}
+                    {% for error in form.resume_text.errors %}<p class="text-red-400 text-xs mt-1">{{ error }}</p>{% endfor %}
+                    <div class="mt-4">
+                        {{ form.resume_file.label(class="block text-md sm:text-lg md:text-xl font-sora font-semibold text-tech-blue mb-2") }}
+                        {{ form.resume_file(class="w-full text-primary-light text-xs sm:text-sm p-3 sm:p-4 border rounded-lg cursor-pointer bg-gray-700 bg-opacity-60 border-electric-cyan border-opacity-30 focus:outline-none focus:border-electric-cyan glass-card-inner") }}
+                        {% for error in form.resume_file.errors %}<p class="text-red-400 text-xs mt-1">{{ error }}</p>{% endfor %}
+                        <p class="text-xs text-secondary-light mt-1">Accepted formats: TXT, DOCX, PDF</p>
+                    </div>
+                </div>
+                <div>
+                    {{ form.job_description.label(class="block text-md sm:text-lg md:text-xl font-sora font-semibold text-tech-blue mb-2") }}
+                    {{ form.job_description(class="w-full p-3 sm:p-4 rounded-lg shadow-inner focus:ring-electric-cyan focus:border-electric-cyan transition duration-200 resize-y glass-card-inner border border-electric-cyan border-opacity-30 text-primary-light placeholder-secondary-light", style="min-height: 150px; sm:min-height: 160px;") }}
+                    {% for error in form.job_description.errors %}<p class="text-red-400 text-xs mt-1">{{ error }}</p>{% endfor %}
+                    <div class="mt-4">
+                        {{ form.job_description_file.label(class="block text-md sm:text-lg md:text-xl font-sora font-semibold text-tech-blue mb-2") }}
+                        {{ form.job_description_file(class="w-full text-primary-light text-xs sm:text-sm p-3 sm:p-4 border rounded-lg cursor-pointer bg-gray-700 bg-opacity-60 border-electric-cyan border-opacity-30 focus:outline-none focus:border-electric-cyan glass-card-inner") }}
+                        {% for error in form.job_description_file.errors %}<p class="text-red-400 text-xs mt-1">{{ error }}</p>{% endfor %}
+                        <p class="text-xs text-secondary-light mt-1">Accepted formats: TXT, DOCX, PDF</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5 md:gap-6 items-start">
+                <div>
+                    {{ form.industry.label(class="block text-md sm:text-lg font-sora font-semibold text-tech-blue mb-2") }}
+                    {{ form.industry(class="w-full p-3 sm:p-4 rounded-lg shadow-sm focus:ring-electric-cyan focus:border-electric-cyan transition duration-200 glass-card-inner border border-electric-cyan border-opacity-30 text-primary-light") }}
+                </div>
+                <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mt-2 md:mt-0">
+                    <div class="flex items-center space-x-2 sm:space-x-3">
+                        {{ form.insert_keywords(class="checkbox-custom flex-shrink-0") }}
+                        {{ form.insert_keywords.label(class="text-xs sm:text-sm md:text-base text-secondary-light font-medium cursor-pointer") }}
+                    </div>
+                    <div class="flex items-center space-x-2 sm:space-x-3">
+                        {{ form.highlight_keywords(class="checkbox-custom flex-shrink-0") }}
+                        {{ form.highlight_keywords.label(class="text-xs sm:text-sm md:text-base text-secondary-light font-medium cursor-pointer") }}
+                    </div>
+                    <div class="flex items-center space-x-2 sm:space-x-3 col-span-full">
+                        {{ form.auto_draft_enhancements(class="checkbox-custom flex-shrink-0") }}
+                        {{ form.auto_draft_enhancements.label(class="text-xs sm:text-sm md:text-base text-secondary-light font-medium cursor-pointer") }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5 md:gap-6 items-start pt-4 border-t border-accent-dark mt-6 sm:mt-8">
+                <div class="md:col-span-3 text-md sm:text-lg font-sora font-semibold text-tech-blue mb-1 sm:mb-2">Multilingual Options:</div>
+                <div class="flex items-center space-x-2 sm:space-x-3">
+                    {{ form.enable_translation(class="checkbox-custom flex-shrink-0") }}
+                    {{ form.enable_translation.label(class="text-xs sm:text-sm md:text-base text-secondary-light font-medium cursor-pointer") }}
+                </div>
+                <div>
+                    {{ form.target_language.label(class="block text-xs sm:text-sm md:text-base font-sora font-semibold text-secondary-light mb-1 sm:mb-2") }}
+                    {{ form.target_language(class="w-full p-3 sm:p-4 rounded-lg shadow-sm focus:ring-electric-cyan focus:border-electric-cyan transition duration-200 glass-card-inner border border-electric-cyan border-opacity-30 text-primary-light") }}
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5 md:gap-6 items-start pt-4 border-t border-accent-dark mt-6 sm:mt-8">
+                <div class="md:col-span-3 text-md sm:text-lg font-sora font-semibold text-tech-blue mb-1 sm:mb-2">Include General Resume Tips:</div>
+                <div class="flex items-center space-x-2 sm:space-x-3">
+                    {{ form.include_action_verb_list(class="checkbox-custom flex-shrink-0") }}
+                    {{ form.include_action_verb_list.label(class="text-xs sm:text-sm md:text-base text-secondary-light font-medium cursor-pointer") }}
+                </div>
+                <div class="flex items-center space-x-2 sm:space-x-3">
+                    {{ form.include_summary_best_practices(class="checkbox-custom flex-shrink-0") }}
+                    {{ form.include_summary_best_practices.label(class="text-xs sm:text-sm md:text-base text-secondary-light font-medium cursor-pointer") }}
+                </div>
+                <div class="flex items-center space-x-2 sm:space-x-3">
+                    {{ form.include_ats_formatting_tips(class="checkbox-custom flex-shrink-0") }}
+                    {{ form.include_ats_formatting_tips.label(class="text-xs sm:text-sm md:text-base text-secondary-light font-medium cursor-pointer") }}
+                </div>
+            </div>
+
+            <div class="text-center pt-4">
+                <button type="submit" class="btn-glow btn-primary inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 font-bold rounded-full shadow-lg text-white text-base sm:text-lg md:text-xl transition duration-300 ease-in-out transform hover:scale-105 w-full sm:w-auto">Analyze and Optimize Resume</button>
+            </div>
+        </form>
+        <div class="mt-6 text-center text-xs sm:text-sm text-secondary-light space-y-1">
+            <p><strong class="text-electric-cyan">Free Tier:</strong> Basic Resume Analyzer, Basic Resume Builder, Limited Suggestions.</p>
+            <p><strong class="text-neon-purple">Starter Tier:</strong> Enhanced Analyzer, Full Resume Builder (AI suggestions, translation), AI Cover Letter Drafts (1/month), Shared AI Credits.</p>
+            <p><strong class="text-tech-blue">Pro Tier:</strong> All Starter features, Unlimited Resume AI, Unlimited Cover Letter AI, Unlimited Shared AI Credits.</p>
+        </div>
+    </div>
+
+      <div id="pricing-section" class="glass-card p-4 sm:p-6 md:p-10 my-10 sm:my-12">
+          <h2 class="text-2xl sm:text-3xl md:text-4xl font-sora font-extrabold text-electric-cyan mb-6 sm:mb-8 text-center">Our Plans</h2>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+              <div class="border border-gray-700 rounded-lg p-4 sm:p-6 bg-gray-800 bg-opacity-50 flex flex-col">
+                  <h3 class="text-xl sm:text-2xl font-bold text-primary-light mb-2">Free</h3>
+                  <p class="text-2xl sm:text-3xl font-bold text-electric-cyan mb-4">$0</p>
+                  <ul class="space-y-2 text-secondary-light mb-6 text-xs sm:text-sm md:text-base flex-grow">
+                      <li>✓ Basic Resume Analysis</li>
+                      <li>✓ Limited Keyword Suggestions</li>
+                      <li>✓ Basic Resume Builder (limited templates)</li>
+                      <li>✓ Watermarked DOCX Download (Analyzer & Basic Resume)</li>
+                  </ul>
+                  <button class="w-full btn-disabled p-3 rounded-lg mt-auto text-sm sm:text-base">Your Current Plan</button>
+              </div>
+              <div class="border border-gray-700 rounded-lg p-4 sm:p-6 bg-gray-800 bg-opacity-50 flex flex-col">
+                  <h3 class="text-xl sm:text-2xl font-bold text-primary-light mb-2">Starter</h3>
+                  <p class="text-2xl sm:text-3xl font-bold text-neon-purple mb-4">$9 <span class="text-xs sm:text-sm">/mo</span></p>
+                  <ul class="space-y-2 text-secondary-light mb-6 text-xs sm:text-sm md:text-base flex-grow">
+                      <li>✓ Enhanced Analysis & ATS Tips</li>
+                      <li>✓ Full DOCX Exports</li>
+                      <li>✓ Smart Bullet-Point Suggestions</li>
+                      <li>✓ Full Resume Builder (all templates, AI suggestions for sections, translation)</li>
+                      <li>✓ 1 Cover Letter AI Draft Credit / month</li>
+                      <li>✓ 5 Shared AI Feature Credits / month (for Deep Dives, Resume AI, Cover Letter AI)</li>
+                  </ul>
+                  <button onclick="redirectToCheckout(STRIPE_STARTER_PRICE_ID_JS_VAR)" class="w-full btn-glow btn-primary p-3 rounded-lg mt-auto text-sm sm:text-base">Subscribe to Starter</button>
+              </div>
+              <div class="border border-gray-700 rounded-lg p-4 sm:p-6 bg-gray-800 bg-opacity-50 flex flex-col">
+                  <h3 class="text-xl sm:text-2xl font-bold text-primary-light mb-2">Pro</h3>
+                  <p class="text-2xl sm:text-3xl font-bold text-tech-blue mb-4">$19 <span class="text-xs sm:text-sm">/mo</span></p>
+                  <ul class="space-y-2 text-secondary-light mb-6 text-xs sm:text-sm md:text-base flex-grow">
+                      <li>✓ All Starter Features</li>
+                      <li>✓ Unlimited Resume Builder AI Features</li>
+                      <li>✓ Unlimited AI Cover Letter Drafts</li>
+                      <li>✓ Unlimited Shared AI Feature Credits</li>
+                      <li>✓ Priority Email Support</li>
+                  </ul>
+                  <button onclick="redirectToCheckout(STRIPE_PRO_PRICE_ID_JS_VAR)" class="w-full btn-glow btn-primary p-3 rounded-lg mt-auto text-sm sm:text-base" style="background: linear-gradient(45deg, #8A2BE2, #007BFF);">Subscribe to Pro</button>
+              </div>
+          </div>
+          <div class="mt-8 text-center">
+              <h3 class="text-lg sm:text-xl font-bold text-primary-light mb-3">Need More Credits?</h3>
+              <p class="text-secondary-light mb-4 text-xs sm:text-sm md:text-base">Purchase additional "Deep Dive" credits for your Starter plan.</p>
+              <button onclick="redirectToCheckout(STRIPE_CREDIT_PACK_PRICE_ID_JS_VAR)" class="btn-glow btn-download px-6 py-3 rounded-lg text-sm sm:text-base">Buy 5 Credits for $10</button>
+          </div>
+      </div>
+
+    {% if preview %}
+        <div id="results" class="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 sm:gap-10 mb-10 sm:mb-12">
+            <div class="lg:col-span-2">
+                {{ preview | safe }}
+            </div>
+            <div class="lg:col-span-2 glass-card p-4 sm:p-6 md:p-10">
+                <h2 class="text-2xl sm:text-3xl md:text-4xl font-sora font-extrabold text-electric-cyan mb-4 sm:mb-6 text-center leading-tight">Analysis & Suggestions</h2>
+                {% if match_data %}
+                    <div class="mb-6 p-4 sm:p-6 rounded-lg shadow-md analysis-card analysis-card-blue">
+                        <h3 class="text-lg sm:text-xl md:text-2xl font-bold text-electric-cyan mb-3 flex items-center">
+                            <svg class="w-6 h-6 sm:w-7 md:w-8 text-electric-cyan mr-2 sm:mr-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                            Job Match Score: <span class="text-highlight-score ml-2 text-xl sm:text-2xl md:text-3xl">{{ match_data.match_score }}%</span>
+                        </h3>
+                        <p class="text-primary-light text-xs sm:text-sm md:text-base font-inter">This score indicates how well your resume's keywords align. Aim higher!</p>
+                    </div>
+                    <div class="mb-6 p-4 sm:p-6 rounded-lg shadow-md analysis-card analysis-card-green">
+                        <h3 class="text-lg sm:text-xl md:text-2xl font-bold text-electric-cyan mb-3 flex items-center">
+                            <svg class="w-6 h-6 sm:w-7 md:w-8 text-electric-cyan mr-2 sm:mr-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            Matched Keywords ({{ match_data.matched_keywords|length }}):
+                        </h3>
+                        <p class="text-primary-light break-words text-xs sm:text-sm md:text-base font-inter">{{ match_data.matched_keywords|join(', ') if match_data.matched_keywords else 'No direct matches.' }}</p>
+                    </div>
+                    <div class="mb-6 p-4 sm:p-6 rounded-lg shadow-md analysis-card analysis-card-red">
+                        <h3 class="text-lg sm:text-xl md:text-2xl font-bold text-electric-cyan mb-3 flex items-center">
+                            <svg class="w-6 h-6 sm:w-7 md:w-8 text-electric-cyan mr-2 sm:mr-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path></svg>
+                            Missing Keywords ({{ match_data.missing_keywords|length }}):
+                        </h3>
+                        {% if match_data.missing_by_category %}
+                            <ul class="list-disc list-inside text-primary-light space-y-2 text-xs sm:text-sm md:text-base font-inter">
+                                {% if match_data.missing_by_category.technical %}<li><strong>Technical:</strong> <span class="break-words">{{ match_data.missing_by_category.technical|join(', ') }}</span></li>{% endif %}
+                                {% if match_data.missing_by_category.soft %}<li><strong>Soft Skills:</strong> <span class="break-words">{{ match_data.missing_by_category.soft|join(', ') }}</span></li>{% endif %}
+                                {% if match_data.missing_by_category.other %}<li><strong>Other:</strong> <span class="break-words">{{ match_data.missing_by_category.other|join(', ') }}</span></li>{% endif %}
+                            </ul>
+                        {% else %}<p class="text-primary-light text-xs sm:text-sm md:text-base font-inter">No missing keywords! Highly aligned.</p>{% endif %}
+                    </div>
+                {% else %}<p class="text-primary-light text-center py-6 text-sm sm:text-base md:text-lg font-inter">Paste job description for keyword analysis.</p>{% endif %}
+                {% if insert_recs %}
+                    <div class="mb-6 p-4 sm:p-6 rounded-lg shadow-md analysis-card analysis-card-yellow">
+                        <h3 class="text-lg sm:text-xl md:text-2xl font-bold text-electric-cyan mb-3 flex items-center">
+                            <svg class="w-6 h-6 sm:w-7 md:w-8 text-electric-cyan mr-2 sm:mr-3" fill="currentColor" viewBox="0 0 20 20"><path d="M11 3a1 1 0 10-2 0v1a1 1 0 102 0V3zM15.325 5.586a1 1 0 00-1.414-1.414L13.21 5.394a1 1 0 101.414 1.414l.707-.707zM17 10a1 1 0 00-2 0v1a1 1 0 102 0v-1zM14.636 14.636a1 1 0 001.414 1.414l.707-.707a1 1 0 10-1.414-1.414l-.707.707zM10 15a1 1 0 100 2h1a1 1 0 100-2h-1zM5.364 14.636a1 1 0 00-1.414-.707l-.707.707a1 1 0 101.414 1.414l.707-.707zM3 11a1 1 0 102 0v-1a1 1 0 10-2 0v1zM4.675 5.586a1 1 0 00-.707-.707l-.707.707a1 1 0 001.414 1.414l.707-.707z"></path></svg>
+                            Enhancement Suggestions:
+                        </h3>
+                        <ul class="list-disc list-inside text-primary-light space-y-2 text-xs sm:text-sm md:text-base font-inter">{% for rec in insert_recs %}<li>{{ rec | safe }}</li>{% endfor %}</ul>
+                    </div>
+                {% endif %}
+                {% if quantifiable_achievements %}
+                    <div class="mb-6 p-4 sm:p-6 rounded-lg shadow-md analysis-card analysis-card-purple">
+                        <h3 class="text-lg sm:text-xl md:text-2xl font-bold text-electric-cyan mb-3 flex items-center">
+                            <svg class="w-6 h-6 sm:w-7 md:w-8 text-electric-cyan mr-2 sm:mr-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M3 3a1 1 0 000 2h11a1 1 0 100-2H3zm0 4a1 1 0 000 2h7a1 1 0 100-2H3zm0 4a1 1 0 100 2h4a1 1 0 100-2H3zm0 4a1 1 0 100 2h11a1 1 0 100-2H3z" clip-rule="evenodd"></path></svg>
+                            Potential Quantifiable Achievements:
+                        </h3>
+                        <p class="text-primary-light mb-3 text-xs sm:text-sm md:text-base font-inter">Review these. Ensure they highlight impact with numbers!</p>
+                        <ul class="list-disc list-inside text-primary-light space-y-1 text-xs sm:text-sm md:text-base font-inter">{% for achievement in quantifiable_achievements %}<li>{{ achievement }}</li>{% endfor %}</ul>
+                        <p class="text-secondary-light text-xs sm:text-sm mt-3 font-inter">Example: "Increased sales by 15% ($50K) in Q3."</p>
+                    </div>
+                {% endif %}
+                <div class="text-center mt-6 sm:mt-10 space-y-4 md:space-y-0 md:space-x-4 flex flex-col md:flex-row justify-center items-center">
+                    {% if word_available %}
+                        <a href="{{ url_for('download_word') }}" class="btn-glow btn-download inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 font-bold rounded-full shadow-lg text-white text-sm sm:text-base md:text-lg transition duration-300 ease-in-out transform hover:scale-105 w-full md:w-auto">Download DOCX</a>
+                    {% else %}<button disabled class="btn-disabled inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 font-bold rounded-full shadow-md text-sm sm:text-base md:text-lg w-full md:w-auto">Download DOCX</button>{% endif %}
+                    <button disabled class="btn-disabled inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 font-bold rounded-full shadow-md text-sm sm:text-base md:text-lg w-full md:w-auto">Download PDF (Unavailable)</button>
+                </div>
+                <p class="text-xs sm:text-sm text-secondary-light mt-4 text-center w-full font-inter">To download as PDF, use browser's "Print to PDF" or download DOCX.</p>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}

@@ -36,7 +36,7 @@ from flask_login import LoginManager, UserMixin, login_user, logout_user, curren
 from flask_bcrypt import Bcrypt
 
 from backend.resume_builder import bp as resume_builder_bp
-from backend.cover_letter import bp as cover_letter_bp
+from backend.cover_letter_app import bp as cover_letter_bp
 
 app.register_blueprint(resume_builder_bp, url_prefix='/resume-builder')
 app.register_blueprint(cover_letter_bp, url_prefix='/cover-letter')
@@ -245,132 +245,6 @@ class LoginForm(FlaskForm):
     submit = SubmitField('Login')
 
 # --- Authentication Routes ---
-REGISTER_HTML_TEMPLATE = """
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register - Revisume.ai</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Sora:wght@400;600;700&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Inter', sans-serif; background-color: #1A1A2E; color: #E0E0E0; }
-        .container { max-width: 450px; margin: auto; padding-top: 5%; }
-        .form-card { background-color: rgba(26, 26, 46, 0.85); backdrop-filter: blur(10px); border: 1px solid rgba(0, 216, 255, 0.3); padding: 2rem; border-radius: 1rem; box-shadow: 0 8px 25px rgba(0,0,0,0.3); }
-        .form-input { background-color: rgba(15, 15, 26, 0.7); border: 1px solid rgba(0, 216, 255, 0.2); color: #E0E0E0; }
-        .form-input:focus { border-color: #00D8FF; box-shadow: 0 0 0 2px rgba(0, 216, 255, 0.5); }
-        .btn-submit { background: linear-gradient(45deg, #007BFF, #00D8FF); color: white; font-family: 'Sora', sans-serif; transition: all 0.3s ease; }
-        .btn-submit:hover { box-shadow: 0 0 15px rgba(0, 216, 255, 0.7); transform: translateY(-2px); }
-        .flash-message { padding: 0.75rem; margin-bottom: 1rem; border-radius: 0.5rem; text-align: center; }
-        .flash-message.error { background-color: rgba(255, 112, 67, 0.2); color: #FF7043; border: 1px solid #FF7043; }
-        .flash-message.success { background-color: rgba(105, 240, 174, 0.2); color: #69F0AE; border: 1px solid #69F0AE; }
-        .flash-message.info { background-color: rgba(129, 212, 250, 0.2); color: #81D4FA; border: 1px solid #81D4FA; }
-    </style>
-</head>
-<body class="flex items-center justify-center min-h-screen">
-    <div class="container px-4">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="flash-message {{ category }}">{{ message }}</div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-        <div class="form-card">
-            <h2 class="text-3xl font-bold text-center text-electric-cyan mb-6 font-sora">Create Account</h2>
-            <form method="POST" action="{{ url_for('register') }}">
-                {{ form.csrf_token }}
-                <div class="mb-4">
-                    {{ form.email.label(class="block text-primary-light text-sm font-bold mb-2") }}
-                    {{ form.email(class="shadow appearance-none border rounded w-full py-2 px-3 text-primary-light leading-tight focus:outline-none focus:shadow-outline form-input", placeholder="you@example.com") }}
-                    {% for error in form.email.errors %}<span class="text-red-400 text-xs">{{ error }}</span>{% endfor %}
-                </div>
-                <div class="mb-4">
-                    {{ form.password.label(class="block text-primary-light text-sm font-bold mb-2") }}
-                    {{ form.password(class="shadow appearance-none border rounded w-full py-2 px-3 text-primary-light leading-tight focus:outline-none focus:shadow-outline form-input", placeholder="********") }}
-                    {% for error in form.password.errors %}<span class="text-red-400 text-xs">{{ error }}</span>{% endfor %}
-                </div>
-                <div class="mb-6">
-                    {{ form.confirm_password.label(class="block text-primary-light text-sm font-bold mb-2") }}
-                    {{ form.confirm_password(class="shadow appearance-none border rounded w-full py-2 px-3 text-primary-light leading-tight focus:outline-none focus:shadow-outline form-input", placeholder="********") }}
-                    {% for error in form.confirm_password.errors %}<span class="text-red-400 text-xs">{{ error }}</span>{% endfor %}
-                </div>
-                <div class="flex items-center justify-between">
-                    {{ form.submit(class="btn-submit font-bold py-2 px-4 rounded-full focus:outline-none focus:shadow-outline w-full") }}
-                </div>
-            </form>
-            <p class="text-center text-secondary-light text-sm mt-6">
-                Already have an account? <a href="{{ url_for('login') }}" class="font-bold text-electric-cyan hover:text-tech-blue">Login here</a>.
-            </p>
-        </div>
-    </div>
-</body>
-</html>
-"""
-
-LOGIN_HTML_TEMPLATE = """
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Revisume.ai</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Sora:wght@400;600;700&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Inter', sans-serif; background-color: #1A1A2E; color: #E0E0E0; }
-        .container { max-width: 450px; margin: auto; padding-top: 5%; }
-        .form-card { background-color: rgba(26, 26, 46, 0.85); backdrop-filter: blur(10px); border: 1px solid rgba(0, 216, 255, 0.3); padding: 2rem; border-radius: 1rem; box-shadow: 0 8px 25px rgba(0,0,0,0.3); }
-        .form-input { background-color: rgba(15, 15, 26, 0.7); border: 1px solid rgba(0, 216, 255, 0.2); color: #E0E0E0; }
-        .form-input:focus { border-color: #00D8FF; box-shadow: 0 0 0 2px rgba(0, 216, 255, 0.5); }
-        .btn-submit { background: linear-gradient(45deg, #007BFF, #00D8FF); color: white; font-family: 'Sora', sans-serif; transition: all 0.3s ease; }
-        .btn-submit:hover { box-shadow: 0 0 15px rgba(0, 216, 255, 0.7); transform: translateY(-2px); }
-        .flash-message { padding: 0.75rem; margin-bottom: 1rem; border-radius: 0.5rem; text-align: center; }
-        .flash-message.error { background-color: rgba(255, 112, 67, 0.2); color: #FF7043; border: 1px solid #FF7043;}
-        .flash-message.success { background-color: rgba(105, 240, 174, 0.2); color: #69F0AE; border: 1px solid #69F0AE; }
-        .flash-message.info { background-color: rgba(129, 212, 250, 0.2); color: #81D4FA; border: 1px solid #81D4FA; }
-    </style>
-</head>
-<body class="flex items-center justify-center min-h-screen">
-    <div class="container px-4">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="flash-message {{ category }}">{{ message }}</div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-        <div class="form-card">
-            <h2 class="text-3xl font-bold text-center text-electric-cyan mb-6 font-sora">Welcome Back</h2>
-            <form method="POST" action="{{ url_for('login') }}">
-                {{ form.csrf_token }}
-                <div class="mb-4">
-                    {{ form.email.label(class="block text-primary-light text-sm font-bold mb-2") }}
-                    {{ form.email(class="shadow appearance-none border rounded w-full py-2 px-3 text-primary-light leading-tight focus:outline-none focus:shadow-outline form-input", placeholder="you@example.com") }}
-                    {% for error in form.email.errors %}<span class="text-red-400 text-xs">{{ error }}</span>{% endfor %}
-                </div>
-                <div class="mb-6">
-                    {{ form.password.label(class="block text-primary-light text-sm font-bold mb-2") }}
-                    {{ form.password(class="shadow appearance-none border rounded w-full py-2 px-3 text-primary-light leading-tight focus:outline-none focus:shadow-outline form-input", placeholder="********") }}
-                    {% for error in form.password.errors %}<span class="text-red-400 text-xs">{{ error }}</span>{% endfor %}
-                </div>
-                <div class="flex items-center justify-between">
-                    {{ form.submit(class="btn-submit font-bold py-2 px-4 rounded-full focus:outline-none focus:shadow-outline w-full") }}
-                </div>
-            </form>
-            <p class="text-center text-secondary-light text-sm mt-6">
-                Don't have an account? <a href="{{ url_for('register') }}" class="font-bold text-electric-cyan hover:text-tech-blue">Register here</a>.
-            </p>
-             <p class="text-center text-secondary-light text-sm mt-2">
-                <a href="{{ url_for('serve_homepage_file') }}" class="text-tech-blue hover:underline">Back to Homepage</a>
-            </p>
-        </div>
-    </div>
-</body>
-</html>
-"""
-
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if current_user.is_authenticated:
@@ -380,7 +254,7 @@ def register():
         existing_user = User.query.filter_by(email=form.email.data).first()
         if existing_user:
             flash('Email already exists. Please choose a different one or log in.', 'error')
-            return render_template_string(REGISTER_HTML_TEMPLATE, form=form)
+            return render_template('auth/register.html', form=form)
 
         user = User(email=form.email.data)
         user.set_password(form.password.data) # Hashes password
@@ -393,7 +267,7 @@ def register():
 
         flash('Your account has been created! You can now log in.', 'success')
         return redirect(url_for('login'))
-    return render_template_string(REGISTER_HTML_TEMPLATE, form=form)
+    return render_template('auth/register.html', form=form)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -409,7 +283,7 @@ def login():
             return redirect(next_page) if next_page else redirect(url_for('index'))
         else:
             flash('Login Unsuccessful. Please check email and password.', 'error')
-    return render_template_string(LOGIN_HTML_TEMPLATE, form=form)
+    return render_template('auth/login.html', form=form)
 
 @app.route('/logout')
 @login_required
@@ -1097,357 +971,7 @@ def export_to_word(text: str): # Unchanged for brevity, assume it's fine
     bio = BytesIO(); doc.save(bio); bio.seek(0)
     return bio
 
-# --- HTML Template (MODIFIED FOR RESPONSIVENESS AND AUTH STATE) ---
-HTML_TEMPLATE = """
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Revisume.ai</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Sora:wght@400;600;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
-    <style>
-        /* Custom Colors for Dark Mode */
-        .bg-gradient-dark { background: linear-gradient(135deg, #1A1A2E 0%, #0F0F1A 100%); }
-        .text-tech-blue { color: #007BFF; } .text-electric-cyan { color: #00D8FF; } .text-neon-purple { color: #8A2BE2; }
-        .text-primary-light { color: #E0E0E0; } .text-secondary-light { color: #A0AEC0; }
-        .header-text-color { color: #00D8FF; } .border-accent-dark { border-color: #00D8FF; }
-        .text-strong-accent { color: #00FFFF; } .text-highlight-score { color: #7D00FF; }
-        .font-inter { font-family: 'Inter', sans-serif; } .font-sora { font-family: 'Sora', sans-serif; } .font-space-grotesk { font-family: 'Space Grotesk', sans-serif; }
-        body { font-family: 'Inter', sans-serif; background-color: #1A1A2E; color: #E0E0E0; }
-        .container { max-width: 1200px; margin: 0 auto; padding: 1rem; }
-        @media (min-width: 640px) { .container { padding: 1.5rem; } } @media (min-width: 1024px) { .container { padding: 2rem; } }
-        .glass-card { background-color: rgba(26, 26, 46, 0.7); backdrop-filter: blur(15px); border-radius: 1.25rem; border: 1px solid rgba(0, 216, 255, 0.4); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4); transition: transform 0.3s ease, box-shadow 0.3s ease; }
-        .glass-card:hover { transform: translateY(-3px); box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5); }
-        .glass-card-inner { background-color: rgba(15, 15, 26, 0.8); border-radius: 1rem; border: 1px solid rgba(0, 216, 255, 0.2); }
-        .flash-message { padding: 1rem; margin-bottom: 1.5rem; border-radius: 0.75rem; font-weight: 600; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); text-align: center; border-left: 5px solid; transition: all 0.3s ease-in-out; font-family: 'Sora', sans-serif; }
-        .flash-message.error { color: #FF7043; background-color: rgba(255, 112, 67, 0.15); border-color: #FF7043; }
-        .flash-message.success { color: #69F0AE; background-color: rgba(105, 240, 174, 0.15); border-color: #69F0AE; }
-        .flash-message.info { color: #81D4FA; background-color: rgba(129, 212, 250, 0.15); border-color: #81D4FA; }
-        textarea::-webkit-scrollbar { width: 8px; } textarea::-webkit-scrollbar-track { background: #2D3748; border-radius: 10px; }
-        textarea::-webkit-scrollbar-thumb { background: #007BFF; border-radius: 10px; } textarea::-webkit-scrollbar-thumb:hover { background: #00D8FF; }
-        mark { background-color: rgba(0, 255, 255, 0.3); color: #1A1A2E; border-radius: 0.3rem; padding: 0 0.3rem; font-weight: 700; }
-        .btn-glow { position: relative; z-index: 1; overflow: hidden; border-radius: 9999px; }
-        .btn-glow::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle at center, rgba(0,216,255,0.4), transparent 70%); transition: transform 0.6s ease-out; transform: scale(0); z-index: -1; opacity: 0; }
-        .btn-glow:hover::before { transform: scale(1); opacity: 1; }
-        .btn-primary { background: linear-gradient(45deg, #007BFF, #00D8FF); color: white; transition: all 0.3s ease; font-family: 'Sora', sans-serif; font-weight: 700; }
-        .btn-primary:hover { box-shadow: 0 0 20px rgba(0, 216, 255, 0.8); transform: translateY(-3px); }
-        .btn-download { background: linear-gradient(45deg, #8A2BE2, #007BFF); color: white; transition: all 0.3s ease; font-family: 'Sora', sans-serif; font-weight: 700; }
-        .btn-download:hover { box-shadow: 0 0 20px rgba(138, 43, 226, 0.8); transform: translateY(-3px); }
-        .btn-disabled { background-color: #2D3748; color: #4A5568; cursor: not-allowed; box-shadow: none; font-family: 'Sora', sans-serif; font-weight: 600; }
-        .analysis-card { border-radius: 0.8rem; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); transition: transform 0.2s ease-in-out, box-shadow 0.2s ease; background-color: rgba(26, 26, 46, 0.6); border: 1px solid rgba(0, 216, 255, 0.2); color: #E0E0E0; }
-        .analysis-card:hover { transform: translateY(-4px); box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4); }
-        .analysis-card-blue { border-left: 5px solid #007BFF; } .analysis-card-green { border-left: 5px solid #00D8FF; }
-        .analysis-card-red { border-left: 5px solid #FF7043; } .analysis-card-yellow { border-left: 5px solid #FFEB3B; } .analysis-card-purple { border-left: 5px solid #8A2BE2; }
-        .analysis-card h3 { color: #00D8FF; display: flex; align-items: center; font-family: 'Sora', sans-serif; font-weight: 700; }
-        .analysis-card svg { color: #00FFFF; filter: drop-shadow(0 0 5px rgba(0, 255, 255, 0.7)); }
-        .analysis-card ul li strong { color: #7D00FF; } .analysis-card strong { font-weight: 700; }
-        input[type="checkbox"].checkbox-custom { -webkit-appearance: none; -moz-appearance: none; appearance: none; display: inline-block; vertical-align: middle; width: 1.6rem; height: 1.6rem; border-radius: 0.35rem; border: 2px solid #007BFF; background-color: rgba(0, 0, 0, 0.2); cursor: pointer; transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s; }
-        input[type="checkbox"].checkbox-custom:checked { background-color: #00D8FF; border-color: #00D8FF; box-shadow: 0 0 10px rgba(0, 216, 255, 0.8); }
-        input[type="checkbox"].checkbox-custom:checked::after { content: '\\2713'; color: #1A1A2E; font-size: 1.3rem; line-height: 1; display: block; text-align: center; margin-top: -1px; }
-        input[type="checkbox"].checkbox-custom:focus { outline: none; box-shadow: 0 0 0 4px rgba(0, 123, 255, 0.6); }
-        header { background-color: rgba(15, 15, 26, 0.8); border-bottom: 1px solid rgba(0, 216, 255, 0.3); box-shadow: 0 3px 15px rgba(0, 0, 0, 0.3); }
-        header h1 { color: #00D8FF; font-weight: 700; }
-        header nav ul li a { color: #E0E0E0; font-weight: 500; } header nav ul li a:hover { color: #00FFFF; }
-        footer { background-color: rgba(15, 15, 26, 0.8); border-top: 1px solid rgba(0, 216, 255, 0.3); box-shadow: 0 -3px 15px rgba(0, 0, 0, 0.3); }
-        footer p { color: #E0E0E0; font-weight: 500; } footer p.text-gray-500 { color: #A0AEC0; }
-    </style>
-</head>
-<body class="bg-gradient-dark font-inter min-h-screen flex flex-col">
-    <header class="p-4 shadow-lg md:p-6">
-        <div class="container flex flex-col md:flex-row justify-between items-center">
-            <div class="flex items-center mb-4 md:mb-0">
-                <a href="{{ url_for('serve_homepage_file') }}"> <!-- Link logo to welcome page -->
-                    <img src="/static/logo.png" alt="Revisume.ai Logo" class="h-10 sm:h-12 mr-3" onerror="this.onerror=null;this.src='https://placehold.co/48x48/1A1A2E/00D8FF?text=AI';">
-                </a>
-                <a href="{{ url_for('serve_homepage_file') }}"> <!-- Link text to welcome page -->
-                    <h1 class="text-2xl sm:text-3xl font-space-grotesk font-bold header-text-color">Revisume.ai</h1>
-                </a>
-            </div>
-            <nav class="mb-4 md:mb-0">
-                <ul class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 md:space-x-6 text-base sm:text-lg text-center sm:text-left">
-                    <li><a href="{{ url_for('index') }}#analyzer" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light">Analyzer</a></li>
-                    <li><a href="{{ url_for('index') }}#results" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light">Results</a></li>
-                    <li><a href="{{ url_for('index') }}#pricing-section" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light">Pricing</a></li>
-                    {% if current_user.is_authenticated %}
-                        <li><a href="{{ url_for('logout') }}" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light">Logout</a></li>
-                    {% else %}
-                        <li><a href="{{ url_for('login') }}" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light">Login</a></li>
-                        <li><a href="{{ url_for('register') }}" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light">Register</a></li>
-                    {% endif %}
-                </ul>
-            </nav>
-            {% if current_user.is_authenticated %}
-            <div class="text-xs sm:text-sm text-secondary-light p-2 bg-gray-700 bg-opacity-70 rounded-lg shadow text-center md:text-left mt-4 md:mt-0">
-                <p>User: <span class="text-electric-cyan font-semibold">{{ current_user.email }}</span></p>
-                <p>Tier: <span class="text-neon-purple font-semibold">{{ current_user.tier | capitalize }}</span>
-                {% if current_user.credits and current_user.credits.credits_remaining is defined %}
-                    | Credits: <span class="text-tech-blue font-semibold">{{ current_user.credits.credits_remaining }}</span>
-                {% endif %}
-                </p>
-            </div>
-            {% endif %}
-        </div>
-    </header>
-
-    <main class="container py-6 sm:py-10 flex-grow">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                <div class="mb-6 sm:mb-8">
-                    {% for category, message in messages %}
-                        <div class="flash-message {{ category }}">{{ message }}</div>
-                    {% endfor %}
-                </div>
-            {% endif %}
-        {% endwith %}
-
-        <div id="analyzer" class="glass-card p-4 sm:p-6 md:p-10 mb-10 sm:mb-12">
-            <h2 class="text-2xl sm:text-3xl md:text-4xl font-sora font-extrabold text-electric-cyan mb-4 sm:mb-6 text-center leading-tight">Optimize Your Resume for Success</h2>
-            <p class="text-center text-secondary-light mb-6 sm:mb-8 max-w-2xl mx-auto text-sm sm:text-base md:text-lg">Paste your resume and an optional job description below, or upload files, for AI-powered analysis and optimization.</p>
-
-            <form method="POST" action="{{ url_for('index') }}" enctype="multipart/form-data" class="space-y-6 sm:space-y-8">
-                {{ form.csrf_token }}
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
-                    <div>
-                        {{ form.resume_text.label(class="block text-md sm:text-lg md:text-xl font-sora font-semibold text-tech-blue mb-2") }}
-                        {{ form.resume_text(class="w-full p-3 sm:p-4 rounded-lg shadow-inner focus:ring-electric-cyan focus:border-electric-cyan transition duration-200 resize-y glass-card-inner border border-electric-cyan border-opacity-30 text-primary-light placeholder-secondary-light", style="min-height: 150px; sm:min-height: 160px;") }}
-                        {% for error in form.resume_text.errors %}<p class="text-red-400 text-xs mt-1">{{ error }}</p>{% endfor %}
-                        <div class="mt-4">
-                            {{ form.resume_file.label(class="block text-md sm:text-lg md:text-xl font-sora font-semibold text-tech-blue mb-2") }}
-                            {{ form.resume_file(class="w-full text-primary-light text-xs sm:text-sm p-3 sm:p-4 border rounded-lg cursor-pointer bg-gray-700 bg-opacity-60 border-electric-cyan border-opacity-30 focus:outline-none focus:border-electric-cyan glass-card-inner") }}
-                            {% for error in form.resume_file.errors %}<p class="text-red-400 text-xs mt-1">{{ error }}</p>{% endfor %}
-                            <p class="text-xs text-secondary-light mt-1">Accepted formats: TXT, DOCX, PDF</p>
-                        </div>
-                    </div>
-                    <div>
-                        {{ form.job_description.label(class="block text-md sm:text-lg md:text-xl font-sora font-semibold text-tech-blue mb-2") }}
-                        {{ form.job_description(class="w-full p-3 sm:p-4 rounded-lg shadow-inner focus:ring-electric-cyan focus:border-electric-cyan transition duration-200 resize-y glass-card-inner border border-electric-cyan border-opacity-30 text-primary-light placeholder-secondary-light", style="min-height: 150px; sm:min-height: 160px;") }}
-                        {% for error in form.job_description.errors %}<p class="text-red-400 text-xs mt-1">{{ error }}</p>{% endfor %}
-                        <div class="mt-4">
-                            {{ form.job_description_file.label(class="block text-md sm:text-lg md:text-xl font-sora font-semibold text-tech-blue mb-2") }}
-                            {{ form.job_description_file(class="w-full text-primary-light text-xs sm:text-sm p-3 sm:p-4 border rounded-lg cursor-pointer bg-gray-700 bg-opacity-60 border-electric-cyan border-opacity-30 focus:outline-none focus:border-electric-cyan glass-card-inner") }}
-                            {% for error in form.job_description_file.errors %}<p class="text-red-400 text-xs mt-1">{{ error }}</p>{% endfor %}
-                            <p class="text-xs text-secondary-light mt-1">Accepted formats: TXT, DOCX, PDF</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5 md:gap-6 items-start">
-                    <div>
-                        {{ form.industry.label(class="block text-md sm:text-lg font-sora font-semibold text-tech-blue mb-2") }}
-                        {{ form.industry(class="w-full p-3 sm:p-4 rounded-lg shadow-sm focus:ring-electric-cyan focus:border-electric-cyan transition duration-200 glass-card-inner border border-electric-cyan border-opacity-30 text-primary-light") }}
-                    </div>
-                    <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mt-2 md:mt-0">
-                        <div class="flex items-center space-x-2 sm:space-x-3">
-                            {{ form.insert_keywords(class="checkbox-custom flex-shrink-0") }}
-                            {{ form.insert_keywords.label(class="text-xs sm:text-sm md:text-base text-secondary-light font-medium cursor-pointer") }}
-                        </div>
-                        <div class="flex items-center space-x-2 sm:space-x-3">
-                            {{ form.highlight_keywords(class="checkbox-custom flex-shrink-0") }}
-                            {{ form.highlight_keywords.label(class="text-xs sm:text-sm md:text-base text-secondary-light font-medium cursor-pointer") }}
-                        </div>
-                        <div class="flex items-center space-x-2 sm:space-x-3 col-span-full">
-                            {{ form.auto_draft_enhancements(class="checkbox-custom flex-shrink-0") }}
-                            {{ form.auto_draft_enhancements.label(class="text-xs sm:text-sm md:text-base text-secondary-light font-medium cursor-pointer") }}
-                        </div>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5 md:gap-6 items-start pt-4 border-t border-accent-dark mt-6 sm:mt-8">
-                    <div class="md:col-span-3 text-md sm:text-lg font-sora font-semibold text-tech-blue mb-1 sm:mb-2">Multilingual Options:</div>
-                    <div class="flex items-center space-x-2 sm:space-x-3">
-                        {{ form.enable_translation(class="checkbox-custom flex-shrink-0") }}
-                        {{ form.enable_translation.label(class="text-xs sm:text-sm md:text-base text-secondary-light font-medium cursor-pointer") }}
-                    </div>
-                    <div>
-                        {{ form.target_language.label(class="block text-xs sm:text-sm md:text-base font-sora font-semibold text-secondary-light mb-1 sm:mb-2") }}
-                        {{ form.target_language(class="w-full p-3 sm:p-4 rounded-lg shadow-sm focus:ring-electric-cyan focus:border-electric-cyan transition duration-200 glass-card-inner border border-electric-cyan border-opacity-30 text-primary-light") }}
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5 md:gap-6 items-start pt-4 border-t border-accent-dark mt-6 sm:mt-8">
-                    <div class="md:col-span-3 text-md sm:text-lg font-sora font-semibold text-tech-blue mb-1 sm:mb-2">Include General Resume Tips:</div>
-                    <div class="flex items-center space-x-2 sm:space-x-3">
-                        {{ form.include_action_verb_list(class="checkbox-custom flex-shrink-0") }}
-                        {{ form.include_action_verb_list.label(class="text-xs sm:text-sm md:text-base text-secondary-light font-medium cursor-pointer") }}
-                    </div>
-                    <div class="flex items-center space-x-2 sm:space-x-3">
-                        {{ form.include_summary_best_practices(class="checkbox-custom flex-shrink-0") }}
-                        {{ form.include_summary_best_practices.label(class="text-xs sm:text-sm md:text-base text-secondary-light font-medium cursor-pointer") }}
-                    </div>
-                    <div class="flex items-center space-x-2 sm:space-x-3">
-                        {{ form.include_ats_formatting_tips(class="checkbox-custom flex-shrink-0") }}
-                        {{ form.include_ats_formatting_tips.label(class="text-xs sm:text-sm md:text-base text-secondary-light font-medium cursor-pointer") }}
-                    </div>
-                </div>
-
-                <div class="text-center pt-4">
-                    <button type="submit" class="btn-glow btn-primary inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 font-bold rounded-full shadow-lg text-white text-base sm:text-lg md:text-xl transition duration-300 ease-in-out transform hover:scale-105 w-full sm:w-auto">Analyze and Optimize Resume</button>
-                </div>
-            </form>
-            <div class="mt-6 text-center text-xs sm:text-sm text-secondary-light space-y-1">
-                <p><strong class="text-electric-cyan">Free Tier:</strong> Basic analysis, Limited suggestions.</p>
-                <p><strong class="text-neon-purple">Starter Tier:</strong> Enhanced analysis, Smart Bullet Points, 1 "Deep Dive" credit/month.</p>
-                <p><strong class="text-tech-blue">Pro Tier:</strong> All Starter features, Unlimited "Deep Dives", AI Cover Letter drafts.</p>
-            </div>
-        </div>
-
-          <div id="pricing-section" class="glass-card p-4 sm:p-6 md:p-10 my-10 sm:my-12">
-              <h2 class="text-2xl sm:text-3xl md:text-4xl font-sora font-extrabold text-electric-cyan mb-6 sm:mb-8 text-center">Our Plans</h2>
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
-                  <div class="border border-gray-700 rounded-lg p-4 sm:p-6 bg-gray-800 bg-opacity-50 flex flex-col">
-                      <h3 class="text-xl sm:text-2xl font-bold text-primary-light mb-2">Free</h3>
-                      <p class="text-2xl sm:text-3xl font-bold text-electric-cyan mb-4">$0</p>
-                      <ul class="space-y-2 text-secondary-light mb-6 text-xs sm:text-sm md:text-base flex-grow">
-                          <li>✓ Basic Resume Analysis</li>
-                          <li>✓ Limited Keyword Suggestions</li>
-                          <li>✓ Watermarked DOCX Download</li>
-                      </ul>
-                      <button class="w-full btn-disabled p-3 rounded-lg mt-auto text-sm sm:text-base">Your Current Plan</button>
-                  </div>
-                  <div class="border border-gray-700 rounded-lg p-4 sm:p-6 bg-gray-800 bg-opacity-50 flex flex-col">
-                      <h3 class="text-xl sm:text-2xl font-bold text-primary-light mb-2">Starter</h3>
-                      <p class="text-2xl sm:text-3xl font-bold text-neon-purple mb-4">$9 <span class="text-xs sm:text-sm">/mo</span></p>
-                      <ul class="space-y-2 text-secondary-light mb-6 text-xs sm:text-sm md:text-base flex-grow">
-                          <li>✓ Enhanced Analysis & ATS Tips</li>
-                          <li>✓ Full DOCX Exports</li>
-                          <li>✓ Smart Bullet-Point Suggestions</li>
-                          <li>✓ 1 "Deep Dive" AI Analysis Credit / month</li>
-                      </ul>
-                      <button onclick="redirectToCheckout(STRIPE_STARTER_PRICE_ID_JS_VAR)" class="w-full btn-glow btn-primary p-3 rounded-lg mt-auto text-sm sm:text-base">Subscribe to Starter</button>
-                  </div>
-                  <div class="border border-gray-700 rounded-lg p-4 sm:p-6 bg-gray-800 bg-opacity-50 flex flex-col">
-                      <h3 class="text-xl sm:text-2xl font-bold text-primary-light mb-2">Pro</h3>
-                      <p class="text-2xl sm:text-3xl font-bold text-tech-blue mb-4">$19 <span class="text-xs sm:text-sm">/mo</span></p>
-                      <ul class="space-y-2 text-secondary-light mb-6 text-xs sm:text-sm md:text-base flex-grow">
-                          <li>✓ All Starter Features</li>
-                          <li>✓ Unlimited "Deep Dives"</li>
-                          <li>✓ AI Cover Letter Drafts</li>
-                          <li>✓ Priority Email Support</li>
-                      </ul>
-                      <button onclick="redirectToCheckout(STRIPE_PRO_PRICE_ID_JS_VAR)" class="w-full btn-glow btn-primary p-3 rounded-lg mt-auto text-sm sm:text-base" style="background: linear-gradient(45deg, #8A2BE2, #007BFF);">Subscribe to Pro</button>
-                  </div>
-              </div>
-              <div class="mt-8 text-center">
-                  <h3 class="text-lg sm:text-xl font-bold text-primary-light mb-3">Need More Credits?</h3>
-                  <p class="text-secondary-light mb-4 text-xs sm:text-sm md:text-base">Purchase additional "Deep Dive" credits for your Starter plan.</p>
-                  <button onclick="redirectToCheckout(STRIPE_CREDIT_PACK_PRICE_ID_JS_VAR)" class="btn-glow btn-download px-6 py-3 rounded-lg text-sm sm:text-base">Buy 5 Credits for $10</button>
-              </div>
-          </div>
-
-        {% if preview %}
-            <div id="results" class="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 sm:gap-10 mb-10 sm:mb-12">
-                <div class="lg:col-span-2">
-                    {{ preview | safe }}
-                </div>
-                <div class="lg:col-span-2 glass-card p-4 sm:p-6 md:p-10">
-                    <h2 class="text-2xl sm:text-3xl md:text-4xl font-sora font-extrabold text-electric-cyan mb-4 sm:mb-6 text-center leading-tight">Analysis & Suggestions</h2>
-                    {% if match_data %}
-                        <div class="mb-6 p-4 sm:p-6 rounded-lg shadow-md analysis-card analysis-card-blue">
-                            <h3 class="text-lg sm:text-xl md:text-2xl font-bold text-electric-cyan mb-3 flex items-center">
-                                <svg class="w-6 h-6 sm:w-7 md:w-8 text-electric-cyan mr-2 sm:mr-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
-                                Job Match Score: <span class="text-highlight-score ml-2 text-xl sm:text-2xl md:text-3xl">{{ match_data.match_score }}%</span>
-                            </h3>
-                            <p class="text-primary-light text-xs sm:text-sm md:text-base font-inter">This score indicates how well your resume's keywords align. Aim higher!</p>
-                        </div>
-                        <div class="mb-6 p-4 sm:p-6 rounded-lg shadow-md analysis-card analysis-card-green">
-                            <h3 class="text-lg sm:text-xl md:text-2xl font-bold text-electric-cyan mb-3 flex items-center">
-                                <svg class="w-6 h-6 sm:w-7 md:w-8 text-electric-cyan mr-2 sm:mr-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                Matched Keywords ({{ match_data.matched_keywords|length }}):
-                            </h3>
-                            <p class="text-primary-light break-words text-xs sm:text-sm md:text-base font-inter">{{ match_data.matched_keywords|join(', ') if match_data.matched_keywords else 'No direct matches.' }}</p>
-                        </div>
-                        <div class="mb-6 p-4 sm:p-6 rounded-lg shadow-md analysis-card analysis-card-red">
-                            <h3 class="text-lg sm:text-xl md:text-2xl font-bold text-electric-cyan mb-3 flex items-center">
-                                <svg class="w-6 h-6 sm:w-7 md:w-8 text-electric-cyan mr-2 sm:mr-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path></svg>
-                                Missing Keywords ({{ match_data.missing_keywords|length }}):
-                            </h3>
-                            {% if match_data.missing_by_category %}
-                                <ul class="list-disc list-inside text-primary-light space-y-2 text-xs sm:text-sm md:text-base font-inter">
-                                    {% if match_data.missing_by_category.technical %}<li><strong>Technical:</strong> <span class="break-words">{{ match_data.missing_by_category.technical|join(', ') }}</span></li>{% endif %}
-                                    {% if match_data.missing_by_category.soft %}<li><strong>Soft Skills:</strong> <span class="break-words">{{ match_data.missing_by_category.soft|join(', ') }}</span></li>{% endif %}
-                                    {% if match_data.missing_by_category.other %}<li><strong>Other:</strong> <span class="break-words">{{ match_data.missing_by_category.other|join(', ') }}</span></li>{% endif %}
-                                </ul>
-                            {% else %}<p class="text-primary-light text-xs sm:text-sm md:text-base font-inter">No missing keywords! Highly aligned.</p>{% endif %}
-                        </div>
-                    {% else %}<p class="text-primary-light text-center py-6 text-sm sm:text-base md:text-lg font-inter">Paste job description for keyword analysis.</p>{% endif %}
-                    {% if insert_recs %}
-                        <div class="mb-6 p-4 sm:p-6 rounded-lg shadow-md analysis-card analysis-card-yellow">
-                            <h3 class="text-lg sm:text-xl md:text-2xl font-bold text-electric-cyan mb-3 flex items-center">
-                                <svg class="w-6 h-6 sm:w-7 md:w-8 text-electric-cyan mr-2 sm:mr-3" fill="currentColor" viewBox="0 0 20 20"><path d="M11 3a1 1 0 10-2 0v1a1 1 0 102 0V3zM15.325 5.586a1 1 0 00-1.414-1.414L13.21 5.394a1 1 0 101.414 1.414l.707-.707zM17 10a1 1 0 00-2 0v1a1 1 0 102 0v-1zM14.636 14.636a1 1 0 001.414 1.414l.707-.707a1 1 0 10-1.414-1.414l-.707.707zM10 15a1 1 0 100 2h1a1 1 0 100-2h-1zM5.364 14.636a1 1 0 00-1.414-.707l-.707.707a1 1 0 101.414 1.414l.707-.707zM3 11a1 1 0 102 0v-1a1 1 0 10-2 0v1zM4.675 5.586a1 1 0 00-.707-.707l-.707.707a1 1 0 001.414 1.414l.707-.707z"></path></svg>
-                                Enhancement Suggestions:
-                            </h3>
-                            <ul class="list-disc list-inside text-primary-light space-y-2 text-xs sm:text-sm md:text-base font-inter">{% for rec in insert_recs %}<li>{{ rec | safe }}</li>{% endfor %}</ul>
-                        </div>
-                    {% endif %}
-                    {% if quantifiable_achievements %}
-                        <div class="mb-6 p-4 sm:p-6 rounded-lg shadow-md analysis-card analysis-card-purple">
-                            <h3 class="text-lg sm:text-xl md:text-2xl font-bold text-electric-cyan mb-3 flex items-center">
-                                <svg class="w-6 h-6 sm:w-7 md:w-8 text-electric-cyan mr-2 sm:mr-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M3 3a1 1 0 000 2h11a1 1 0 100-2H3zm0 4a1 1 0 000 2h7a1 1 0 100-2H3zm0 4a1 1 0 100 2h4a1 1 0 100-2H3zm0 4a1 1 0 100 2h11a1 1 0 100-2H3z" clip-rule="evenodd"></path></svg>
-                                Potential Quantifiable Achievements:
-                            </h3>
-                            <p class="text-primary-light mb-3 text-xs sm:text-sm md:text-base font-inter">Review these. Ensure they highlight impact with numbers!</p>
-                            <ul class="list-disc list-inside text-primary-light space-y-1 text-xs sm:text-sm md:text-base font-inter">{% for achievement in quantifiable_achievements %}<li>{{ achievement }}</li>{% endfor %}</ul>
-                            <p class="text-secondary-light text-xs sm:text-sm mt-3 font-inter">Example: "Increased sales by 15% ($50K) in Q3."</p>
-                        </div>
-                    {% endif %}
-                    <div class="text-center mt-6 sm:mt-10 space-y-4 md:space-y-0 md:space-x-4 flex flex-col md:flex-row justify-center items-center">
-                        {% if word_available %}
-                            <a href="{{ url_for('download_word') }}" class="btn-glow btn-download inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 font-bold rounded-full shadow-lg text-white text-sm sm:text-base md:text-lg transition duration-300 ease-in-out transform hover:scale-105 w-full md:w-auto">Download DOCX</a>
-                        {% else %}<button disabled class="btn-disabled inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 font-bold rounded-full shadow-md text-sm sm:text-base md:text-lg w-full md:w-auto">Download DOCX</button>{% endif %}
-                        <button disabled class="btn-disabled inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 font-bold rounded-full shadow-md text-sm sm:text-base md:text-lg w-full md:w-auto">Download PDF (Unavailable)</button>
-                    </div>
-                    <p class="text-xs sm:text-sm text-secondary-light mt-4 text-center w-full font-inter">To download as PDF, use browser's "Print to PDF" or download DOCX.</p>
-                </div>
-            </div>
-        {% endif %}
-    </main>
-
-    <footer class="p-4 text-center mt-auto md:p-6">
-        <div class="container">
-            <p class="text-sm sm:text-base md:text-lg font-sora text-primary-light">&copy; {{ now | strftime('%Y') }} Revisume.ai. All rights reserved.</p>
-            <p class="text-xs sm:text-sm mt-2 text-secondary-light font-inter">Crafted with AI for your career success. 🚀</p>
-        </div>
-    </footer>
-    <script>
-        const STRIPE_STARTER_PRICE_ID_JS_VAR = "{{ STRIPE_STARTER_PRICE_ID_TEMPLATE_VAR or 'YOUR_STARTER_PRICE_ID' }}";
-        const STRIPE_PRO_PRICE_ID_JS_VAR = "{{ STRIPE_PRO_PRICE_ID_TEMPLATE_VAR or 'YOUR_PRO_PRICE_ID' }}";
-        const STRIPE_CREDIT_PACK_PRICE_ID_JS_VAR = "{{ STRIPE_CREDIT_PACK_PRICE_ID_TEMPLATE_VAR or 'YOUR_CREDIT_PACK_PRICE_ID' }}";
-        const IS_USER_AUTHENTICATED_JS_VAR = {{ current_user.is_authenticated | tojson }};
-
-        async function redirectToCheckout(priceId) {
-            if (!IS_USER_AUTHENTICATED_JS_VAR) {
-                alert("Please log in or register to subscribe or purchase credits.");
-                window.location.href = "{{ url_for('login') }}?next=" + encodeURIComponent(window.location.pathname + window.location.hash);
-                return;
-            }
-            if (!priceId || priceId.includes("YOUR_")) {
-                alert("Stripe Price ID is not configured correctly.");
-                return;
-            }
-            try {
-                const response = await fetch("{{ url_for('create_checkout_session') }}", {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': document.querySelector('input[name="csrf_token"]').value },
-                    body: JSON.stringify({ price_id: priceId })
-                });
-                const sessionData = await response.json(); // Renamed to avoid conflict with 'session' global
-                if (sessionData.url) {
-                    window.location.href = sessionData.url;
-                } else if (sessionData.error) {
-                    alert('Error creating checkout session: ' + sessionData.error);
-                }
-            } catch (error) {
-                alert('Failed to initiate checkout. See console.');
-                console.error('redirectToCheckout error:', error);
-            }
-        }
-    </script>
-</body>
-</html>
-"""
-
+# --- Main Application Route ---
 @app.route('/', methods=['GET', 'POST'])
 def index():
     global nlp # Ensure global nlp is used
@@ -1588,7 +1112,7 @@ def index():
             flash('An unexpected error occurred. Please simplify input or try again.', 'error')
             # Don't redirect on major error, allow form to re-render with user input
 
-    return render_template_string(HTML_TEMPLATE,
+    return render_template('main_app_index.html',
                                 form=form,
                                 preview=preview, # This will be from session on GET after POST
                                 match_data=match_data,

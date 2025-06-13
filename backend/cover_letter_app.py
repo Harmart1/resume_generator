@@ -1,17 +1,17 @@
-from flask import Flask, request, render_template, redirect, url_for, flash
+from flask import Blueprint, request, render_template, redirect, url_for, flash, current_app
 from cov_let import CoverLetterForm
 from file_utils import extract_text_from_file
 from prompt_engine import build_cover_letter_prompt
 from security import rate_limited, validate_input_length
+from flask_login import login_required
+from backend.app import tier_required # Assuming this can be accessed
 import os
 import tempfile
 import requests
 from datetime import datetime
 import uuid
 
-app = Flask(__name__)
-app.config['SECRET_KEY'] = os.environ.get('FLASK_SECRET_KEY', 'default-secret-key')
-app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5MB file limit
+bp = Blueprint('cover_letter', __name__, template_folder='../../frontend/templates')
 
 # Mistral API Configuration
 MISTRAL_API_KEY = os.environ.get('MISTRAL_API_KEY', 'Om9YIaeWFVHtKqvMTt7jc9DGn47dF1Go')
@@ -41,18 +41,22 @@ def generate_with_mistral(prompt):
         response.raise_for_status()
         return response.json()["choices"][0]["message"]["content"]
     except requests.exceptions.RequestException as e:
-        app.logger.error(f"Mistral API request failed: {str(e)}")
+        current_app.logger.error(f"Mistral API request failed: {str(e)}")
         return None
     except (KeyError, ValueError) as e:
-        app.logger.error(f"Error parsing Mistral response: {str(e)}")
+        current_app.logger.error(f"Error parsing Mistral response: {str(e)}")
         return None
 
-@app.route('/', methods=['GET'])
+@bp.route('/', methods=['GET'])
+@login_required
+@tier_required('pro')
 def index():
     form = CoverLetterForm()
     return render_template('cover_letter_form.html', form=form)
 
-@app.route('/generate', methods=['POST'])
+@bp.route('/generate', methods=['POST'])
+@login_required
+@tier_required('pro')
 @rate_limited
 def generate():
     form = CoverLetterForm()
@@ -107,7 +111,7 @@ def generate():
     
     # Add tracking ID for analytics
     tracking_id = str(uuid.uuid4())[:8]
-    app.logger.info(f"Generated cover letter - Tracking ID: {tracking_id}")
+    current_app.logger.info(f"Generated cover letter - Tracking ID: {tracking_id}")
     
     # Render with consistent styling
     return render_template(
@@ -121,14 +125,10 @@ def generate():
         tracking_id=tracking_id
     )
 
-@app.errorhandler(413)
+@bp.errorhandler(413)
 def request_entity_too_large(error):
     return 'File too large (max 5MB)', 413
 
-@app.errorhandler(429)
+@bp.errorhandler(429)
 def ratelimit_handler(error):
     return 'Too many requests. Please try again in a minute.', 429
-
-if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
