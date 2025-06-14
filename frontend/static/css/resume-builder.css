@@ -1,108 +1,67 @@
-/* Resume Builder Specific Styles */
-.resume-builder-container {
-    max-width: 800px;
-    margin: 0 auto;
-    padding: 30px;
-}
+/* Resume Builder Specific Styles - Stripped down */
 
-.step-card {
-    background-color: white;
-    border-radius: 10px;
-    box-shadow: 0 0 20px rgba(0,0,0,0.1);
-    padding: 30px;
-    margin-bottom: 30px;
-}
+/* Styles for the content within the .resume-preview-area if not covered by industry_css */
+/* These are fallback/base styles for the resume content itself. */
+/* Industry-specific CSS (industry_css) is expected to override these. */
 
-.step-header {
-    color: #8B0000;
-    border-bottom: 2px solid #8B0000;
-    padding-bottom: 15px;
-    margin-bottom: 25px;
-}
-
-.step-indicator {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 30px;
-}
-
-.step {
-    text-align: center;
-    flex: 1;
-    padding: 10px;
-    border-bottom: 3px solid #dee2e6;
-    color: #6c757d;
-}
-
-.step.active {
-    border-bottom: 3px solid #8B0000;
-    color: #8B0000;
-    font-weight: bold;
-}
-
-/* Resume Preview Styles */
-.resume-preview {
-    font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif;
+.resume-preview-area { /* This class is applied to the main div in preview.html */
+    font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif; /* Classic resume font */
     font-size: 11pt;
-    max-width: 800px;
-    margin: 0 auto;
-    padding: 20px;
-    background-color: white;
-    box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    line-height: 1.4;
+    color: #333; /* Default text color for resume content */
 }
 
-.resume-header {
-    padding: 20px;
-    margin-bottom: 20px;
-    text-align: center;
-}
-
-.resume-header h1 {
-    margin-bottom: 10px;
-}
-
-.contact-info {
-    display: flex;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 15px;
-    margin-bottom: 15px;
-}
-
-.section {
-    margin-bottom: 20px;
-}
-
-.section-title {
-    padding-bottom: 5px;
-    margin-bottom: 10px;
-    font-variant: small-caps;
-}
-
-.job-item, .education-item {
-    margin-bottom: 15px;
-}
-
-.job-header, .education-header {
-    display: flex;
-    justify-content: space-between;
-}
-
-.job-title {
+.resume-preview-area h1,
+.resume-preview-area h2,
+.resume-preview-area h3 {
     font-weight: bold;
+    color: #000; /* Darker color for headings in resume content */
 }
 
-.company {
-    font-style: italic;
+.resume-preview-area .section-title {
+    /* Basic styling for section titles if not handled by industry_css */
+    /* Example: font-variant: small-caps; */
+    /* Margin and padding for these should be handled by Tailwind in preview.html or by industry_css */
 }
 
-.skills-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
+.resume-preview-area .skill-badge {
+    /* Base styling for skill badges, can be overridden by industry_css */
+    /* Example: display: inline-block; background-color: #f0f0f0; padding: 2px 8px; margin: 2px; border-radius: 4px; */
 }
 
-.skill-badge {
-    padding: 5px 10px;
-    border-radius: 4px;
+.resume-preview-area a {
+    color: #0066cc; /* Standard link color for resume content */
+    text-decoration: none;
 }
+
+.resume-preview-area a:hover {
+    text-decoration: underline;
+}
+
+/* Any other highly specific, non-layout styles for resume content elements can go here */
+/* For example, specific list stylings if ul/li are used within achievements */
+.resume-preview-area ul {
+    list-style-type: disc; /* Or square, or none if handled by achievements content */
+    padding-left: 20px; /* Example indent for bullets */
+}
+
+.resume-preview-area li {
+    margin-bottom: 4px;
+}
+
+/*
+    The following classes from the original file have been removed as their
+    styling is now primarily handled by Tailwind CSS utilities directly in the HTML templates
+    or by the overall app_base.html styling:
+
+    - resume-builder-container
+    - step-card
+    - step-header
+    - step-indicator
+    - step
+    - step.active
+
+    Layout aspects of .resume-preview (max-width, margin, padding, bg-color, shadow)
+    are now handled by Tailwind classes on the .resume-preview-area div in preview.html.
+    Typography (font-family, font-size) for the resume content itself is set above.
+*/

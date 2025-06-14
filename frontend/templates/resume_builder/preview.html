@@ -1,52 +1,88 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Resume Preview</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/resume-builder.css') }}">
-    <style>
-        {{ industry_css|safe }}
-    </style>
-</head>
-<body>
-    <div class="resume-preview">
-        <div class="resume-header">
-            <h1>{{ personal.full_name }}</h1>
-            <div class="contact-info">
-                {% if personal.email %}<span>{{ personal.email }}</span>{% endif %}
-                {% if personal.phone %}<span>{{ personal.phone }}</span>{% endif %}
-                {% if personal.location %}<span>{{ personal.location }}</span>{% endif %}
-                {% if personal.linkedin %}<span><a href="{{ personal.linkedin }}">LinkedIn</a></span>{% endif %}
-                {% if personal.portfolio %}<span><a href="{{ personal.portfolio }}">Portfolio</a></span>{% endif %}
+{% extends "app_base.html" %}
+
+{% block title %}Resume Preview - Resume Builder - Revisume.ai{% endblock %}
+
+{% block content %}
+<style>
+    /* Styles for printing */
+    @media print {
+        body * {
+            visibility: hidden;
+        }
+        .resume-preview-area, .resume-preview-area * {
+            visibility: visible;
+        }
+        .resume-preview-area {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            border: none;
+            box-shadow: none;
+        }
+        .no-print {
+            display: none !important;
+        }
+    }
+    /* Dynamic industry-specific styles will be injected here */
+    {{ industry_css|safe }}
+</style>
+
+<div class="w-full max-w-4xl mx-auto py-8 px-4">
+    <div class="no-print mb-6 flex flex-wrap justify-center items-center gap-2">
+        <span class="text-secondary-light mr-2">Switch Template (Language &amp; Style):</span>
+        <a href="{{ url_for('resume_builder.preview', industry='technology', lang=lang) }}" class="btn-glow btn-primary text-xs px-3 py-1 rounded-full">Tech</a>
+        <a href="{{ url_for('resume_builder.preview', industry='finance', lang=lang) }}" class="btn-glow btn-primary text-xs px-3 py-1 rounded-full">Finance</a>
+        <a href="{{ url_for('resume_builder.preview', industry='creative', lang=lang) }}" class="btn-glow btn-primary text-xs px-3 py-1 rounded-full">Creative</a>
+         <a href="{{ url_for('resume_builder.preview', industry='generic', lang=lang) }}" class="btn-glow btn-primary text-xs px-3 py-1 rounded-full">Generic</a>
+    </div>
+    <div class="language-options no-print mb-6 flex flex-wrap justify-center items-center gap-2">
+        <span class="text-secondary-light mr-2">Preview Language:</span>
+        <a href="{{ url_for('resume_builder.preview', industry=industry, lang='en') }}" class="btn-glow btn-primary text-xs px-3 py-1 rounded-full {% if lang == 'en' %}ring-2 ring-electric-cyan ring-offset-2 ring-offset-gray-800{% endif %}">EN</a>
+        <a href="{{ url_for('resume_builder.preview', industry=industry, lang='es') }}" class="btn-glow btn-primary text-xs px-3 py-1 rounded-full {% if lang == 'es' %}ring-2 ring-electric-cyan ring-offset-2 ring-offset-gray-800{% endif %}">ES</a>
+        <a href="{{ url_for('resume_builder.preview', industry=industry, lang='fr') }}" class="btn-glow btn-primary text-xs px-3 py-1 rounded-full {% if lang == 'fr' %}ring-2 ring-electric-cyan ring-offset-2 ring-offset-gray-800{% endif %}">FR</a>
+        <a href="{{ url_for('resume_builder.preview', industry=industry, lang='de') }}" class="btn-glow btn-primary text-xs px-3 py-1 rounded-full {% if lang == 'de' %}ring-2 ring-electric-cyan ring-offset-2 ring-offset-gray-800{% endif %}">DE</a>
+        <a href="{{ url_for('resume_builder.preview', industry=industry, lang='zh') }}" class="btn-glow btn-primary text-xs px-3 py-1 rounded-full {% if lang == 'zh' %}ring-2 ring-electric-cyan ring-offset-2 ring-offset-gray-800{% endif %}">ZH</a>
+    </div>
+
+    <!-- Resume Preview Area -->
+    <div class="resume-preview-area bg-white text-gray-900 p-6 sm:p-8 md:p-12 shadow-2xl rounded-lg">
+        <div class="resume-header text-center mb-6">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-800">{{ personal.full_name }}</h1>
+            <div class="contact-info text-sm text-gray-600 mt-2">
+                {% if personal.email %}<span class="mx-2">{{ personal.email }}</span>{% endif %}
+                {% if personal.phone %}<span class="mx-2">{{ personal.phone }}</span>{% endif %}
+                {% if personal.location %}<span class="mx-2">{{ personal.location }}</span>{% endif %}
+                {% if personal.linkedin %}<a href="{{ personal.linkedin }}" class="text-blue-600 hover:underline mx-2">LinkedIn</a>{% endif %}
+                {% if personal.portfolio %}<a href="{{ personal.portfolio }}" class="text-blue-600 hover:underline mx-2">Portfolio</a>{% endif %}
             </div>
         </div>
         
         {% if personal.summary %}
-        <div class="section">
-            <h2 class="section-title">Professional Summary</h2>
-            <p>{{ personal.summary }}</p>
+        <div class="section mb-5">
+            <h2 class="section-title text-xl font-semibold border-b-2 border-gray-300 pb-1 mb-2">{{ section_titles.get('summary', 'Professional Summary') }}</h2>
+            <p class="text-gray-700 text-sm leading-relaxed">{{ personal.summary }}</p>
         </div>
         {% endif %}
         
         {% if experiences %}
-        <div class="section">
-            <h2 class="section-title">Work Experience</h2>
+        <div class="section mb-5">
+            <h2 class="section-title text-xl font-semibold border-b-2 border-gray-300 pb-1 mb-2">{{ section_titles.get('experience', 'Work Experience') }}</h2>
             {% for job in experiences %}
-            <div class="job-item">
-                <div class="job-header">
+            <div class="job-item mb-4">
+                <div class="job-header flex justify-between items-center mb-1">
                     <div>
-                        <span class="job-title">{{ job.job_title }}</span>
-                        <span class="company">{{ job.company }}</span>
+                        <h3 class="job-title text-lg font-medium text-gray-800">{{ job.job_title }}</h3>
+                        <p class="company text-md text-gray-700">{{ job.company }}{% if job.location %}, {{ job.location }}{% endif %}</p>
                     </div>
-                    <div class="date">
+                    <div class="date text-sm text-gray-600">
                         {{ job.start_date }} - {{ job.end_date or 'Present' }}
                     </div>
                 </div>
-                <div class="job-location">{{ job.location }}</div>
-                <div class="achievements">
-                    {{ job.achievements|safe }}
+                <div class="achievements text-sm text-gray-700 pl-4 leading-relaxed">
+                    {{ job.achievements|safe }} {# Assumes achievements are pre-formatted HTML (e.g. bullet points) #}
                 </div>
             </div>
             {% endfor %}
@@ -54,40 +90,41 @@
         {% endif %}
         
         {% if skills %}
-        <div class="section">
-            <h2 class="section-title">Skills</h2>
+        <div class="section mb-5">
+            <h2 class="section-title text-xl font-semibold border-b-2 border-gray-300 pb-1 mb-2">{{ section_titles.get('skills', 'Skills') }}</h2>
             {% if skills.technical_skills %}
-            <div class="skills-container">
+            <div class="skills-container mb-2">
+                <strong class="text-gray-700">Technical Skills:</strong>
                 {% for skill in skills.technical_skills.split(',') %}
-                <span class="skill-badge">{{ skill.strip() }}</span>
+                <span class="skill-badge inline-block bg-gray-200 text-gray-800 text-xs font-medium mr-2 mb-2 px-2.5 py-0.5 rounded">{{ skill.strip() }}</span>
                 {% endfor %}
             </div>
             {% endif %}
             
             {% if skills.soft_skills %}
-            <p><strong>Soft Skills:</strong> {{ skills.soft_skills }}</p>
+            <p class="text-sm text-gray-700 mb-1"><strong class="text-gray-700">Soft Skills:</strong> {{ skills.soft_skills }}</p>
             {% endif %}
             
             {% if skills.certifications %}
-            <p><strong>Certifications:</strong> {{ skills.certifications }}</p>
+            <p class="text-sm text-gray-700"><strong class="text-gray-700">Certifications:</strong> {{ skills.certifications }}</p>
             {% endif %}
         </div>
         {% endif %}
         
         {% if education %}
-        <div class="section">
-            <h2 class="section-title">Education</h2>
+        <div class="section mb-5">
+            <h2 class="section-title text-xl font-semibold border-b-2 border-gray-300 pb-1 mb-2">{{ section_titles.get('education', 'Education') }}</h2>
             {% for edu in education %}
-            <div class="education-item">
-                <div class="education-header">
+            <div class="education-item mb-3">
+                <div class="education-header flex justify-between items-center">
                     <div>
-                        <span class="degree">{{ edu.degree }}</span>
-                        <span class="institution">{{ edu.institution }}</span>
+                        <h3 class="degree text-lg font-medium text-gray-800">{{ edu.degree }}</h3>
+                        <p class="institution text-md text-gray-700">{{ edu.institution }}</p>
                     </div>
-                    <div class="date">{{ edu.graduation_year }}</div>
+                    <div class="date text-sm text-gray-600">{{ edu.graduation_year }}</div>
                 </div>
                 {% if edu.field_of_study %}
-                <div class="field-of-study">{{ edu.field_of_study }}</div>
+                <p class="field-of-study text-sm text-gray-600">{{ edu.field_of_study }}</p>
                 {% endif %}
             </div>
             {% endfor %}
@@ -97,34 +134,55 @@
         {% if additional %}
         <div class="section">
             {% if additional.projects %}
-            <h2 class="section-title">Projects</h2>
-            <p>{{ additional.projects }}</p>
+            <h2 class="section-title text-xl font-semibold border-b-2 border-gray-300 pb-1 mb-2">{{ section_titles.get('projects', 'Projects') }}</h2>
+            <p class="text-sm text-gray-700 mb-3 leading-relaxed">{{ additional.projects }}</p>
             {% endif %}
             
             {% if additional.languages %}
-            <h2 class="section-title">Languages</h2>
-            <p>{{ additional.languages }}</p>
+            <h2 class="section-title text-xl font-semibold border-b-2 border-gray-300 pb-1 mb-2">{{ section_titles.get('languages', 'Languages') }}</h2>
+            <p class="text-sm text-gray-700 mb-3 leading-relaxed">{{ additional.languages }}</p>
             {% endif %}
             
             {% if additional.volunteer %}
-            <h2 class="section-title">Volunteer Experience</h2>
-            <p>{{ additional.volunteer }}</p>
+            <h2 class="section-title text-xl font-semibold border-b-2 border-gray-300 pb-1 mb-2">{{ section_titles.get('volunteer', 'Volunteer Experience') }}</h2>
+            <p class="text-sm text-gray-700 leading-relaxed">{{ additional.volunteer }}</p>
             {% endif %}
         </div>
         {% endif %}
-
-        <div class="language-options mb-4">
-    <label>Download in:</label>
-    <a href="?lang=en" class="btn btn-sm btn-outline-primary">English</a>
-    <a href="?lang=es" class="btn btn-sm btn-outline-primary">Spanish</a>
-    <a href="?lang=fr" class="btn btn-sm btn-outline-primary">French</a>
-    <a href="?lang=de" class="btn btn-sm btn-outline-primary">German</a>
-    <a href="?lang=zh" class="btn btn-sm btn-outline-primary">Chinese</a>
-</div>
-        <div class="text-center mt-5">
-            <button onclick="window.print()" class="btn btn-primary">Download as PDF</button>
-            <a href="{{ url_for('resume_builder.start') }}" class="btn btn-secondary">Create Another Resume</a>
-        </div>
     </div>
-</body>
-</html>
+
+    <div class="no-print text-center mt-8 space-y-4 md:space-y-0 md:flex md:flex-wrap md:justify-center md:items-start md:gap-4">
+        <form method="POST" action="{{ url_for('resume_builder.save_resume') }}" class="flex flex-col sm:flex-row items-center gap-2 mx-auto sm:mx-0 max-w-sm sm:max-w-md mb-3 md:mb-0">
+            {# CSRF token if using Flask-WTF for this form, but it's a simple POST. Add if form is converted to FlaskForm. #}
+            {# <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}"> #}
+            <input type="text" name="resume_title" value="{{ resume_title if resume_title else 'Resume - ' + (datetime.now().strftime('%Y-%m-%d %H:%M')) }}" class="w-full p-3 rounded-lg shadow-sm focus:ring-electric-cyan focus:border-electric-cyan transition duration-200 glass-card-inner border border-electric-cyan border-opacity-30 text-primary-light placeholder-secondary-light" placeholder="Enter resume title">
+            <button type="submit" class="btn-glow btn-primary inline-flex items-center justify-center px-6 py-3 font-bold rounded-full shadow-lg text-white text-base transition duration-300 ease-in-out transform hover:scale-105 w-full sm:w-auto whitespace-nowrap">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M7.521 3.076C8.192 2.405 9.06 2 10 2s1.808.405 2.479 1.076L14.596 5H17a2 2 0 012 2v9a2 2 0 01-2 2H3a2 2 0 01-2-2V7a2 2 0 012-2h2.404l2.117-1.924zM10 14a4 4 0 100-8 4 4 0 000 8z" />
+                    <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                </svg>
+                Save Resume
+            </button>
+        </form>
+
+        <button onclick="window.print()" class="btn-glow btn-secondary inline-flex items-center justify-center px-6 py-3 font-bold rounded-full shadow-lg text-white text-base transition duration-300 ease-in-out transform hover:scale-105 w-full sm:w-auto">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V4a2 2 0 00-2-2H6zm1 2a1 1 0 000 2h6a1 1 0 100-2H7zM6 7a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" />
+            </svg>
+            Download PDF
+        </button>
+        <a href="{{ url_for('resume_builder.my_resumes') }}" class="btn-glow inline-flex items-center justify-center px-6 py-3 font-bold rounded-full shadow-lg text-white text-base transition duration-300 ease-in-out transform hover:scale-105 w-full sm:w-auto" style="background: linear-gradient(45deg, #4A00E0, #8E2DE2);">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M3 3a1 1 0 000 2h14a1 1 0 100-2H3zm0 4a1 1 0 000 2h14a1 1 0 100-2H3zm0 4a1 1 0 000 2h14a1 1 0 100-2H3zm0 4a1 1 0 000 2h14a1 1 0 100-2H3z" />
+            </svg>
+            My Saved Resumes
+        </a>
+        <a href="{{ url_for('resume_builder.start') }}" class="btn-glow btn-download inline-flex items-center justify-center px-6 py-3 font-bold rounded-full shadow-lg text-white text-base transition duration-300 ease-in-out transform hover:scale-105 w-full sm:w-auto">
+             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            Create New Resume
+        </a>
+    </div>
+</div>
+{% endblock %}

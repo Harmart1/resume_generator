@@ -1,0 +1,105 @@
+{% extends "app_base.html" %}
+
+{% block title %}My Profile - Revisume.ai{% endblock %}
+
+{% block content %}
+<div class="glass-card p-6 sm:p-8 md:p-10 w-full max-w-3xl mx-auto">
+    <h2 class="text-2xl sm:text-3xl font-sora font-extrabold text-electric-cyan mb-8 text-center">
+        My Profile
+    </h2>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="mb-6 space-y-2">
+                {% for category, message in messages %}
+                    {% set alert_category = 'error' if category == 'danger' else category %}
+                    <div class="flash-message {{ alert_category }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <div class="space-y-6">
+        <!-- User Information Section -->
+        <div class="p-6 glass-card-inner rounded-lg">
+            <h3 class="text-xl font-sora font-semibold text-electric-cyan mb-4">Account Details</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-primary-light">
+                <div>
+                    <p class="font-medium">Email:</p>
+                    <p class="text-secondary-light">{{ current_user.email }}</p>
+                </div>
+                <div>
+                    <p class="font-medium">Username:</p>
+                    <p class="text-secondary-light">{{ current_user.username or 'Not set' }}</p>
+                </div>
+                <div>
+                    <p class="font-medium">Contact Phone:</p>
+                    <p class="text-secondary-light">{{ current_user.contact_phone or 'Not set' }}</p>
+                </div>
+                <div>
+                    <p class="font-medium">Industry Preference:</p>
+                    <p class="text-secondary-light">{{ current_user.industry_preference or 'Not set' }}</p>
+                </div>
+                <div>
+                    <p class="font-medium">Current Tier:</p>
+                    <p class="text-secondary-light font-semibold">{{ current_user.tier | capitalize }}</p>
+                </div>
+            </div>
+            <!-- Placeholder for edit profile button -->
+            <div class="mt-6 text-right">
+                <a href="#" class="text-sm text-electric-cyan hover:underline">(Edit Profile - Coming Soon)</a>
+            </div>
+        </div>
+
+        <!-- Credit Balances Section -->
+        <div class="p-6 glass-card-inner rounded-lg">
+            <h3 class="text-xl font-sora font-semibold text-electric-cyan mb-4">Credit Balances</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-primary-light">
+                <div class="p-4 bg-gray-700 bg-opacity-50 rounded-md text-center">
+                    <p class="text-lg font-semibold">Resume AI</p>
+                    <p class="text-2xl font-bold text-electric-cyan">{{ resume_ai_credits }}</p>
+                    <p class="text-xs text-secondary-light">credits</p>
+                </div>
+                <div class="p-4 bg-gray-700 bg-opacity-50 rounded-md text-center">
+                    <p class="text-lg font-semibold">Cover Letter AI</p>
+                    <p class="text-2xl font-bold text-electric-cyan">{{ cover_letter_ai_credits }}</p>
+                    <p class="text-xs text-secondary-light">credits</p>
+                </div>
+                <div class="p-4 bg-gray-700 bg-opacity-50 rounded-md text-center">
+                    <p class="text-lg font-semibold">Deep Dive</p>
+                    <p class="text-2xl font-bold text-electric-cyan">{{ deep_dive_credits }}</p>
+                    <p class="text-xs text-secondary-light">credits</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Saved Items Links Section -->
+        <div class="p-6 glass-card-inner rounded-lg">
+            <h3 class="text-xl font-sora font-semibold text-electric-cyan mb-4">Manage Your Documents</h3>
+            <div class="space-y-3">
+                <a href="{{ url_for('resume_builder.my_resumes') }}" class="block w-full text-center px-6 py-3 btn-primary btn-glow rounded-full text-white font-semibold transition duration-300 ease-in-out hover:bg-opacity-80">
+                    My Saved Resumes
+                </a>
+                <a href="{{ url_for('cover_letter.my_cover_letters') }}" class="block w-full text-center px-6 py-3 btn-primary btn-glow rounded-full text-white font-semibold transition duration-300 ease-in-out hover:bg-opacity-80">
+                    My Saved Cover Letters
+                </a>
+            </div>
+        </div>
+
+        <!-- Subscription Management Teaser -->
+        <div class="p-6 glass-card-inner rounded-lg">
+            <h3 class="text-xl font-sora font-semibold text-electric-cyan mb-4">Subscription</h3>
+            <p class="text-primary-light mb-3">Manage your subscription, view invoices, or change your plan.</p>
+             <a href="{{ url_for('stripe_portal') if 'stripe_portal' in current_app.view_functions else '#' }}"
+               class="block w-full text-center px-6 py-3 btn-download btn-glow rounded-full text-white font-semibold transition duration-300 ease-in-out hover:bg-opacity-80
+                      {% if 'stripe_portal' not in current_app.view_functions %}btn-disabled opacity-50 cursor-not-allowed{% endif %}">
+                Manage Subscription (via Stripe)
+            </a>
+            {% if 'stripe_portal' not in current_app.view_functions %}
+            <p class="text-xs text-center text-secondary-light mt-2">(Stripe portal integration coming soon)</p>
+            {% endif %}
+        </div>
+
+    </div>
+</div>
+{% endblock %}

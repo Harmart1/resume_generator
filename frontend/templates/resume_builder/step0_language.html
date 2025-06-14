@@ -1,43 +1,69 @@
-{% extends "base.html" %}
+{% extends "app_base.html" %}
+
+{% block title %}Select Languages - Resume Builder - Revisume.ai{% endblock %}
+
 {% block content %}
-<div class="resume-builder-container">
-    <div class="step-indicator">
-        <div class="step active">1. Language</div>
-        <div class="step">2. Industry</div>
-        <div class="step">3. Personal</div>
-        <div class="step">4. Experience</div>
-        <div class="step">5. Skills</div>
-        <div class="step">6. Education</div>
-        <div class="step">7. Additional</div>
-    </div>
+<div class="min-h-screen flex flex-col items-center justify-start py-8 px-4">
     
-    <div class="step-card">
-        <h2 class="step-header">Select Languages</h2>
-        <p class="mb-4">Choose your input language and the language for your final resume. 
-        You can enter information in your native language, and we'll translate it professionally.</p>
+    <!-- Step Indicator -->
+    <div class="w-full max-w-4xl mb-8">
+        <div class="flex justify-between text-xs sm:text-sm text-secondary-light">
+            <div class="step text-center flex-1">
+                <div class="font-bold text-electric-cyan">1. Language</div>
+                <div class="h-1 mt-1 bg-electric-cyan rounded-full"></div>
+            </div>
+            <div class="step text-center flex-1 opacity-50">
+                <div class="font-medium">2. Industry</div>
+                <div class="h-1 mt-1 bg-gray-600 rounded-full"></div>
+            </div>
+            <div class="step text-center flex-1 opacity-50">
+                <div class="font-medium">3. Personal</div>
+                <div class="h-1 mt-1 bg-gray-600 rounded-full"></div>
+            </div>
+            <div class="step text-center flex-1 opacity-50">
+                <div class="font-medium">4. Experience</div>
+                <div class="h-1 mt-1 bg-gray-600 rounded-full"></div>
+            </div>
+            <div class="step text-center flex-1 opacity-50">
+                <div class="font-medium">5. Skills</div>
+                <div class="h-1 mt-1 bg-gray-600 rounded-full"></div>
+            </div>
+            <div class="step text-center flex-1 opacity-50">
+                <div class="font-medium">6. Education</div>
+                <div class="h-1 mt-1 bg-gray-600 rounded-full"></div>
+            </div>
+            <div class="step text-center flex-1 opacity-50">
+                <div class="font-medium">7. Additional</div>
+                <div class="h-1 mt-1 bg-gray-600 rounded-full"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="glass-card p-6 sm:p-8 md:p-10 w-full max-w-4xl">
+        <h2 class="text-2xl sm:text-3xl font-sora font-extrabold text-electric-cyan mb-4 text-center">Select Languages</h2>
+        <p class="text-center text-secondary-light mb-6 sm:mb-8 max-w-2xl mx-auto text-sm sm:text-base">
+            Choose your input language and the language for your final resume.
+            You can enter information in your native language, and we'll translate it professionally.
+        </p>
         
-        <form method="POST">
+        <form method="POST" class="space-y-6">
             {{ form.hidden_tag() }}
             
-            <div class="row mb-4">
-                <div class="col-md-6">
-                    <div class="mb-3">
-                        {{ form.input_language.label(class="form-label") }}
-                        {{ form.input_language(class="form-select") }}
-                        <div class="form-text">Select the language you'll use to input information</div>
-                    </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    {{ form.input_language.label(class="block text-md font-sora font-semibold text-tech-blue mb-2") }}
+                    {{ form.input_language(class="w-full p-3 rounded-lg shadow-sm focus:ring-electric-cyan focus:border-electric-cyan transition duration-200 glass-card-inner border border-electric-cyan border-opacity-30 text-primary-light") }}
+                    <p class="text-xs text-secondary-light mt-2">Select the language you'll use to input information.</p>
                 </div>
-                <div class="col-md-6">
-                    <div class="mb-3">
-                        {{ form.output_language.label(class="form-label") }}
-                        {{ form.output_language(class="form-select") }}
-                        <div class="form-text">Select your resume output language</div>
-                    </div>
+                <div>
+                    {{ form.output_language.label(class="block text-md font-sora font-semibold text-tech-blue mb-2") }}
+                    {{ form.output_language(class="w-full p-3 rounded-lg shadow-sm focus:ring-electric-cyan focus:border-electric-cyan transition duration-200 glass-card-inner border border-electric-cyan border-opacity-30 text-primary-light") }}
+                    <p class="text-xs text-secondary-light mt-2">Select your resume output language.</p>
                 </div>
             </div>
             
-            <div class="d-grid">
-                {{ form.submit(class="btn btn-primary btn-lg") }}
+            <div class="pt-4 text-center">
+                {{ form.submit(class="btn-glow btn-primary inline-flex items-center justify-center px-8 py-3 font-bold rounded-full shadow-lg text-white text-lg transition duration-300 ease-in-out transform hover:scale-105 w-full sm:w-auto") }}
             </div>
         </form>
     </div>

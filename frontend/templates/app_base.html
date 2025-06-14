@@ -67,9 +67,12 @@
             <nav class="mb-4 md:mb-0">
                 <ul class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 md:space-x-6 text-base sm:text-lg text-center sm:text-left">
                     <li><a href="{{ url_for('index') }}#analyzer" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light">Analyzer</a></li>
-                    <li><a href="{{ url_for('index') }}#results" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light">Results</a></li>
+                    <li><a href="{{ url_for('resume_builder.start') }}" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light">Resume Builder</a></li>
+                    <li><a href="{{ url_for('cover_letter.index') }}" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light">Cover Letter AI</a></li>
                     <li><a href="{{ url_for('index') }}#pricing-section" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light">Pricing</a></li>
+                    <li><a href="{{ url_for('contact') }}" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light">Contact Us</a></li>
                     {% if current_user.is_authenticated %}
+                        <li><a href="{{ url_for('user_profile') }}" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light">My Profile</a></li>
                         <li><a href="{{ url_for('logout') }}" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light">Logout</a></li>
                     {% else %}
                         <li><a href="{{ url_for('login') }}" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light">Login</a></li>
@@ -80,11 +83,7 @@
             {% if current_user.is_authenticated %}
             <div class="text-xs sm:text-sm text-secondary-light p-2 bg-gray-700 bg-opacity-70 rounded-lg shadow text-center md:text-left mt-4 md:mt-0">
                 <p>User: <span class="text-electric-cyan font-semibold">{{ current_user.email }}</span></p>
-                <p>Tier: <span class="text-neon-purple font-semibold">{{ current_user.tier | capitalize }}</span>
-                {% if current_user.credits and current_user.credits.credits_remaining is defined %}
-                    | Credits: <span class="text-tech-blue font-semibold">{{ current_user.credits.credits_remaining }}</span>
-                {% endif %}
-                </p>
+                <p>Tier: <span class="text-neon-purple font-semibold">{{ current_user.tier | capitalize }}</span></p>
             </div>
             {% endif %}
         </div>

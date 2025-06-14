@@ -1,81 +1,15 @@
-/* Cover letter specific styles */
+/*
+    This file is for Cover Letter specific CSS.
+    Most general styling (forms, buttons, page layout) is now handled by
+    Tailwind CSS utility classes in the HTML templates and app_base.html.
 
-.cover-letter-container {
-    margin-top: 1.5cm;
-    position: relative;
-    padding: 20px;
-}
+    Styles for the visual appearance of the generated cover letter itself
+    (the "document" look) are primarily handled by an inline <style> block
+    within frontend/templates/cover_letter_template.html, especially classes
+    like .letter-content-preview and @media print rules.
 
-.header-section {
-    text-align: right;
-    margin-bottom: 20px;
-}
-
-.header-section p {
-    margin: 3px 0;
-    font-size: 10.5pt;
-}
-
-.recipient-block {
-    margin-bottom: 25px;
-}
-
-.recipient-block p {
-    margin: 3px 0;
-}
-
-.salutation {
-    margin-bottom: 15px;
-}
-
-.letter-body {
-    text-align: justify;
-}
-
-.paragraph {
-    margin-bottom: 12px;
-    text-align: left;
-    text-justify: inter-word;
-}
-
-.signature-block {
-    margin-top: 50px;
-}
-
-/* Form styling */
-.form-container {
-    background-color: white;
-    border-radius: 10px;
-    box-shadow: 0 0 20px rgba(0,0,0,0.1);
-    padding: 30px;
-    margin-top: 30px;
-    margin-bottom: 30px;
-}
-
-.form-header {
-    text-align: center;
-    margin-bottom: 25px;
-    color: #8B0000;
-    border-bottom: 2px solid #8B0000;
-    padding-bottom: 15px;
-}
-
-.btn-primary {
-    background-color: #8B0000;
-    border-color: #8B0000;
-}
-
-.btn-primary:hover {
-    background-color: #A52A2A;
-    border-color: #A52A2A;
-}
-
-.btn-secondary {
-    background-color: #6c757d;
-    border-color: #6c757d;
-}
-
-.btn-secondary:hover {
-    background-color: #5a6268;
-    border-color: #545b62;
-}
+    This file can be used for any highly specific overrides or additional
+    styles for the cover letter module that are not covered elsewhere.
+    For now, it is kept minimal as most styling has been migrated to
+    Tailwind utilities or inline in the specific template.
+*/

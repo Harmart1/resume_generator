@@ -1,8 +1,6 @@
 import requests
 import json
-from config.resume_builder_config import ResumeBuilderConfig
-
-config = ResumeBuilderConfig()
+from backend.app import MISTRAL_API_KEY, MISTRAL_API_URL, logger
 
 SUPPORTED_LANGUAGES = {
     'en': 'English',
@@ -19,6 +17,9 @@ SUPPORTED_LANGUAGES = {
 
 def detect_language(text):
     """Detect language of input text using Mistral"""
+    if not MISTRAL_API_KEY:
+        logger.warning("Mistral API key not configured. Cannot detect language. Defaulting to 'en'.")
+        return 'en'
     if not text.strip():
         return 'en'
     
@@ -26,9 +27,9 @@ def detect_language(text):
     
     try:
         response = requests.post(
-            config.MISTRAL_API_URL,
+            MISTRAL_API_URL,
             headers={
-                "Authorization": f"Bearer {config.MISTRAL_API_KEY}",
+                "Authorization": f"Bearer {MISTRAL_API_KEY}",
                 "Content-Type": "application/json"
             },
             json={
@@ -47,6 +48,9 @@ def detect_language(text):
 
 def translate_text(text, target_lang='en', source_lang=None):
     """Translate text to target language"""
+    if not MISTRAL_API_KEY:
+        logger.warning("Mistral API key not configured. Cannot translate text. Returning original text.")
+        return text
     if not text.strip():
         return text
         
@@ -58,9 +62,9 @@ def translate_text(text, target_lang='en', source_lang=None):
     
     try:
         response = requests.post(
-            config.MISTRAL_API_URL,
+            MISTRAL_API_URL,
             headers={
-                "Authorization": f"Bearer {config.MISTRAL_API_KEY}",
+                "Authorization": f"Bearer {MISTRAL_API_KEY}",
                 "Content-Type": "application/json"
             },
             json={
@@ -74,7 +78,7 @@ def translate_text(text, target_lang='en', source_lang=None):
         response.raise_for_status()
         return response.json()["choices"][0]["message"]["content"].strip()
     except Exception as e:
-        print(f"Translation error: {str(e)}")
+        logger.error(f"Translation error: {str(e)}")
         return text
 
 SECTION_TITLES = {
