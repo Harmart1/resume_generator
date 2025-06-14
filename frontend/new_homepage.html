@@ -9,7 +9,7 @@
 <body>
     <header id="main-header">
         <div class="header-content-wrapper">
-            <a href="new_homepage.html" class="logo-link">
+            <a href="/" class="logo-link">
                 <img src="/static/revisume.jpg" alt="Revisume Logo" id="homepageRevisumeImage">
             </a>
             <nav>
@@ -17,10 +17,10 @@
                     <li><a href="#how-it-works">How It Works</a></li>
                     <li><a href="#features">Features</a></li>
                     <li><a href="#pricing">Pricing</a></li>
-                    <li><a href="/contact">Contact Us</a></li>
+                    <li><a href="{{ url_for('contact') }}">Contact Us</a></li>
                     <li><a href="/">App</a></li>
-                    <li><a href="/register" class="button-nav">Register</a></li>
-                    <li><a href="/login" class="button-nav">Login</a></li>
+                    <li><a href="{{ url_for('register') }}" class="button-nav">Register</a></li>
+                    <li><a href="{{ url_for('login') }}" class="button-nav">Login</a></li>
                 </ul>
             </nav>
         </div>
@@ -31,7 +31,7 @@
             <h1>Upgrade Your Resume with AI-Powered Precision</h1>
             <p>Maximize job opportunities with smart optimization. Craft the perfect resume that lands you interviews. Effortless, intelligent, and fast.</p>
             <div> <!-- Wrapper for buttons -->
-                <a href="/register" class="button primary">Get Started (Free)</a>
+                <a href="{{ url_for('register') }}" class="button primary">Get Started (Free)</a>
                 <a href="#pricing" class="button">Explore Plans</a>
             </div>
         </section>
@@ -113,7 +113,7 @@
                         <li>✓ 0 AI Credits for Cover Letter drafts</li>
                         <li>✓ 0 Deep Dive Credits</li>
                     </ul>
-                    <a href="/register" class="button">Sign Up & Get Started</a>
+                    <a href="{{ url_for('register') }}" class="button">Sign Up & Get Started</a>
                 </div>
                 <div class="pricing-tier premium-tier"> <!-- Represents Starter Plan -->
                     <h3>Starter Plan</h3>
@@ -129,7 +129,7 @@
                         <li>✓ <strong>3 Cover Letter Saves/month</strong></li>
                         <li>✓ 1 Deep Dive Credit/month</li>
                     </ul>
-                    <a href="/register" class="button primary">Get Starter</a>
+                    <a href="{{ url_for('register') }}" class="button primary">Get Starter</a>
                 </div>
                 <div class="pricing-tier"> <!-- Represents Pro Plan -->
                     <h3>Pro Plan</h3>
@@ -143,7 +143,7 @@
                         <li>✓ Unlimited Deep Dive Credits</li>
                         <li>✓ Priority Email Support</li>
                     </ul>
-                    <a href="/register" class="button">Get Pro</a>
+                    <a href="{{ url_for('register') }}" class="button">Get Pro</a>
                 </div>
                  <div class="pricing-tier enterprise-tier">
                     <h3>Recruiter / Enterprise</h3>
@@ -166,7 +166,7 @@
         <section id="account-creation">
             <h2>Ready to Elevate Your Career?</h2>
             <p>Join Revisume.ai today and transform your job application process.</p>
-            <form id="signup-form" action="/register" method="POST">
+            <form id="signup-form" action="{{ url_for('register') }}" method="POST">
                 <div class="form-group">
                     <label for="hp-email">Email Address:</label>
                     <input type="email" id="hp-email" name="email" placeholder="you@example.com" required>
@@ -183,10 +183,10 @@
             </form>
             <div class="sso-options">
                 <p>Or sign up swiftly with:</p>
-                <button class="button sso-google">[G] Sign Up with Google</button>
-                <button class="button sso-linkedin">[in] Sign Up with LinkedIn</button>
+                <button class="button sso-google"><img src="/static/Google.jpg" alt="Google logo" style="height: 20px; margin-right: 8px; vertical-align: middle;"> Sign Up with Google</button>
+                <button class="button sso-linkedin"><img src="/static/LInkedin.jpg" alt="LinkedIn logo" style="height: 20px; margin-right: 8px; vertical-align: middle;"> Sign Up with LinkedIn</button>
             </div>
-            <p class="login-prompt">Already have an account? <a href="/login">Log In</a></p>
+            <p class="login-prompt">Already have an account? <a href="{{ url_for('login') }}">Log In</a></p>
         </section>
     </main>
 
@@ -195,14 +195,9 @@
             <div class="footer-links">
                 <a href="#">About Us</a> |
                 <a href="#">FAQ</a> |
-                <a href="/contact.html">Contact Us</a> |
+                <a href="{{ url_for('contact') }}">Contact Us</a> |
                 <a href="#">Privacy Policy</a> |
                 <a href="#">Terms of Service</a>
-            </div>
-            <div class="social-media-links">
-                <a href="#">[Fb]</a>
-                <a href="#">[Tw]</a>
-                <a href="#">[Li]</a>
             </div>
             <p>&copy; 2024 Revisume.ai. All rights reserved. AI for a smarter resume.</p>
         </div>

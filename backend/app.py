@@ -380,7 +380,14 @@ class LoginForm(FlaskForm):
 class ContactForm(FlaskForm):
     name = StringField('Name', validators=[DataRequired()])
     email = StringField('Email', validators=[DataRequired(), Email()])
-    subject = StringField('Subject', validators=[DataRequired()])
+    subject = SelectField('Subject',
+                          choices=[('registration', 'Registration'),
+                                   ('billing', 'Billing'),
+                                   ('account', 'Account'),
+                                   ('technical', 'Technical Support'),
+                                   ('other', 'Other (Please specify)')],
+                          validators=[DataRequired()])
+    other_subject = StringField('Other Subject', validators=[Optional(), Length(max=100)])
     message = TextAreaField('Message', validators=[DataRequired()])
     submit = SubmitField('Send Message')
 
@@ -442,23 +449,66 @@ def contact():
     form = ContactForm()
     if form.validate_on_submit():
         try:
-            doc = Document()
-            doc.add_heading('Contact Form Submission', level=1)
-            doc.add_paragraph(f"Name: {form.name.data}")
-            doc.add_paragraph(f"Email: {form.email.data}")
-            doc.add_paragraph(f"Subject: {form.subject.data}")
-            doc.add_paragraph(f"Message:\n{form.message.data}")
-            doc.add_paragraph(f"Timestamp: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}")
-            storage_path = os.path.join('storage', 'contact_submissions')
+            actual_subject = form.subject.data
+            if form.subject.data == 'other':
+                actual_subject = form.other_subject.data if form.other_subject.data else 'Other_Unspecified'
+            else:
+                # Get display value for subject
+                actual_subject = dict(form.subject.choices).get(form.subject.data, form.subject.data)
+
+            storage_path = os.path.join('storage', 'database')
             os.makedirs(storage_path, exist_ok=True)
-            timestamp_str = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
-            filename = f"contact_{timestamp_str}_{secure_filename(form.name.data)}.docx"
+
+            timestamp = datetime.utcnow()
+            timestamp_str_file = timestamp.strftime('%Y-%m-%d')
+            safe_subject_filename = secure_filename(actual_subject.replace(' ', '_'))
+            if not safe_subject_filename: # Handle cases where subject might become empty after secure_filename
+                safe_subject_filename = "submission"
+            filename = f"{timestamp_str_file}_{safe_subject_filename}.txt"
+
             full_path = os.path.join(storage_path, filename)
-            doc.save(full_path)
+
+            # Ensure filename doesn't exceed a reasonable length (e.g. 100 chars for subject part)
+            # Max filename length can be an issue on some systems.
+            # Example: YYYY-MM-DD_ (11 chars) + .txt (4 chars) = 15 chars. Allow 85 for subject.
+            if len(safe_subject_filename) > 85:
+                safe_subject_filename = safe_subject_filename[:85]
+            filename = f"{timestamp_str_file}_{safe_subject_filename}.txt"
+            full_path = os.path.join(storage_path, filename)
+
+            # Prevent overwriting by adding a counter if file exists
+            counter = 1
+            original_full_path = full_path
+            while os.path.exists(full_path):
+                base, ext = os.path.splitext(original_full_path)
+                # Check if base already has a counter suffix like _1, _2
+                match = re.match(r"(.+)_(\d+)$", base)
+                if match:
+                    base_no_counter = match.group(1)
+                    current_counter = int(match.group(2))
+                    full_path = f"{base_no_counter}_{current_counter + counter}{ext}"
+                else:
+                    full_path = f"{base}_{counter}{ext}"
+                counter += 1
+                if counter > 100: # Safety break to prevent infinite loop
+                    logger.error(f"Could not find a unique filename for contact submission after 100 tries: {original_full_path}")
+                    flash('Error saving submission due to filename conflict. Please contact support.', 'error')
+                    return render_template('contact.html', form=form)
+
+
+            content = f"Name: {form.name.data}\n"
+            content += f"Email: {form.email.data}\n"
+            content += f"Subject: {actual_subject}\n"
+            content += f"Timestamp: {timestamp.strftime('%Y-%m-%d %H:%M:%S UTC')}\n\n"
+            content += f"Message:\n{form.message.data}\n"
+
+            with open(full_path, 'w', encoding='utf-8') as f:
+                f.write(content)
+
             flash('Thank you for your message! We will get back to you soon.', 'success')
             return redirect(url_for('contact'))
         except Exception as e:
-            logger.error(f"Error processing contact form: {e}")
+            logger.error(f"Error processing contact form: {e}\n{traceback.format_exc()}")
             flash('An error occurred while processing your request. Please try again.', 'error')
     return render_template('contact.html', form=form)
 
