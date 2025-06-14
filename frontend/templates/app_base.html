@@ -67,8 +67,47 @@
             <nav class="mb-4 md:mb-0">
                 <ul class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 md:space-x-6 text-base sm:text-lg text-center sm:text-left">
                     <li><a href="{{ url_for('index') }}#analyzer" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light">Analyzer</a></li>
-                    <li><a href="{{ url_for('resume_builder.start') }}" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light">Resume Builder</a></li>
-                    <li><a href="{{ url_for('cover_letter.index') }}" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light">Cover Letter AI</a></li>
+
+                    <li class="relative group"> <!-- Dropdown container -->
+                        <a href="#" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light py-2 sm:py-0">Revisume Tools</a>
+                        <!-- Dropdown Menu -->
+                        <div class="absolute left-0 mt-2 w-56 bg-gray-800 border border-gray-700 rounded-md shadow-lg z-20 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-300 ease-in-out invisible group-hover:visible group-focus-within:visible py-1">
+
+                            <div class="px-4 py-3 hover:bg-gray-700">
+                                {% if current_user.is_authenticated and current_user.tier in ['starter', 'pro'] %}
+                                    <a href="{{ url_for('resume_builder.start') }}" class="block text-sm text-primary-light hover:text-electric-cyan">Resume Builder</a>
+                                {% else %} {# Free tier or not authenticated #}
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-sm text-gray-400">Resume Builder</span>
+                                        <a href="{{ url_for('serve_homepage_file') }}#pricing" class="text-xs bg-tech-blue text-white hover:bg-electric-cyan py-1 px-2 rounded">Upgrade</a>
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="px-4 py-3 hover:bg-gray-700">
+                                {% if current_user.is_authenticated and current_user.tier in ['starter', 'pro'] %}
+                                    <a href="{{ url_for('cover_letter.index') }}" class="block text-sm text-primary-light hover:text-electric-cyan">Cover Letter AI</a>
+                                {% else %} {# Free tier or not authenticated #}
+                                     <div class="flex justify-between items-center">
+                                        <span class="text-sm text-gray-400">Cover Letter AI</span>
+                                        <a href="{{ url_for('serve_homepage_file') }}#pricing" class="text-xs bg-tech-blue text-white hover:bg-electric-cyan py-1 px-2 rounded">Upgrade</a>
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="px-4 py-3 hover:bg-gray-700">
+                                {% if current_user.is_authenticated and current_user.tier == 'pro' %}
+                                     <a href="#" class="block text-sm text-primary-light hover:text-electric-cyan">Resume Reviser (Pro)</a> {# Placeholder Link for illustrative Pro feature #}
+                                {% else %} {# Free or Starter tier or not authenticated #}
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-sm text-gray-400">Resume Reviser (Pro)</span>
+                                        <a href="{{ url_for('serve_homepage_file') }}#pricing" class="text-xs bg-tech-blue text-white hover:bg-electric-cyan py-1 px-2 rounded">Upgrade</a>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </li>
+
                     <li><a href="{{ url_for('index') }}#pricing-section" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light">Pricing</a></li>
                     <li><a href="{{ url_for('contact') }}" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light">Contact Us</a></li>
                     {% if current_user.is_authenticated %}
