@@ -8,4 +8,4 @@ bp = Blueprint('cover_letter', __name__,
               static_folder='../../../frontend/static')
 
 # Import routes at the bottom to avoid circular dependencies
-from backend.cover_letter import routes
+from backend.cover_letter_app import routes

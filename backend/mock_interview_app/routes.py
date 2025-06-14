@@ -4,7 +4,8 @@ from . import mock_interview_bp
 # Assuming db, User, Credit, Resume, MockInterview are accessible
 # e.g. from .. import db (if db in backend/__init__.py)
 # from ..app import db, User, Credit, Resume (if these are all in app.py)
-from ..app import db, User, Credit, Resume # Using app.py as central model/db store
+from ..extensions import db
+from ..models import User, Resume # Credit removed as it's commented out
 from .models import MockInterview
 from .utils.question_generator import generate_questions
 from .utils.interview_analyzer import score_answer, generate_feedback

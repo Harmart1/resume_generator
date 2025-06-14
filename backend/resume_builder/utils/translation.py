@@ -1,6 +1,11 @@
 import requests
 import json
-from backend.app import MISTRAL_API_KEY, MISTRAL_API_URL, logger
+import os
+import logging
+
+logger = logging.getLogger(__name__)
+MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY")
+MISTRAL_API_URL = os.getenv("MISTRAL_API_URL", "https://api.mistral.ai/v1/chat/completions")
 
 SUPPORTED_LANGUAGES = {
     'en': 'English',

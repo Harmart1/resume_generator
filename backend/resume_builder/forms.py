@@ -39,6 +39,7 @@ class LanguageForm(FlaskForm):  # NEW
 
 class IndustryForm(FlaskForm):
     # ... (existing code) ...
+    pass # Added pass if no fields are defined
 
 # Add this to PersonalForm
 class PersonalForm(FlaskForm):
@@ -47,3 +48,16 @@ class PersonalForm(FlaskForm):
         'Desired Job Title',
         render_kw={"class": "form-control"}
     )
+    # Removed comments to ensure clean parsing
+
+class ExperienceForm(FlaskForm):
+    # Placeholder for experience fields - add actual fields as needed
+    # For now, just ensuring the class is defined to resolve import error.
+    job_title = StringField('Job Title', validators=[Optional()]) # Example field
+    company = StringField('Company', validators=[Optional()])
+    location = StringField('Location', validators=[Optional()])
+    start_date = StringField('Start Date', validators=[Optional()]) # Consider DateField
+    end_date = StringField('End Date', validators=[Optional()]) # Consider DateField
+    achievements = TextAreaField('Achievements', validators=[Optional()])
+    submit = SubmitField('Add Experience', render_kw={"class": "btn btn-secondary"})
+    continue_btn = SubmitField('Continue to Next Step', render_kw={"class": "btn btn-primary"})
