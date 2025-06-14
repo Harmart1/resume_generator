@@ -1,0 +1,79 @@
+{% extends 'app_base.html' %}
+{% block title %}Mock Interview Practice{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold text-white mb-6 text-center">Mock Interview Practice</h1>
+    <p class="text-gray-300 mb-8 text-center max-w-2xl mx-auto">
+        Hone your interview skills with our AI-powered mock interview tool.
+        Submit a job description, optionally link a resume, and receive tailored questions.
+        After your responses, you'll get detailed feedback on relevance, specificity, clarity, and confidence.
+    </p>
+
+    <div class="bg-gray-800 p-6 sm:p-8 rounded-xl shadow-2xl max-w-lg mx-auto">
+        <form method="POST" action="{{ url_for('mock_interview.index') }}">
+            {{ form.hidden_tag() }}
+
+            <div class="mb-6">
+                <label for="{{ form.job_description.id }}" class="block text-sm font-medium text-gray-300 mb-1">{{ form.job_description.label }}</label>
+                {{ form.job_description(class="w-full p-3 bg-gray-700 text-white rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 placeholder-gray-400", rows="6", placeholder="Paste the job description here...") }}
+                {% if form.job_description.errors %}
+                    <div class="text-red-400 text-xs mt-1">
+                        {% for error in form.job_description.errors %}{{ error }}{% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="mb-6">
+                <label for="{{ form.resume_id.id }}" class="block text-sm font-medium text-gray-300 mb-1">{{ form.resume_id.label }}</label>
+                {{ form.resume_id(class="w-full p-3 bg-gray-700 text-white rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500") }}
+                {% if form.resume_id.errors %}
+                    <div class="text-red-400 text-xs mt-1">
+                        {% for error in form.resume_id.errors %}{{ error }}{% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="mb-6">
+                <label for="{{ form.resume_text.id }}" class="block text-sm font-medium text-gray-300 mb-1">{{ form.resume_text.label }}</label>
+                {{ form.resume_text(class="w-full p-3 bg-gray-700 text-white rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 placeholder-gray-400", rows="5", placeholder="Alternatively, paste your resume text here...") }}
+                {% if form.resume_text.errors %}
+                    <div class="text-red-400 text-xs mt-1">
+                        {% for error in form.resume_text.errors %}{{ error }}{% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            {{ form.submit(class="w-full bg-indigo-600 text-white px-6 py-3 rounded-md hover:bg-indigo-700 font-semibold text-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 focus:ring-offset-gray-800 transition duration-150 ease-in-out") }}
+        </form>
+    </div>
+
+    {% if mock_interviews and mock_interviews|length > 0 %}
+    <div class="mt-12">
+        <h2 class="text-2xl font-bold text-white mb-6 text-center">Your Past Interview Sessions</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for interview_session in mock_interviews %}
+            <div class="bg-gray-800 p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-200">
+                <h3 class="text-xl font-semibold text-indigo-400 mb-2">Session from: {{ interview_session.created_at.strftime('%Y-%m-%d %H:%M') }}</h3>
+                <p class="text-gray-400 text-sm mb-1">Job Description: {{ interview_session.job_description|truncate(80, True) }}</p>
+                {% if interview_session.overall_score is not none %}
+                <p class="text-gray-300 mb-3">Overall Score: <span class="font-bold text-lg">{{ interview_session.overall_score|round(1) }}/5</span></p>
+                {% else %}
+                <p class="text-yellow-400 text-sm mb-3">Session pending completion.</p>
+                {% endif %}
+                {% if interview_session.answers and interview_session.answers|length > 0 %}
+                <a href="{{ url_for('mock_interview.view_results', interview_id=interview_session.id) }}" class="inline-block bg-indigo-500 text-white px-4 py-2 rounded-md hover:bg-indigo-600 transition duration-150 text-sm">View Results</a>
+                {% else %}
+                <a href="{{ url_for('mock_interview.answer_questions', interview_id=interview_session.id) }}" class="inline-block bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition duration-150 text-sm">Start/Continue Session</a>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% else %}
+    <div class="mt-12 text-center">
+        <p class="text-gray-400">You have no past interview sessions yet.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

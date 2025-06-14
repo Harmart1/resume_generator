@@ -1,3 +1,8 @@
+# Resume Suite Project
+
+This project is a suite of applications including a Resume Builder, Cover Letter Generator, and a Mock Interview Practice tool.
+
+## Backend Notes
 ## Stripe Integration Setup
 
 To enable subscription and payment features, you need to configure several environment variables. These variables should be added to your `.env` file in the `backend` directory.
@@ -37,3 +42,5 @@ For testing the `/stripe_webhook` endpoint locally, it's recommended to use the 
    ```
 This command will provide you with a webhook signing secret to use for `STRIPE_WEBHOOK_SECRET` for local testing if you haven't configured a persistent one in your dashboard for the local endpoint.
 ```
+
+## Frontend Notes

@@ -1,0 +1,77 @@
+{% extends 'app_base.html' %}
+{% block title %}Mock Interview Results{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-3xl mx-auto">
+        <h1 class="text-4xl font-bold text-white mb-3 text-center">Mock Interview Results</h1>
+        <p class="text-gray-300 mb-1 text-center">Session from: {{ interview_session.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+        <p class="text-gray-300 mb-8 text-center">Job Description: {{ interview_session.job_description|truncate(150, True) }}</p>
+
+        {% if interview_session.overall_score is not none %}
+        <div class="bg-gray-800 p-6 rounded-xl shadow-2xl mb-10 text-center">
+            <h2 class="text-2xl font-semibold text-white mb-2">Overall Performance</h2>
+            <p class="text-7xl font-bold text-indigo-400">{{ interview_session.overall_score|round(1) }}<span class="text-4xl text-gray-400">/5</span></p>
+        </div>
+        {% endif %}
+
+        {% if interview_session.questions and interview_session.answers %}
+            {% for i in range(interview_session.questions|length) %}
+            <div class="bg-gray-800 p-6 rounded-xl shadow-lg mb-6">
+                <h3 class="text-xl font-semibold text-indigo-300 mb-2">{{ loop.index }}. {{ interview_session.questions[i] }}</h3>
+
+                <div class="mb-4">
+                    <h4 class="text-sm font-medium text-gray-400 mb-1">Your Answer:</h4>
+                    <p class="text-gray-200 bg-gray-700 p-3 rounded-md whitespace-pre-wrap">{{ interview_session.answers[i] }}</p>
+                </div>
+
+                {% if interview_session.scores and interview_session.scores[i] %}
+                <div class="mb-4">
+                    <h4 class="text-sm font-medium text-gray-400 mb-2">Scores:</h4>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+                        {% set score_item = interview_session.scores[i] %}
+                        <div class="bg-gray-700 p-2 rounded-md">
+                            <span class="text-xs text-gray-300">Relevance</span>
+                            <p class="text-xl font-semibold text-indigo-400">{{ score_item.relevance }}/5</p>
+                        </div>
+                        <div class="bg-gray-700 p-2 rounded-md">
+                            <span class="text-xs text-gray-300">Specificity</span>
+                            <p class="text-xl font-semibold text-indigo-400">{{ score_item.specificity }}/5</p>
+                        </div>
+                        <div class="bg-gray-700 p-2 rounded-md">
+                            <span class="text-xs text-gray-300">Clarity</span>
+                            <p class="text-xl font-semibold text-indigo-400">{{ score_item.clarity }}/5</p>
+                        </div>
+                        <div class="bg-gray-700 p-2 rounded-md">
+                            <span class="text-xs text-gray-300">Confidence</span>
+                            <p class="text-xl font-semibold text-indigo-400">{{ score_item.confidence }}/5</p>
+                        </div>
+                    </div>
+                    <p class="text-right text-lg font-bold text-indigo-300 mt-2">Overall: {{ score_item.overall|round(1) }}/5</p>
+                </div>
+                {% endif %}
+
+                {% if interview_session.feedback and interview_session.feedback[i] %}
+                <div>
+                    <h4 class="text-sm font-medium text-gray-400 mb-1">Feedback:</h4>
+                    <ul class="list-disc list-inside text-gray-300 bg-gray-700 p-3 rounded-md">
+                        {% for fb_point in interview_session.feedback[i] %}
+                        <li>{{ fb_point }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        {% else %}
+            <p class="text-yellow-400 text-center">No questions, answers, or feedback available for this session.</p>
+        {% endif %}
+
+        <div class="mt-10 text-center">
+            <a href="{{ url_for('mock_interview.index') }}" class="bg-blue-600 text-white px-8 py-3 rounded-md hover:bg-blue-700 font-semibold text-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 focus:ring-offset-gray-800 transition duration-150 ease-in-out">
+                Practice Another Interview
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

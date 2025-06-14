@@ -93,6 +93,17 @@
                             </div>
 
                             <div class="px-4 py-3 hover:bg-gray-700">
+                                {% if current_user.is_authenticated and current_user.tier in ['starter', 'pro'] %}
+                                    <a href="{{ url_for('mock_interview.index') }}" class="block text-sm text-primary-light hover:text-electric-cyan">Mock Interview AI</a>
+                                {% else %} {# Free tier or not authenticated #}
+                                     <div class="flex justify-between items-center">
+                                        <span class="text-sm text-gray-400">Mock Interview AI</span>
+                                        <a href="{{ url_for('serve_homepage_file') }}#pricing" class="text-xs bg-tech-blue text-white hover:bg-electric-cyan py-1 px-2 rounded">Upgrade</a>
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="px-4 py-3 hover:bg-gray-700">
                                 {% if current_user.is_authenticated and current_user.tier == 'pro' %}
                                      <a href="#" class="block text-sm text-primary-light hover:text-electric-cyan">Resume Reviser (Pro)</a> {# Placeholder Link for illustrative Pro feature #}
                                 {% else %} {# Free or Starter tier or not authenticated #}
