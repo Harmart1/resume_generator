@@ -159,9 +159,16 @@ if os.getenv('FLASK_ENV') == 'production':
 else:
     app.config['SESSION_COOKIE_SECURE'] = False
 
-# Use a fallback SQLite DB for migration generation if DATABASE_URL is not set (common in CI/sandbox)
-DATABASE_URL = os.getenv('DATABASE_URL', 'sqlite:///./app_for_migration.db')
-app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///instance/site.db')
+effective_db_uri = app.config['SQLALCHEMY_DATABASE_URI']
+if 'postgresql' in effective_db_uri and os.getenv('DATABASE_URL'):
+    logger.info(f"Using PostgreSQL database URI from DATABASE_URL: {effective_db_uri}")
+elif 'sqlite' in effective_db_uri and os.getenv('DATABASE_URL'):
+    logger.info(f"Using SQLite database URI from DATABASE_URL: {effective_db_uri}")
+elif 'sqlite:///instance/site.db' in effective_db_uri:
+    logger.info(f"Using default SQLite database URI: {effective_db_uri} (DATABASE_URL not set)")
+else:
+    logger.info(f"Using custom database URI from DATABASE_URL: {effective_db_uri}")
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Initialize extensions
