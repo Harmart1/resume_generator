@@ -525,6 +525,11 @@ def user_profile():
                            cover_letter_ai_credits=cover_letter_ai_credits_obj.amount if cover_letter_ai_credits_obj else 0,
                            deep_dive_credits=deep_dive_credits_obj.amount if deep_dive_credits_obj else 0)
 
+@app.route('/account/edit')
+@login_required
+def edit_account():
+    return render_template('auth/edit_account.html')
+
 @app.route('/static/<path:path>')
 def serve_frontend_static_file(path):
     static_dir = os.path.join(os.path.dirname(__file__), '../frontend/static')

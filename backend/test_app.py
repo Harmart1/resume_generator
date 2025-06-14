@@ -158,6 +158,8 @@ class AppTestCase(unittest.TestCase):
     # --- Stripe Webhook Tests ---
     # We need to mock Stripe API calls for these tests
     # unittest.mock.patch and MagicMock are already imported at the top
+from flask import url_for
+
 
     def test_webhook_checkout_session_completed_new_user_starter_tier(self):
         """Test 'checkout.session.completed' for a new user subscribing to Starter tier."""
@@ -314,5 +316,141 @@ class AppTestCase(unittest.TestCase):
                 self.assertIsNotNone(user_downgraded)
                 self.assertEqual(user_downgraded.tier, 'free') # Assuming downgrade to 'free'
 
+    # --- Route Existence and Basic Access Tests ---
+    def test_contact_route_exists(self):
+        """Test if the contact route URL can be generated."""
+        with app.test_request_context(): # Use app.test_request_context for url_for
+            try:
+                url = url_for('contact')
+                self.assertIsNotNone(url)
+                self.assertEqual(url, '/contact')
+            except Exception as e:
+                self.fail(f"url_for('contact') failed to resolve: {e}")
+
+    def test_register_route_exists(self):
+        """Test if the register route URL can be generated."""
+        with app.test_request_context():
+            try:
+                url = url_for('register')
+                self.assertIsNotNone(url)
+                self.assertEqual(url, '/register')
+            except Exception as e:
+                self.fail(f"url_for('register') failed to resolve: {e}")
+
+    def test_login_route_exists(self):
+        """Test if the login route URL can be generated."""
+        with app.test_request_context():
+            try:
+                url = url_for('login')
+                self.assertIsNotNone(url)
+                self.assertEqual(url, '/login')
+            except Exception as e:
+                self.fail(f"url_for('login') failed to resolve: {e}")
+
+    def test_logout_route_exists(self):
+        """Test if the logout route URL can be generated."""
+        with app.test_request_context():
+            try:
+                url = url_for('logout')
+                self.assertIsNotNone(url)
+                self.assertEqual(url, '/logout')
+            except Exception as e:
+                self.fail(f"url_for('logout') failed to resolve: {e}")
+
+    def test_user_profile_route_exists(self):
+        """Test if the user_profile route URL can be generated."""
+        with app.test_request_context():
+            try:
+                url = url_for('user_profile')
+                self.assertIsNotNone(url)
+                self.assertEqual(url, '/profile')
+            except Exception as e:
+                self.fail(f"url_for('user_profile') failed to resolve: {e}")
+
+    def test_edit_account_route_exists(self):
+        """Test if the edit_account route URL can be generated."""
+        with app.test_request_context():
+            try:
+                url = url_for('edit_account')
+                self.assertIsNotNone(url)
+                self.assertEqual(url, '/account/edit')
+            except Exception as e:
+                self.fail(f"url_for('edit_account') failed to resolve: {e}")
+
+    def test_edit_account_route_get_unauthenticated(self):
+        """Test GET /account/edit redirects to login if user is not authenticated."""
+        with app.test_request_context(): # Ensure url_for works correctly
+            # No need to use self.client.get() with app.test_request_context() for this check,
+            # self.client.get already sets up its own context.
+            # The with app.test_request_context() is more for direct url_for calls if not using client.
+            pass # client.get will handle context
+
+        response = self.client.get(url_for('edit_account'))
+        self.assertEqual(response.status_code, 302) # Should redirect
+        # Check if the redirection location contains the login URL path.
+        # This is more robust than checking the full URL if domain/port might vary.
+        self.assertIn(url_for('login', _external=False), response.location)
+
+
+    # --- Placeholder for Authenticated Route Tests ---
+    # def test_edit_account_route_get_authenticated(self):
+    #     """Test GET /account/edit is successful and contains correct data for an authenticated user."""
+    #     with app.app_context():
+    #         # Register and log in a user
+    #         self._register_user('authed_user@example.com', 'password123')
+    #         login_response = self.client.post(url_for('login'), data={
+    #             'email': 'authed_user@example.com',
+    #             'password': 'password123'
+    #         }, follow_redirects=True)
+    #         self.assertEqual(login_response.status_code, 200) # Ensure login was successful
+    #
+    #         # Now access the protected route
+    #         # Use 'with self.client:' to maintain the session context from login
+    #         with self.client:
+    #             response = self.client.get(url_for('edit_account'))
+    #             self.assertEqual(response.status_code, 200)
+    #             self.assertIn(b"Account Information", response.data)
+    #             self.assertIn(b"authed_user@example.com", response.data) # Check if user's email is present
+
 if __name__ == '__main__':
     unittest.main()
+
+# --- Conceptual Tests (for manual testing or future automation if UI testing framework is added) ---
+
+# Test Name: test_nav_bar_display_logged_out
+# Description: Verify that when a user is not logged in, the nav bar in app_base.html shows "Login" and "Register" links.
+# How to test: Manually run the app, log out, and inspect the navigation bar.
+# Expected: "Login" and "Register" links are visible. "User Account Button" is not visible.
+
+# Test Name: test_nav_bar_display_logged_in
+# Description: Verify that when a user is logged in, the nav bar in app_base.html shows the "User Account Button" (with username/email)
+#              and does NOT show "Login" or "Register" links.
+# How to test: Manually run the app, log in, and inspect the navigation bar.
+# Expected: "User Account Button" is visible, displaying the correct username or email. "Login" and "Register" links are not visible.
+
+# Test Name: test_user_account_dropdown_links_and_functionality
+# Description: Verify the correct links and basic functionality of the user account dropdown menu in app_base.html.
+# How to test:
+#   1. Manually run the app and log in.
+#   2. Hover over/click the "User Account Button" to reveal the dropdown.
+#   3. Check links:
+#      - "View/Edit Account" should point to /account/edit. Click it and verify it loads the Account Information page.
+#      - "View Tier / Upgrade" should point to the main page's pricing section. Click it and verify.
+#      - "Sign Out" should log the user out and redirect, typically to the homepage or login page. Click and verify.
+# Expected: Dropdown appears, links are correct and navigate to the expected pages/functionality.
+
+# Test Name: test_sso_button_styles_on_homepage
+# Description: Verify that the Single Sign-On (SSO) buttons on new_homepage.html (or where they are implemented)
+#              have the new styles (blue background, white text).
+# How to test: Manually run the app, navigate to the page with SSO buttons (likely new_homepage.html or login/register pages).
+#              Use browser developer tools to inspect the CSS applied to `.sso-options .button`.
+# Expected: `background-color` should be `rgb(0, 123, 255)` (from `var(--primary-accent)`) and `color` should be `rgb(255, 255, 255)` (white).
+#           Hover styles should also match the darker blue background and border.
+
+# Test Name: test_edit_account_page_content_display
+# Description: Verify that the content on the /account/edit page (edit_account.html) correctly displays current_user's information.
+# How to test: Manually run the app, log in with a test user that has distinct username, email, tier, contact_phone, and industry_preference.
+#              Navigate to /account/edit.
+# Expected: The page should display the correct email, username (or "Not set"), tier, contact phone (or "Not set"),
+#           and industry preference (or "Not set") for the logged-in user.
+#           The links "View Full Profile" and "Manage Subscription / Upgrade" should be present.
