@@ -1,0 +1,39 @@
+{% extends 'app_base.html' %}
+{% block title %}Answer Interview Questions{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-2xl mx-auto">
+        <h1 class="text-3xl font-bold text-white mb-4 text-center">Mock Interview Questions</h1>
+        <p class="text-gray-300 mb-8 text-center">
+            Answer the following questions to the best of your ability.
+            Aim for responses that are clear, specific, and relevant to the question.
+        </p>
+
+        <form method="POST" action="{{ url_for('mock_interview.answer_questions', interview_id=interview_session.id) }}" class="bg-gray-800 p-6 sm:p-8 rounded-xl shadow-2xl">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/> {# Ensure CSRF token if forms generally use it #}
+
+            {% if interview_session.questions %}
+                {% for question_text in interview_session.questions %}
+                <div class="mb-8">
+                    <h3 class="text-xl font-semibold text-indigo-300 mb-3">{{ loop.index }}. {{ question_text }}</h3>
+                    <textarea name="answers" rows="5" class="w-full p-3 bg-gray-700 text-white rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 placeholder-gray-400" placeholder="Your answer here..." required></textarea>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-yellow-400">No questions generated for this session. This might indicate an issue.</p>
+            {% endif %}
+
+            {% if interview_session.questions and interview_session.questions|length > 0 %}
+            <button type="submit" class="w-full bg-green-600 text-white px-6 py-3 rounded-md hover:bg-green-700 font-semibold text-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 focus:ring-offset-gray-800 transition duration-150 ease-in-out">
+                Submit All Answers
+            </button>
+            {% else %}
+             <a href="{{ url_for('mock_interview.index') }}" class="w-full block text-center bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 font-semibold text-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 focus:ring-offset-gray-800 transition duration-150 ease-in-out">
+                Back to Mock Interview Setup
+            </a>
+            {% endif %}
+        </form>
+    </div>
+</div>
+{% endblock %}

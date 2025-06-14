@@ -38,6 +38,7 @@ from flask_bcrypt import Bcrypt
 
 from backend.resume_builder import bp as resume_builder_bp
 from backend.cover_letter_app import bp as cover_letter_bp
+from backend.mock_interview_app import mock_interview_bp
 
 # Credit Type Constants
 CREDIT_TYPE_RESUME_AI = 'resume_ai'
@@ -56,6 +57,7 @@ nlp = None # SpaCy global instance
 
 app.register_blueprint(resume_builder_bp, url_prefix='/resume-builder')
 app.register_blueprint(cover_letter_bp, url_prefix='/cover-letter')
+app.register_blueprint(mock_interview_bp, url_prefix='/mock-interview')
 
 # ... (Existing configurations for langdetect, IBM Watson, Gemini, Stripe, PDF libs remain here) ...
 # For language detection
@@ -155,8 +157,7 @@ if os.getenv('FLASK_ENV') == 'production':
 else:
     app.config['SESSION_COOKIE_SECURE'] = False
 
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL') or \
-                                         'sqlite:///' + os.path.join(os.path.abspath(os.path.dirname(__file__)), '../instance/site.db')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'postgresql://user:pass@localhost/resume_suite')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
@@ -171,7 +172,7 @@ class User(db.Model, UserMixin):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
-    username = db.Column(db.String(80), unique=False, nullable=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
     password_hash = db.Column(db.String(128), nullable=False)
     tier = db.Column(db.String(50), nullable=False, default='free')
     stripe_customer_id = db.Column(db.String(120), nullable=True, unique=True)
