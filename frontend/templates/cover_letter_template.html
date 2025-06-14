@@ -1,3 +1,4 @@
+ jules_wip_13199808752806997036
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -99,8 +100,197 @@
                         currentApproxPageHeight += pHeight;
                     }
                 });
+=======
+{% extends "app_base.html" %}
+
+{% block title %}Generated Cover Letter - Revisume.ai{% endblock %}
+
+{% block content %}
+<style>
+    /* Styles for printing the cover letter content */
+    @media print {
+        body * {
+            visibility: hidden;
+        }
+        .cover-letter-print-area, .cover-letter-print-area * {
+            visibility: visible;
+        }
+        .cover-letter-print-area {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            margin: 20mm; /* Standard A4 margins */
+            padding: 0;
+            border: none;
+            box-shadow: none;
+            font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif; /* Ensure font for print */
+            font-size: 11pt;
+            color: #000000;
+            line-height: 1.4;
+        }
+        .no-print {
+            display: none !important;
+        }
+         /* Ensure paragraphs break correctly */
+        .cover-letter-print-area .paragraph {
+            page-break-inside: avoid;
+        }
+        .cover-letter-print-area .letter-head,
+        .cover-letter-print-area .recipient-block,
+        .cover-letter-print-area .salutation,
+        .cover-letter-print-area .signature-block {
+            page-break-inside: avoid;
+        }
+    }
+
+    /* On-screen preview styling for the letter content */
+    .letter-content-preview {
+        font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif;
+        font-size: 11pt;
+        color: #333; /* Dark gray for readability on white */
+        line-height: 1.5;
+    }
+    .letter-content-preview .letter-head {
+        text-align: right;
+        margin-bottom: 1.5rem; /* Tailwind: mb-6 */
+    }
+    .letter-content-preview .letter-head p {
+        margin: 0.125rem 0; /* Tailwind: my-0.5 */
+        font-size: 10.5pt;
+    }
+    .letter-content-preview .sender-info { /* Not used in current HTML, but if it were */
+        margin-bottom: 1rem; /* Tailwind: mb-4 */
+        text-align: left;
+    }
+    .letter-content-preview .recipient-block {
+        margin-bottom: 1.5rem; /* Tailwind: mb-6 */
+    }
+    .letter-content-preview .recipient-block p {
+        margin: 0.125rem 0; /* Tailwind: my-0.5 */
+    }
+    .letter-content-preview .salutation {
+        margin-bottom: 1rem; /* Tailwind: mb-4 */
+        font-weight: 500; /* Tailwind: font-medium */
+    }
+    .letter-content-preview .letter-body {
+        text-align: left;
+        margin-bottom: 0.75rem; /* Tailwind: mb-3 */
+    }
+    .letter-content-preview .paragraph {
+        margin-bottom: 0.75rem; /* Tailwind: mb-3 */
+        text-align: justify;
+    }
+    .letter-content-preview .signature-block {
+        margin-top: 2.5rem; /* Tailwind: mt-10 */
+    }
+</style>
+
+<div class="w-full max-w-4xl mx-auto py-8 px-4">
+    <div class="no-print mb-6 text-center">
+        <h2 class="text-2xl sm:text-3xl font-sora font-extrabold text-electric-cyan mb-2">{% if is_loaded %}Saved{% else %}Generated{% endif %} Cover Letter</h2>
+        <p class="text-secondary-light">Review your letter below. You can save it or download it as a PDF.</p>
+
+        <form method="POST" action="{{ url_for('cover_letter.save_cover_letter') }}" class="mt-6 flex flex-col sm:flex-row items-center justify-center gap-2 max-w-lg mx-auto">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
+            <input type="hidden" name="cover_letter_content" value="{{ content }}">
+            <input type="text" name="cover_letter_title"
+                   value="{{ title if title else (job_title + ' - ' + company if job_title and company else 'Cover Letter - ' + current_date) }}"
+                   class="w-full sm:flex-grow p-3 rounded-lg shadow-sm focus:ring-electric-cyan focus:border-electric-cyan transition duration-200 glass-card-inner border border-electric-cyan border-opacity-30 text-primary-light placeholder-secondary-light"
+                   placeholder="Enter title for this cover letter">
+            <button type="submit" class="btn-glow btn-primary inline-flex items-center justify-center px-6 py-3 font-bold rounded-full shadow-lg text-white text-base transition duration-300 ease-in-out transform hover:scale-105 w-full sm:w-auto whitespace-nowrap">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M7.521 3.076C8.192 2.405 9.06 2 10 2s1.808.405 2.479 1.076L14.596 5H17a2 2 0 012 2v9a2 2 0 01-2 2H3a2 2 0 01-2-2V7a2 2 0 012-2h2.404l2.117-1.924zM10 14a4 4 0 100-8 4 4 0 000 8z" />
+                    <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                </svg>
+                Save Cover Letter
+            </button>
+        </form>
+
+        <div class="mt-4 flex flex-wrap justify-center items-center gap-3">
+            <button onclick="window.print()" class="btn-glow btn-secondary inline-flex items-center justify-center px-6 py-3 font-bold rounded-full shadow-lg text-white text-base transition duration-300 ease-in-out transform hover:scale-105">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V4a2 2 0 00-2-2H6zm1 2a1 1 0 000 2h6a1 1 0 100-2H7zM6 7a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" />
+                </svg>
+                Download PDF
+            </button>
+            <a href="{{ url_for('cover_letter.index') }}" class="btn-glow btn-accent inline-flex items-center justify-center px-6 py-3 font-bold rounded-full shadow-lg text-white text-base transition duration-300 ease-in-out transform hover:scale-105" style="background: linear-gradient(45deg, #007BFF, #00D8FF);">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                   <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+               </svg>
+                New Letter
+            </a>
+             <a href="{{ url_for('cover_letter.my_cover_letters') }}" class="btn-glow btn-download inline-flex items-center justify-center px-6 py-3 font-bold rounded-full shadow-lg text-white text-base transition duration-300 ease-in-out transform hover:scale-105">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                   <path d="M3 3a1 1 0 000 2h14a1 1 0 100-2H3zm0 4a1 1 0 000 2h14a1 1 0 100-2H3zm0 4a1 1 0 000 2h14a1 1 0 100-2H3zm0 4a1 1 0 000 2h14a1 1 0 100-2H3z" />
+               </svg>
+                My Letters
+            </a>
+        </div>
+         {% if tracking_id %}<p class="text-xs text-secondary-light mt-4 no-print">Tracking ID: {{ tracking_id }}</p>{% endif %}
+         {% if letter_id %}<p class="text-xs text-secondary-light mt-1 no-print">Saved ID: {{ letter_id }}</p>{% endif %}
+    </div>
+
+    <!-- Cover Letter Preview Area -->
+    <div class="cover-letter-print-area bg-white p-8 md:p-12 shadow-2xl rounded-lg letter-content-preview">
+        <div class="letter-head">
+            <p>{{ your_name }}</p>
+            <p>{{ your_email }}</p>
+            {# Add other personal details if available and desired #}
+        </div>
+        
+        <div class="letter-head"> {# This seems to be for the date only #}
+            <p>{{ current_date }}</p>
+        </div>
+        
+        <div class="recipient-block">
+            <p>Hiring Manager</p> {# Or a more specific title if available #}
+            {% if company %}
+            <p>{{ company }}</p>
+            {% else %}
+            <p>[Company Name]</p>
+            {% endif %}
+            {# Consider adding placeholders for company address if this data is collected #}
+            {# <p>[Company Address]</p> #}
+            {# <p>[City, State, Zip Code]</p> #}
+        </div>
+        
+        <p class="salutation">Dear Hiring Manager,</p>
+        
+        <div class="letter-body">
+            {# Using Jinja's replace filter for basic newline to paragraph conversion, or loop if complex HTML #}
+            {% for paragraph in content.split('\n\n') if paragraph.strip() %}
+                <p class="paragraph">{{ paragraph | replace('\n', '<br>') | safe }}</p>
+            {% endfor %}
+        </div>
+        
+        <div class="signature-block">
+            <p>Sincerely,</p>
+            <br><br> {# Space for manual signature when printed #}
+            <p>{{ your_name }}</p>
+        </div>
+    </div>
+</div>
+
+{# JavaScript for attempting to manage page breaks - might have limited effect depending on content and browser #}
+{# This script is less critical now with CSS page-break-inside: avoid #}
+{# <script class="no-print">
+    document.addEventListener('DOMContentLoaded', function() {
+        // This script is a best-effort for very long letters. CSS is preferred.
+        const paragraphs = document.querySelectorAll('.cover-letter-print-area .paragraph');
+        let pageHeight = 0;
+        const maxPageHeight = 800; // Approximate, adjust based on A4 and margins in points/pixels
+
+        paragraphs.forEach(p => {
+            const pHeight = p.offsetHeight;
+            if (pageHeight + pHeight > maxPageHeight && pageHeight > 0) { // Avoid break before first paragraph
+                p.style.pageBreakBefore = 'always';
+                pageHeight = pHeight;
+            } else {
+                pageHeight += pHeight;
+ main
             }
         });
-    </script>
-</body>
-</html>
+    });
+</script> #}
+{% endblock %}

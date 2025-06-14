@@ -1,3 +1,4 @@
+ jules_wip_13199808752806997036
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -159,3 +160,126 @@
     </script>
 </body>
 </html>
+=======
+{% extends "app_base.html" %}
+
+{% block title %}Cover Letter Generator - Revisume.ai{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex flex-col items-center justify-start py-8 px-4">
+    <div class="glass-card p-6 sm:p-8 md:p-10 w-full max-w-3xl">
+        <h2 class="text-2xl sm:text-3xl font-sora font-extrabold text-electric-cyan mb-6 text-center">
+            Professional Cover Letter Generator
+        </h2>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="mb-6 space-y-2">
+                    {% for category, message in messages %}
+                        {# Adjust category mapping if needed, e.g. 'danger' to 'error' for flash-message styling #}
+                        {% set alert_category = 'error' if category == 'danger' else category %}
+                        <div class="flash-message {{ alert_category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST" enctype="multipart/form-data" class="space-y-6">
+            {{ form.hidden_tag() }}
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="{{ form.your_name.id }}" class="block text-md font-sora font-semibold text-tech-blue mb-2 required">{{ form.your_name.label.text }}</label>
+                    {{ form.your_name(class="w-full p-3 rounded-lg shadow-sm focus:ring-electric-cyan focus:border-electric-cyan transition duration-200 glass-card-inner border border-electric-cyan border-opacity-30 text-primary-light placeholder-secondary-light", placeholder="John Smith") }}
+                </div>
+
+                <div>
+                    <label for="{{ form.your_email.id }}" class="block text-md font-sora font-semibold text-tech-blue mb-2 required">{{ form.your_email.label.text }}</label>
+                    {{ form.your_email(class="w-full p-3 rounded-lg shadow-sm focus:ring-electric-cyan focus:border-electric-cyan transition duration-200 glass-card-inner border border-electric-cyan border-opacity-30 text-primary-light placeholder-secondary-light", placeholder="john.smith@example.com") }}
+                </div>
+            </div>
+
+            <div>
+                <label for="{{ form.job_title.id }}" class="block text-md font-sora font-semibold text-tech-blue mb-2 required">{{ form.job_title.label.text }}</label>
+                {{ form.job_title(class="w-full p-3 rounded-lg shadow-sm focus:ring-electric-cyan focus:border-electric-cyan transition duration-200 glass-card-inner border border-electric-cyan border-opacity-30 text-primary-light placeholder-secondary-light", placeholder="Senior Software Engineer") }}
+            </div>
+
+            <div>
+                <label for="{{ form.company_name.id }}" class="block text-md font-sora font-semibold text-tech-blue mb-2">{{ form.company_name.label.text }}</label>
+                {{ form.company_name(class="w-full p-3 rounded-lg shadow-sm focus:ring-electric-cyan focus:border-electric-cyan transition duration-200 glass-card-inner border border-electric-cyan border-opacity-30 text-primary-light placeholder-secondary-light", placeholder="Tech Innovations Inc.") }}
+            </div>
+
+            <div>
+                <label for="{{ form.job_description.id }}" class="block text-md font-sora font-semibold text-tech-blue mb-2 required">{{ form.job_description.label.text }}</label>
+                {{ form.job_description(rows="6", class="w-full p-3 rounded-lg shadow-sm focus:ring-electric-cyan focus:border-electric-cyan transition duration-200 glass-card-inner border border-electric-cyan border-opacity-30 text-primary-light placeholder-secondary-light") }}
+            </div>
+
+            <div>
+                <label for="{{ form.resume_text.id }}" class="block text-md font-sora font-semibold text-tech-blue mb-2">{{ form.resume_text.label.text }}</label>
+                {{ form.resume_text(rows="6", class="w-full p-3 rounded-lg shadow-sm focus:ring-electric-cyan focus:border-electric-cyan transition duration-200 glass-card-inner border border-electric-cyan border-opacity-30 text-primary-light placeholder-secondary-light", placeholder="Paste your resume text (optional but recommended for better results)") }}
+            </div>
+
+            <div>
+                <label for="{{ form.refinement_type.id }}" class="block text-md font-sora font-semibold text-tech-blue mb-2">{{ form.refinement_type.label.text }}</label>
+                {{ form.refinement_type(class="w-full p-3 rounded-lg shadow-sm focus:ring-electric-cyan focus:border-electric-cyan transition duration-200 glass-card-inner border border-electric-cyan border-opacity-30 text-primary-light") }}
+            </div>
+
+            <div id="existing_cover_letter_fields">
+                <div>
+                    <label for="{{ form.previous_cover_letter.id }}" class="block text-md font-sora font-semibold text-tech-blue mb-2">{{ form.previous_cover_letter.label.text }}</label>
+                    {{ form.previous_cover_letter(rows="6", class="w-full p-3 rounded-lg shadow-sm focus:ring-electric-cyan focus:border-electric-cyan transition duration-200 glass-card-inner border border-electric-cyan border-opacity-30 text-primary-light placeholder-secondary-light", placeholder="Paste existing cover letter to refine...") }}
+                </div>
+
+                <div class="mt-6">
+                    <label for="{{ form.cover_letter_file.id }}" class="block text-md font-sora font-semibold text-tech-blue mb-2">{{ form.cover_letter_file.label.text }}</label>
+                    {{ form.cover_letter_file(class="w-full text-primary-light text-sm p-3 border rounded-lg cursor-pointer bg-gray-700 bg-opacity-60 border-electric-cyan border-opacity-30 focus:outline-none focus:border-electric-cyan glass-card-inner") }}
+                    <p class="text-xs text-secondary-light mt-1">Supports PDF, DOC, DOCX, TXT files (max 5MB)</p>
+                </div>
+            </div>
+
+            <div>
+                <label for="{{ form.tone.id }}" class="block text-md font-sora font-semibold text-tech-blue mb-2">{{ form.tone.label.text }}</label>
+                {{ form.tone(class="w-full p-3 rounded-lg shadow-sm focus:ring-electric-cyan focus:border-electric-cyan transition duration-200 glass-card-inner border border-electric-cyan border-opacity-30 text-primary-light") }}
+            </div>
+
+            <div>
+                <label for="{{ form.key_points.id }}" class="block text-md font-sora font-semibold text-tech-blue mb-2">{{ form.key_points.label.text }}</label>
+                {{ form.key_points(rows="3", class="w-full p-3 rounded-lg shadow-sm focus:ring-electric-cyan focus:border-electric-cyan transition duration-200 glass-card-inner border border-electric-cyan border-opacity-30 text-primary-light placeholder-secondary-light", placeholder="Specific achievements, skills, or experiences to emphasize...") }}
+            </div>
+
+            <div class="pt-4 text-center">
+                {{ form.submit(class="btn-glow btn-primary inline-flex items-center justify-center px-8 py-3 font-bold rounded-full shadow-lg text-white text-lg transition duration-300 ease-in-out transform hover:scale-105 w-full sm:w-auto") }}
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const refinementType = document.getElementById('{{ form.refinement_type.id }}');
+        const existingCoverLetterFields = document.getElementById('existing_cover_letter_fields');
+        const coverLetterTextarea = document.getElementById('{{ form.previous_cover_letter.id }}');
+        const coverLetterFile = document.getElementById('{{ form.cover_letter_file.id }}');
+
+        function toggleCoverLetterFields() {
+            const show = refinementType.value !== 'generate';
+            existingCoverLetterFields.style.display = show ? 'block' : 'none';
+            // The disabled attribute is not strictly necessary if the fields are hidden,
+            // but it's good practice if they could become visible through other means.
+            if (coverLetterTextarea) coverLetterTextarea.disabled = !show;
+            if (coverLetterFile) coverLetterFile.disabled = !show;
+            
+            if (!show) {
+                if (coverLetterTextarea) coverLetterTextarea.value = '';
+                if (coverLetterFile) coverLetterFile.value = '';
+            }
+        }
+
+        if (refinementType) {
+            refinementType.addEventListener('change', toggleCoverLetterFields);
+            toggleCoverLetterFields(); // Initialize on page load
+        }
+    });
+</script>
+{% endblock %}
+ main
