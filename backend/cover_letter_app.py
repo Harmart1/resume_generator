@@ -64,7 +64,7 @@ def generate_with_mistral(prompt):
 
 @bp.route('/', methods=['GET'])
 @login_required
-@tier_required('pro')
+@tier_required('free')
 def index():
     form = CoverLetterForm()
     return render_template('cover_letter_form.html', form=form)
@@ -81,22 +81,25 @@ def generate():
     # Credit consumption logic
     if current_user.tier == 'starter':
         if not consume_credit(current_user.id, CREDIT_TYPE_COVER_LETTER_AI):
-            flash(f"You have no '{CREDIT_TYPE_COVER_LETTER_AI}' credits remaining. Please upgrade to Pro for unlimited cover letters or wait for your monthly refresh.", "warning")
+            flash(f"No '{CREDIT_TYPE_COVER_LETTER_AI}' credits left for this month. Upgrade to Pro for unlimited drafts or wait for your next monthly refresh.", "warning")
+            # Assuming 'form' is available in this scope to pass back
+            return redirect(url_for('cover_letter.index')) # Or render_template if redirect needs form context
+        db.session.add(FeatureUsageLog(user_id=current_user.id, feature_name=CREDIT_TYPE_COVER_LETTER_AI + "_generate", credits_used=1))
+        try:
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"Error committing credits for starter user {current_user.id} in cover letter generate: {e}")
+            flash("An error occurred while processing your request. Please try again.", "error")
             return redirect(url_for('cover_letter.index'))
-        db.session.add(FeatureUsageLog(user_id=current_user.id, feature_name=CREDIT_TYPE_COVER_LETTER_AI, credits_used=1))
-        logger.info(f"Starter user {current_user.email} consumed 1 credit for {CREDIT_TYPE_COVER_LETTER_AI}.")
     elif current_user.tier == 'pro':
-        db.session.add(FeatureUsageLog(user_id=current_user.id, feature_name=f"{CREDIT_TYPE_COVER_LETTER_AI}_pro_usage", credits_used=0))
-        logger.info(f"Pro user {current_user.email} used {CREDIT_TYPE_COVER_LETTER_AI} (unlimited).")
-    
-    # Commit credit changes and logs immediately
-    try:
-        db.session.commit()
-    except Exception as e:
-        db.session.rollback()
-        logger.error(f"Error committing credit consumption/log for cover letter: {e}")
-        flash("An error occurred while processing credits. Please try again.", "error")
-        return redirect(url_for('cover_letter.index'))
+        db.session.add(FeatureUsageLog(user_id=current_user.id, feature_name=CREDIT_TYPE_COVER_LETTER_AI + "_generate_pro", credits_used=0))
+        try:
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"Error committing feature log for pro user {current_user.id} in cover letter generate: {e}")
+            # Non-critical, so proceed without returning error for pro users
 
     # Process uploaded cover letter file
     cover_letter_text = ""
