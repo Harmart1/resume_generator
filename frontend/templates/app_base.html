@@ -60,9 +60,6 @@
                 <a href="{{ url_for('serve_homepage_file') }}"> <!-- Link logo to welcome page -->
                     <img src="/static/logo.png" alt="Revisume.ai Logo" class="h-10 sm:h-12 mr-3" onerror="this.onerror=null;this.src='https://placehold.co/48x48/1A1A2E/00D8FF?text=AI';">
                 </a>
-                <a href="{{ url_for('serve_homepage_file') }}"> <!-- Link text to welcome page -->
-                    <h1 class="text-2xl sm:text-3xl font-space-grotesk font-bold header-text-color">Revisume.ai</h1>
-                </a>
             </div>
             <nav class="mb-4 md:mb-0">
                 <ul class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 md:space-x-6 text-base sm:text-lg text-center sm:text-left">
@@ -110,12 +107,29 @@
 
                     <li><a href="{{ url_for('index') }}#pricing-section" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light">Pricing</a></li>
                     <li><a href="{{ url_for('contact') }}" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light">Contact Us</a></li>
+
                     {% if current_user.is_authenticated %}
-                        <li><a href="{{ url_for('user_profile') }}" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light">My Profile</a></li>
-                        <li><a href="{{ url_for('logout') }}" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light">Logout</a></li>
+                    <li class="relative group" id="user-account-button-container"> <!-- This will be the container for the new button and its dropdown -->
+                        <button type="button" class="px-4 py-2 bg-tech-blue text-white rounded-md hover:bg-electric-cyan focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-electric-cyan font-medium transition duration-300 ease-in-out">
+                            {{ current_user.username if current_user.username else current_user.email }}
+                        </button>
+                        <!-- User Account Dropdown Menu -->
+                        <div class="absolute right-0 mt-2 w-56 bg-gray-800 border border-gray-700 rounded-md shadow-lg z-20 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-300 ease-in-out invisible group-hover:visible group-focus-within:visible py-1">
+                            <div class="px-4 py-3 hover:bg-gray-700">
+                                <a href="{{ url_for('edit_account') }}" class="block text-sm text-primary-light hover:text-electric-cyan">View/Edit Account</a>
+                            </div>
+                            <div class="px-4 py-3 hover:bg-gray-700">
+                                <a href="{{ url_for('index', _anchor='pricing-section') }}" class="block text-sm text-primary-light hover:text-electric-cyan">View Tier / Upgrade</a>
+                            </div>
+                            <div class="border-t border-gray-700 my-1"></div> <!-- Divider -->
+                            <div class="px-4 py-3 hover:bg-gray-700">
+                                <a href="{{ url_for('logout') }}" class="block text-sm text-primary-light hover:text-electric-cyan">Sign Out</a>
+                            </div>
+                        </div>
+                    </li>
                     {% else %}
-                        <li><a href="{{ url_for('login') }}" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light">Login</a></li>
-                        <li><a href="{{ url_for('register') }}" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light">Register</a></li>
+                    <li><a href="{{ url_for('login') }}" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light">Login</a></li>
+                    <li><a href="{{ url_for('register') }}" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light">Register</a></li>
                     {% endif %}
                 </ul>
             </nav>
