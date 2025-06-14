@@ -1,0 +1,72 @@
+{% extends "app_base.html" %}
+
+{% block title %}Contact Us - Revisume.ai{% endblock %}
+
+{% block content %}
+<div class="min-h-[calc(100vh-10rem)] flex flex-col items-center justify-start py-8 px-4">
+    <div class="glass-card p-6 sm:p-8 md:p-10 w-full max-w-2xl">
+        <h2 class="text-2xl sm:text-3xl font-sora font-extrabold text-electric-cyan mb-6 text-center">
+            Contact Us
+        </h2>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="mb-6 space-y-2">
+                    {% for category, message in messages %}
+                        {% set alert_category = 'error' if category == 'danger' else category %}
+                        <div class="flash-message {{ alert_category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST" action="{{ url_for('contact') }}" class="space-y-6">
+            {{ form.csrf_token }}
+
+            <div>
+                {{ form.name.label(class="block text-md font-sora font-semibold text-tech-blue mb-2") }}
+                {{ form.name(class="w-full p-3 rounded-lg shadow-sm focus:ring-electric-cyan focus:border-electric-cyan transition duration-200 glass-card-inner border border-electric-cyan border-opacity-30 text-primary-light placeholder-secondary-light", placeholder="Your Name") }}
+                {% if form.name.errors %}
+                    <ul class="text-red-400 text-xs mt-1 space-y-0.5">
+                        {% for error in form.name.errors %}<li>{{ error }}</li>{% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+
+            <div>
+                {{ form.email.label(class="block text-md font-sora font-semibold text-tech-blue mb-2") }}
+                {{ form.email(class="w-full p-3 rounded-lg shadow-sm focus:ring-electric-cyan focus:border-electric-cyan transition duration-200 glass-card-inner border border-electric-cyan border-opacity-30 text-primary-light placeholder-secondary-light", placeholder="you@example.com") }}
+                {% if form.email.errors %}
+                    <ul class="text-red-400 text-xs mt-1 space-y-0.5">
+                        {% for error in form.email.errors %}<li>{{ error }}</li>{% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+
+            <div>
+                {{ form.subject.label(class="block text-md font-sora font-semibold text-tech-blue mb-2") }}
+                {{ form.subject(class="w-full p-3 rounded-lg shadow-sm focus:ring-electric-cyan focus:border-electric-cyan transition duration-200 glass-card-inner border border-electric-cyan border-opacity-30 text-primary-light placeholder-secondary-light", placeholder="Subject of your message") }}
+                {% if form.subject.errors %}
+                    <ul class="text-red-400 text-xs mt-1 space-y-0.5">
+                        {% for error in form.subject.errors %}<li>{{ error }}</li>{% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+
+            <div>
+                {{ form.message.label(class="block text-md font-sora font-semibold text-tech-blue mb-2") }}
+                {{ form.message(rows="6", class="w-full p-3 rounded-lg shadow-sm focus:ring-electric-cyan focus:border-electric-cyan transition duration-200 glass-card-inner border border-electric-cyan border-opacity-30 text-primary-light placeholder-secondary-light", placeholder="Your message here...") }}
+                {% if form.message.errors %}
+                    <ul class="text-red-400 text-xs mt-1 space-y-0.5">
+                        {% for error in form.message.errors %}<li>{{ error }}</li>{% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+
+            <div class="pt-4 text-center">
+                {{ form.submit(class="btn-glow btn-primary inline-flex items-center justify-center px-8 py-3 font-bold rounded-full shadow-lg text-white text-lg transition duration-300 ease-in-out transform hover:scale-105 w-full sm:w-auto") }}
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
