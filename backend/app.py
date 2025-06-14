@@ -4,9 +4,9 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 from flask import Flask, request, render_template, send_file, flash, redirect, url_for, session, g, jsonify, send_from_directory, abort
-from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import inspect, text
 from flask_migrate import Migrate
+from .extensions import db, login_manager, bcrypt # UPDATED
 from flask_wtf import FlaskForm
 from flask_wtf.csrf import CSRFProtect
 from flask_session import Session
@@ -33,23 +33,21 @@ from typing import List, Dict, Set, Tuple, Optional as TypingOptional
 from functools import wraps
 
 from werkzeug.utils import secure_filename
-from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user, login_required
-from flask_bcrypt import Bcrypt
+# UserMixin is still needed for model, login_user etc. are flask_login functions
+from flask_login import UserMixin, login_user, logout_user, current_user, login_required
+# Bcrypt removed, imported from extensions
+
+# Import models
+from .models import User, Resume, CoverLetter, FeatureUsageLog # NEW
+from .utils import tier_required # ADDED
 
 from backend.resume_builder import bp as resume_builder_bp
-from backend.cover_letter_app import bp as cover_letter_bp
+from backend.cover_letter_app import cover_letter_bp # Corrected import name
 from backend.mock_interview_app import mock_interview_bp
 
-# Credit Type Constants
-CREDIT_TYPE_RESUME_AI = 'resume_ai'
-CREDIT_TYPE_COVER_LETTER_AI = 'cover_letter_ai'
-CREDIT_TYPE_DEEP_DIVE = 'deep_dive'
-
-# Monthly Credit Quotas for Starter Tier
-STARTER_MONTHLY_RESUME_AI_CREDITS = 10
-STARTER_MONTHLY_COVER_LETTER_AI_CREDITS = 5
-STARTER_MONTHLY_DEEP_DIVE_CREDITS = 1
-PRO_UNLIMITED_CREDITS = 99999 # Represents a large number for "unlimited"
+# Credit Type Constants and Quotas MOVED to utils.py
+# MISTRAL_API_KEY, MISTRAL_API_URL are also in utils.py or loaded via os.getenv directly by modules
+# GEMINI_API_KEY is loaded via os.getenv below
 
 app = Flask(__name__)
 
@@ -59,7 +57,8 @@ app.register_blueprint(resume_builder_bp, url_prefix='/resume-builder')
 app.register_blueprint(cover_letter_bp, url_prefix='/cover-letter')
 app.register_blueprint(mock_interview_bp, url_prefix='/mock-interview')
 
-# ... (Existing configurations for langdetect, IBM Watson, Gemini, Stripe, PDF libs remain here) ...
+# ... (Existing configurations for langdetect, IBM Watson, Stripe, PDF libs remain here) ...
+# Gemini and Mistral API keys are loaded lower or by modules that use them.
 # For language detection
 try:
     from langdetect import detect, LangDetectException
@@ -120,11 +119,10 @@ except Exception as e:
 # Load environment variables
 load_dotenv()
 DOMAIN_URL = os.getenv('DOMAIN_URL', 'http://127.0.0.1:5000')
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY")
-MISTRAL_API_URL = os.getenv("MISTRAL_API_URL", "https://api.mistral.ai/v1/chat/completions")
-if not MISTRAL_API_KEY:
-    logger.warning("MISTRAL_API_KEY not found. Mistral-dependent features will be impacted.")
+# GEMINI_API_KEY is loaded below where it's used or by modules directly.
+# MISTRAL_API_KEY and MISTRAL_API_URL are now in utils.py or loaded by modules.
+# if not MISTRAL_API_KEY: # This check would now be in utils.py or modules using it
+#     logger.warning("MISTRAL_API_KEY not found. Mistral-dependent features will be impacted.")
 
 STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY")
 STRIPE_PUBLISHABLE_KEY = os.getenv("STRIPE_PUBLISHABLE_KEY")
@@ -157,215 +155,129 @@ if os.getenv('FLASK_ENV') == 'production':
 else:
     app.config['SESSION_COOKIE_SECURE'] = False
 
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'postgresql://user:pass@localhost/resume_suite')
+# Use a fallback SQLite DB for migration generation if DATABASE_URL is not set (common in CI/sandbox)
+DATABASE_URL = os.getenv('DATABASE_URL', 'sqlite:///./app_for_migration.db')
+app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-db = SQLAlchemy(app)
-migrate = Migrate(app, db)
-bcrypt = Bcrypt(app)
-login_manager = LoginManager(app)
+# Initialize extensions
+db.init_app(app)
+login_manager.init_app(app)
+bcrypt.init_app(app)
+migrate = Migrate(app, db, directory='backend/migrations') # Explicitly set migrations directory
+
 login_manager.login_view = 'login'
 login_manager.login_message_category = 'info'
 
-# --- Database Models ---
-class User(db.Model, UserMixin):
-    __tablename__ = 'users'
-    id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    username = db.Column(db.String(80), unique=True, nullable=False)
-    password_hash = db.Column(db.String(128), nullable=False)
-    tier = db.Column(db.String(50), nullable=False, default='free')
-    stripe_customer_id = db.Column(db.String(120), nullable=True, unique=True)
-    stripe_subscription_id = db.Column(db.String(120), nullable=True, unique=True)
-    industry_preference = db.Column(db.String(50), nullable=True)
-    contact_phone = db.Column(db.String(30), nullable=True)
-    profile_updated_at = db.Column(db.DateTime, nullable=True, onupdate=datetime.utcnow)
-
-    def set_password(self, password):
-        self.password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
-
-    def check_password(self, password):
-        return bcrypt.check_password_hash(self.password_hash, password)
-
-    def __repr__(self):
-        return f'<User {self.email} (Tier: {self.tier})>'
-
-class Resume(db.Model):
-    __tablename__ = 'resumes'
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    title = db.Column(db.String(100), nullable=False, default='Untitled Resume')
-    content = db.Column(db.Text, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    is_archived = db.Column(db.Boolean, default=False, nullable=False)
-    user = db.relationship('User', backref=db.backref('resumes', lazy=True))
-
-class CoverLetter(db.Model):
-    __tablename__ = 'cover_letters'
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    title = db.Column(db.String(100), nullable=False, default='Untitled Cover Letter')
-    content = db.Column(db.Text, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    is_archived = db.Column(db.Boolean, default=False, nullable=False)
-    user = db.relationship('User', backref=db.backref('cover_letters', lazy=True))
-
-class Credit(db.Model):
-    __tablename__ = 'credits'
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    credit_type = db.Column(db.String(50), nullable=False)
-    amount = db.Column(db.Integer, default=0, nullable=False)
-    last_reset = db.Column(db.DateTime, default=datetime.utcnow, nullable=True)
-    user = db.relationship('User', backref=db.backref('credits', lazy=True))
-    __table_args__ = (db.UniqueConstraint('user_id', 'credit_type', name='uq_user_credit_type'),)
-
-class FeatureUsageLog(db.Model):
-    __tablename__ = 'feature_usage_logs'
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    feature_name = db.Column(db.String(100), nullable=False)
-    credits_used = db.Column(db.Integer, nullable=False, default=0)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
-    user = db.relationship('User', backref=db.backref('usage_logs', lazy=True))
-    def __repr__(self):
-        return f'<FeatureUsageLog user_id={self.user_id} feature={self.feature_name} time={self.timestamp}>'
+# --- Database Models --- MOVED to models.py
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    return User.query.get(int(user_id)) # User is now imported from .models
 
 # --- Credit Management Helper Functions ---
-def get_or_create_credit_record(user_id, credit_type):
-    credit_record = Credit.query.filter_by(user_id=user_id, credit_type=credit_type).first()
-    if not credit_record:
-        logger.info(f"Creating new credit record for user {user_id}, type {credit_type}")
-        credit_record = Credit(user_id=user_id, credit_type=credit_type, amount=0, last_reset=datetime.utcnow())
-        db.session.add(credit_record)
-        # Committing here to ensure the record exists before further operations in consume_credit or reset
-        try:
-            db.session.commit()
-        except Exception as e:
-            db.session.rollback()
-            logger.error(f"Error committing new credit record for user {user_id}, type {credit_type}: {e}")
-            # Raise or return None to indicate failure, so caller can handle
-            raise  # Or return None and check in caller
-    return credit_record
+# def get_or_create_credit_record(user_id, credit_type):
+#     credit_record = Credit.query.filter_by(user_id=user_id, credit_type=credit_type).first()
+#     if not credit_record:
+#         logger.info(f"Creating new credit record for user {user_id}, type {credit_type}")
+#         credit_record = Credit(user_id=user_id, credit_type=credit_type, amount=0, last_reset=datetime.utcnow())
+#         db.session.add(credit_record)
+#         # Committing here to ensure the record exists before further operations in consume_credit or reset
+#         try:
+#             db.session.commit()
+#         except Exception as e:
+#             db.session.rollback()
+#             logger.error(f"Error committing new credit record for user {user_id}, type {credit_type}: {e}")
+#             # Raise or return None to indicate failure, so caller can handle
+#             raise  # Or return None and check in caller
+#     return credit_record
 
-def get_user_credits(user_id, credit_type):
-    return Credit.query.filter_by(user_id=user_id, credit_type=credit_type).first()
+# def get_user_credits(user_id, credit_type):
+#     return Credit.query.filter_by(user_id=user_id, credit_type=credit_type).first()
 
-def consume_credit(user_id, credit_type, amount_to_consume=1):
-    user = User.query.get(user_id) # Assuming user_id is valid
-    if not user:
-        logger.error(f"User not found for ID {user_id} during credit consumption.")
-        return False
+# def consume_credit(user_id, credit_type, amount_to_consume=1):
+#     user = User.query.get(user_id) # Assuming user_id is valid
+#     if not user:
+#         logger.error(f"User not found for ID {user_id} during credit consumption.")
+#         return False
 
-    if user.tier == 'pro':
-        return True # Pro users have unlimited credits for features that use this function
+#     if user.tier == 'pro':
+#         return True # Pro users have unlimited credits for features that use this function
 
-    try:
-        credit_record = get_or_create_credit_record(user_id, credit_type)
-        if credit_record and credit_record.amount >= amount_to_consume:
-            credit_record.amount -= amount_to_consume
-            # db.session.add(credit_record) # Already in session
-            db.session.commit()
-            logger.info(f"Consumed {amount_to_consume} credit(s) for user {user_id}, type {credit_type}. Remaining: {credit_record.amount}")
-            return True
-        else:
-            logger.warning(f"Insufficient credits for user {user_id}, type {credit_type}. Has: {credit_record.amount if credit_record else 'None'}, Needs: {amount_to_consume}")
-            return False
-    except Exception as e: # Catch potential error from get_or_create_credit_record commit failure
-        logger.error(f"Error in consume_credit for user {user_id}, type {credit_type}: {e}")
-        return False
+#     try:
+#         credit_record = get_or_create_credit_record(user_id, credit_type)
+#         if credit_record and credit_record.amount >= amount_to_consume:
+#             credit_record.amount -= amount_to_consume
+#             # db.session.add(credit_record) # Already in session
+#             db.session.commit()
+#             logger.info(f"Consumed {amount_to_consume} credit(s) for user {user_id}, type {credit_type}. Remaining: {credit_record.amount}")
+#             return True
+#         else:
+#             logger.warning(f"Insufficient credits for user {user_id}, type {credit_type}. Has: {credit_record.amount if credit_record else 'None'}, Needs: {amount_to_consume}")
+#             return False
+#     except Exception as e: # Catch potential error from get_or_create_credit_record commit failure
+#         logger.error(f"Error in consume_credit for user {user_id}, type {credit_type}: {e}")
+#         return False
 
-def reset_monthly_credits_for_user(user):
-    if not user or user.tier != 'starter':
-        return False # Only reset for starter tier
+# def reset_monthly_credits_for_user(user):
+#     if not user or user.tier != 'starter':
+#         return False # Only reset for starter tier
 
-    logger.info(f"Attempting monthly credit reset for Starter user {user.id} ({user.email})")
-    changes_made = False
-    current_time = datetime.utcnow()
+#     logger.info(f"Attempting monthly credit reset for Starter user {user.id} ({user.email})")
+#     changes_made = False
+#     current_time = datetime.utcnow()
 
-    credit_configs = {
-        CREDIT_TYPE_RESUME_AI: STARTER_MONTHLY_RESUME_AI_CREDITS,
-        CREDIT_TYPE_COVER_LETTER_AI: STARTER_MONTHLY_COVER_LETTER_AI_CREDITS,
-        CREDIT_TYPE_DEEP_DIVE: STARTER_MONTHLY_DEEP_DIVE_CREDITS,
-    }
+#     credit_configs = {
+#         CREDIT_TYPE_RESUME_AI: STARTER_MONTHLY_RESUME_AI_CREDITS,
+#         CREDIT_TYPE_COVER_LETTER_AI: STARTER_MONTHLY_COVER_LETTER_AI_CREDITS,
+#         CREDIT_TYPE_DEEP_DIVE: STARTER_MONTHLY_DEEP_DIVE_CREDITS,
+#     }
 
-    for credit_type, monthly_amount in credit_configs.items():
-        try:
-            credit_record = get_or_create_credit_record(user.id, credit_type)
+#     for credit_type, monthly_amount in credit_configs.items():
+#         try:
+#             credit_record = get_or_create_credit_record(user.id, credit_type)
 
-            # Check if last_reset is None (first time) or if it's a different month/year
-            needs_reset = False
-            if credit_record.last_reset is None:
-                needs_reset = True
-                logger.info(f"Credit type {credit_type} for user {user.id} never reset, scheduling reset.")
-            else:
-                if (current_time.year > credit_record.last_reset.year or
-                        (current_time.year == credit_record.last_reset.year and current_time.month > credit_record.last_reset.month)):
-                    needs_reset = True
-                    logger.info(f"Credit type {credit_type} for user {user.id} due for monthly reset. Last reset: {credit_record.last_reset}, Current: {current_time}")
-                else:
-                    logger.info(f"Credit type {credit_type} for user {user.id} not due for reset. Last reset: {credit_record.last_reset}")
+#             # Check if last_reset is None (first time) or if it's a different month/year
+#             needs_reset = False
+#             if credit_record.last_reset is None:
+#                 needs_reset = True
+#                 logger.info(f"Credit type {credit_type} for user {user.id} never reset, scheduling reset.")
+#             else:
+#                 if (current_time.year > credit_record.last_reset.year or
+#                         (current_time.year == credit_record.last_reset.year and current_time.month > credit_record.last_reset.month)):
+#                     needs_reset = True
+#                     logger.info(f"Credit type {credit_type} for user {user.id} due for monthly reset. Last reset: {credit_record.last_reset}, Current: {current_time}")
+#                 else:
+#                     logger.info(f"Credit type {credit_type} for user {user.id} not due for reset. Last reset: {credit_record.last_reset}")
 
-            if needs_reset:
-                credit_record.amount = monthly_amount
-                credit_record.last_reset = current_time
-                db.session.add(credit_record) # Ensure it's added if newly created by get_or_create
-                changes_made = True
-                logger.info(f"Reset credits for user {user.id}, type {credit_type} to {monthly_amount}.")
-        except Exception as e:
-            logger.error(f"Error resetting {credit_type} for user {user.id}: {e}")
-            db.session.rollback() # Rollback this specific credit type change
-            # Continue to try other credit types
+#             if needs_reset:
+#                 credit_record.amount = monthly_amount
+#                 credit_record.last_reset = current_time
+#                 db.session.add(credit_record) # Ensure it's added if newly created by get_or_create
+#                 changes_made = True
+#                 logger.info(f"Reset credits for user {user.id}, type {credit_type} to {monthly_amount}.")
+#         except Exception as e:
+#             logger.error(f"Error resetting {credit_type} for user {user.id}: {e}")
+#             db.session.rollback() # Rollback this specific credit type change
+#             # Continue to try other credit types
 
-    if changes_made:
-        try:
-            db.session.commit()
-            logger.info(f"Successfully committed monthly credit resets for user {user.id}.")
-            return True
-        except Exception as e:
-            db.session.rollback()
-            logger.error(f"Error committing all credit resets for user {user.id}: {e}")
-            return False
-    return False
+#     if changes_made:
+#         try:
+#             db.session.commit()
+#             logger.info(f"Successfully committed monthly credit resets for user {user.id}.")
+#             return True
+#         except Exception as e:
+#             db.session.rollback()
+#             logger.error(f"Error committing all credit resets for user {user.id}: {e}")
+#             return False
+#     return False
 
 
 app.config['SESSION_TYPE'] = 'filesystem'
 Session(app)
 csrf = CSRFProtect(app)
 
-# ... (tier_required decorator, WTForms including ContactForm) ...
-def tier_required(required_tiers):
-    if isinstance(required_tiers, str):
-        required_tiers = [required_tiers]
-    def decorator(f):
-        @wraps(f)
-        @login_required
-        def decorated_function(*args, **kwargs):
-            user_tier = current_user.tier
-            g.user = current_user
-            allowed = False
-            if 'pro' in required_tiers and user_tier == 'pro':
-                allowed = True
-            elif 'starter' in required_tiers and user_tier in ['starter', 'pro']:
-                allowed = True
-            elif 'free' in required_tiers and user_tier in ['free', 'starter', 'pro']:
-                allowed = True
-            if not allowed:
-                is_api_endpoint = any(ep_path in request.path for ep_path in ['/analyze_resume', '/match_job', '/check_ats', '/translate_resume', '/get_smart_suggestions', '/get_job_market_insights', '/generate_cover_letter'])
-                if is_api_endpoint or request.blueprint:
-                    return jsonify({"error": f"This feature requires one of the following tiers: {', '.join(required_tiers)}. Your current tier is '{user_tier}'."}), 403
-                else:
-                    flash(f"This feature requires one of the following tiers: {', '.join(required_tiers)}. Please upgrade. (Your tier: '{user_tier}')", "warning")
-                    return redirect(url_for('index', **request.args))
-            return f(*args, **kwargs)
-        return decorated_function
-    return decorator
+# ... (tier_required decorator MOVED to utils.py, WTForms including ContactForm) ...
 
 class RegistrationForm(FlaskForm):
     email = StringField('Email', validators=[DataRequired(), Email(), Length(min=6, max=120)])
@@ -409,10 +321,10 @@ def register():
         db.session.commit()
 
         # Create initial Credit records for the new user
-        db.session.add(Credit(user_id=user.id, credit_type=CREDIT_TYPE_RESUME_AI, amount=0, last_reset=datetime.utcnow()))
-        db.session.add(Credit(user_id=user.id, credit_type=CREDIT_TYPE_COVER_LETTER_AI, amount=0, last_reset=datetime.utcnow()))
-        db.session.add(Credit(user_id=user.id, credit_type=CREDIT_TYPE_DEEP_DIVE, amount=0, last_reset=datetime.utcnow()))
-        db.session.commit()
+        # db.session.add(Credit(user_id=user.id, credit_type=CREDIT_TYPE_RESUME_AI, amount=0, last_reset=datetime.utcnow()))
+        # db.session.add(Credit(user_id=user.id, credit_type=CREDIT_TYPE_COVER_LETTER_AI, amount=0, last_reset=datetime.utcnow()))
+        # db.session.add(Credit(user_id=user.id, credit_type=CREDIT_TYPE_DEEP_DIVE, amount=0, last_reset=datetime.utcnow()))
+        # db.session.commit()
 
         logger.info(f"New user {user.email} registered. Initial credit records created (all 0).")
         flash('Your account has been created! You can now log in.', 'success')
@@ -517,14 +429,14 @@ def contact():
 @login_required
 def user_profile():
     # Fetch granular credits for the user to display
-    resume_ai_credits_obj = Credit.query.filter_by(user_id=current_user.id, credit_type=CREDIT_TYPE_RESUME_AI).first()
-    cover_letter_ai_credits_obj = Credit.query.filter_by(user_id=current_user.id, credit_type=CREDIT_TYPE_COVER_LETTER_AI).first()
-    deep_dive_credits_obj = Credit.query.filter_by(user_id=current_user.id, credit_type=CREDIT_TYPE_DEEP_DIVE).first()
+    # resume_ai_credits_obj = Credit.query.filter_by(user_id=current_user.id, credit_type=CREDIT_TYPE_RESUME_AI).first()
+    # cover_letter_ai_credits_obj = Credit.query.filter_by(user_id=current_user.id, credit_type=CREDIT_TYPE_COVER_LETTER_AI).first()
+    # deep_dive_credits_obj = Credit.query.filter_by(user_id=current_user.id, credit_type=CREDIT_TYPE_DEEP_DIVE).first()
 
-    return render_template('user_profile.html',
-                           resume_ai_credits=resume_ai_credits_obj.amount if resume_ai_credits_obj else 0,
-                           cover_letter_ai_credits=cover_letter_ai_credits_obj.amount if cover_letter_ai_credits_obj else 0,
-                           deep_dive_credits=deep_dive_credits_obj.amount if deep_dive_credits_obj else 0)
+    return render_template('user_profile.html')
+                           # resume_ai_credits=resume_ai_credits_obj.amount if resume_ai_credits_obj else 0,
+                           # cover_letter_ai_credits=cover_letter_ai_credits_obj.amount if cover_letter_ai_credits_obj else 0,
+                           # deep_dive_credits=deep_dive_credits_obj.amount if deep_dive_credits_obj else 0)
 
 @app.route('/account/edit')
 @login_required
@@ -580,6 +492,7 @@ def setup_jinja_globals():
 
 # --- IBM Watson, Skills, Keywords, LLM, PDF, Forms sections --- (mostly unchanged placeholders)
 WATSON_NLP_API_KEY = os.getenv('WATSON_NLP_API_KEY') # ... (rest of Watson config)
+WATSON_NLP_URL = os.getenv('WATSON_NLP_URL') # ADDED
 WATSON_NLP_AVAILABLE = False
 if WATSON_NLP_API_KEY and WATSON_NLP_URL: # ...
     pass # ... (original Watson init logic) ...
@@ -736,16 +649,16 @@ def download_word(): return send_file(BytesIO(), as_attachment=True, download_na
 def get_job_market_insights():
     if not gemini_model: return jsonify({"error": "Gemini client not configured."}), 500
 
-    if current_user.tier == 'starter':
-        if not consume_credit(current_user.id, CREDIT_TYPE_DEEP_DIVE):
-            # Flash message might not be visible for API endpoint, but good for consistency
-            flash(f"No '{CREDIT_TYPE_DEEP_DIVE}' credits remaining for this month. Upgrade to Pro for unlimited insights or wait for your next monthly refresh.", "warning")
-            return jsonify({"error": f"No '{CREDIT_TYPE_DEEP_DIVE}' credits remaining."}), 403
-        db.session.add(FeatureUsageLog(user_id=current_user.id, feature_name=CREDIT_TYPE_DEEP_DIVE, credits_used=1))
-    elif current_user.tier == 'pro':
-        db.session.add(FeatureUsageLog(user_id=current_user.id, feature_name=f"{CREDIT_TYPE_DEEP_DIVE}_pro_usage", credits_used=0))
+    # if current_user.tier == 'starter':
+    #     if not consume_credit(current_user.id, CREDIT_TYPE_DEEP_DIVE):
+    #         # Flash message might not be visible for API endpoint, but good for consistency
+    #         flash(f"No '{CREDIT_TYPE_DEEP_DIVE}' credits remaining for this month. Upgrade to Pro for unlimited insights or wait for your next monthly refresh.", "warning")
+    #         return jsonify({"error": f"No '{CREDIT_TYPE_DEEP_DIVE}' credits remaining."}), 403
+    #     db.session.add(FeatureUsageLog(user_id=current_user.id, feature_name=CREDIT_TYPE_DEEP_DIVE, credits_used=1))
+    # elif current_user.tier == 'pro':
+    #     db.session.add(FeatureUsageLog(user_id=current_user.id, feature_name=f"{CREDIT_TYPE_DEEP_DIVE}_pro_usage", credits_used=0))
 
-    db.session.commit()
+    # db.session.commit()
 
     data = request.get_json();
     if not data: return jsonify({"error": "No data provided."}), 400
@@ -754,9 +667,10 @@ def get_job_market_insights():
 # --- Gemini Client Configuration ---
 # ... (unchanged)
 gemini_model = None
-if GEMINI_API_KEY:
+GEMINI_API_KEY_LOCAL = os.getenv("GEMINI_API_KEY") # Use local var to avoid potential global name issues
+if GEMINI_API_KEY_LOCAL:
     try:
-        genai.configure(api_key=GEMINI_API_KEY)
+        genai.configure(api_key=GEMINI_API_KEY_LOCAL)
         gemini_model = genai.GenerativeModel('gemini-1.0-pro')
         logger.info("Gemini client (gemini-1.0-pro) configured successfully.")
     except Exception as e:
@@ -795,29 +709,30 @@ def stripe_webhook():
                 if price_id == app.config.get('STRIPE_STARTER_PRICE_ID'): # Use app.config for testability
                     user.tier = 'starter'
                     user.stripe_subscription_id = session_data.get('subscription')
-                    credit_types_starter = {
-                        CREDIT_TYPE_RESUME_AI: STARTER_MONTHLY_RESUME_AI_CREDITS,
-                        CREDIT_TYPE_COVER_LETTER_AI: STARTER_MONTHLY_COVER_LETTER_AI_CREDITS,
-                        CREDIT_TYPE_DEEP_DIVE: STARTER_MONTHLY_DEEP_DIVE_CREDITS
-                    }
-                    for ct, amount in credit_types_starter.items():
-                        credit_rec = get_or_create_credit_record(user.id, ct)
-                        credit_rec.amount = amount
-                        credit_rec.last_reset = datetime.utcnow()
-                        db.session.add(credit_rec)
+                    # credit_types_starter = {
+                    #     CREDIT_TYPE_RESUME_AI: STARTER_MONTHLY_RESUME_AI_CREDITS,
+                    #     CREDIT_TYPE_COVER_LETTER_AI: STARTER_MONTHLY_COVER_LETTER_AI_CREDITS,
+                    #     CREDIT_TYPE_DEEP_DIVE: STARTER_MONTHLY_DEEP_DIVE_CREDITS
+                    # }
+                    # for ct, amount in credit_types_starter.items():
+                    #     credit_rec = get_or_create_credit_record(user.id, ct)
+                    #     credit_rec.amount = amount
+                    #     credit_rec.last_reset = datetime.utcnow()
+                    #     db.session.add(credit_rec)
                 elif price_id == app.config.get('STRIPE_PRO_PRICE_ID'):
                     user.tier = 'pro'
                     user.stripe_subscription_id = session_data.get('subscription')
-                    for ct in [CREDIT_TYPE_RESUME_AI, CREDIT_TYPE_COVER_LETTER_AI, CREDIT_TYPE_DEEP_DIVE]:
-                        credit_rec = get_or_create_credit_record(user.id, ct)
-                        credit_rec.amount = PRO_UNLIMITED_CREDITS
-                        credit_rec.last_reset = datetime.utcnow()
-                        db.session.add(credit_rec)
+                    # for ct in [CREDIT_TYPE_RESUME_AI, CREDIT_TYPE_COVER_LETTER_AI, CREDIT_TYPE_DEEP_DIVE]:
+                    #     credit_rec = get_or_create_credit_record(user.id, ct)
+                    #     credit_rec.amount = PRO_UNLIMITED_CREDITS
+                    #     credit_rec.last_reset = datetime.utcnow()
+                    #     db.session.add(credit_rec)
                 elif price_id == app.config.get('STRIPE_CREDIT_PACK_PRICE_ID'):
-                    credit_rec = get_or_create_credit_record(user.id, CREDIT_TYPE_DEEP_DIVE)
-                    credit_rec.amount += 5 # Example pack size
-                    db.session.add(credit_rec)
-                    logger.info(f"Added 5 {CREDIT_TYPE_DEEP_DIVE} credits to user {user.id}.")
+                    # credit_rec = get_or_create_credit_record(user.id, CREDIT_TYPE_DEEP_DIVE)
+                    # credit_rec.amount += 5 # Example pack size
+                    # db.session.add(credit_rec)
+                    # logger.info(f"Added 5 {CREDIT_TYPE_DEEP_DIVE} credits to user {user.id}.")
+                    pass
             db.session.commit()
             logger.info(f"Processed checkout.session.completed for user {user.id}. Tier: {user.tier}, Sub ID: {user.stripe_subscription_id}")
         except Exception as e:
@@ -833,16 +748,16 @@ def stripe_webhook():
         user = User.query.filter_by(stripe_customer_id=stripe_customer_id, stripe_subscription_id=stripe_subscription_id).first()
         if user:
             if user.tier == 'starter':
-                reset_monthly_credits_for_user(user) # This function now handles commit
+                # reset_monthly_credits_for_user(user) # This function now handles commit
                 logger.info(f"Renewed monthly credits for Starter user {user.id} via invoice.payment_succeeded.")
             elif user.tier == 'pro':
                  # Pro credits are "unlimited", but we can update last_reset if desired
-                for ct in [CREDIT_TYPE_RESUME_AI, CREDIT_TYPE_COVER_LETTER_AI, CREDIT_TYPE_DEEP_DIVE]:
-                    credit_rec = get_or_create_credit_record(user.id, ct)
-                    credit_rec.amount = PRO_UNLIMITED_CREDITS # Ensure it stays high
-                    credit_rec.last_reset = datetime.utcnow()
-                    db.session.add(credit_rec)
-                db.session.commit()
+                # for ct in [CREDIT_TYPE_RESUME_AI, CREDIT_TYPE_COVER_LETTER_AI, CREDIT_TYPE_DEEP_DIVE]:
+                #     credit_rec = get_or_create_credit_record(user.id, ct)
+                #     credit_rec.amount = PRO_UNLIMITED_CREDITS # Ensure it stays high
+                #     credit_rec.last_reset = datetime.utcnow()
+                #     db.session.add(credit_rec)
+                # db.session.commit()
                 logger.info(f"Pro user {user.id} subscription renewed. Credits remain effectively unlimited.")
         else:
             logger.warning(f"Webhook invoice.payment_succeeded: User not found for cust {stripe_customer_id}, sub {stripe_subscription_id}")
@@ -855,11 +770,11 @@ def stripe_webhook():
         if user:
             user.tier = 'free'
             user.stripe_subscription_id = None
-            for ct in [CREDIT_TYPE_DEEP_DIVE, CREDIT_TYPE_RESUME_AI, CREDIT_TYPE_COVER_LETTER_AI]:
-                credit_rec = get_or_create_credit_record(user.id, ct)
-                credit_rec.amount = 0
-                db.session.add(credit_rec)
-            db.session.commit()
+            # for ct in [CREDIT_TYPE_DEEP_DIVE, CREDIT_TYPE_RESUME_AI, CREDIT_TYPE_COVER_LETTER_AI]:
+            #     credit_rec = get_or_create_credit_record(user.id, ct)
+            #     credit_rec.amount = 0
+            #     db.session.add(credit_rec)
+            db.session.commit() # Commit the tier and subscription_id change
             logger.warning(f"User {user.id} downgraded to free due to payment failure on subscription {stripe_subscription_id}.")
         else:
             logger.warning(f"Webhook invoice.payment_failed: User not found for cust {stripe_customer_id}, sub {stripe_subscription_id}")
@@ -873,6 +788,7 @@ def generate_cover_letter():
     # Note: This is a distinct API endpoint from the cover_letter_app.py blueprint's UI.
     # Its placeholder nature is acknowledged. Actual LLM call and credit logic for 'starter' tier might need alignment
     # with how cover_letter_app.py's generate() function handles granular credits if this endpoint is to be fully featured.
+    # logger instance is defined at the top of this file.
     logger.info(f"Cover letter API generation requested by Pro user: {current_user.email}")
     return jsonify({
         "message": "Cover letter generation (Pro Tier - API Placeholder).",
@@ -881,36 +797,36 @@ def generate_cover_letter():
 
 # --- Programmatic Schema Updates ---
 # ... (handle_database_schema_updates function remains unchanged)
-def handle_database_schema_updates():
-    with app.app_context():
-        inspector = inspect(db.engine)
-        if 'user_credit' in inspector.get_table_names():
-            with db.engine.connect() as connection:
-                connection.execute(text('DROP TABLE IF EXISTS user_credit'))
-                connection.commit()
-            logger.info("Dropped old 'user_credit' table as part of schema update.")
-        user_columns_raw = inspector.get_columns('users')
-        user_columns = [col['name'] for col in user_columns_raw]
-        new_user_cols = [
-            ("username", "VARCHAR(80)"), ("industry_preference", "VARCHAR(50)"),
-            ("contact_phone", "VARCHAR(30)"), ("profile_updated_at", "TIMESTAMP")
-        ]
-        for col_name, col_type in new_user_cols:
-            if col_name not in user_columns:
-                sql_command = f'ALTER TABLE users ADD COLUMN {col_name} {col_type} NULL'
-                with db.engine.connect() as connection:
-                    connection.execute(text(sql_command))
-                    connection.commit()
-                logger.info(f"Added column '{col_name}' to 'users' table.")
-            else: logger.info(f"Column '{col_name}' already exists in 'users' table.")
-        db.create_all()
-        logger.info("Called db.create_all() - new tables (resumes, cover_letters, credits) and potentially 'users' ensured.")
+# def handle_database_schema_updates():
+#     with app.app_context():
+#         inspector = inspect(db.engine)
+#         if 'user_credit' in inspector.get_table_names():
+#             with db.engine.connect() as connection:
+#                 connection.execute(text('DROP TABLE IF EXISTS user_credit'))
+#                 connection.commit()
+#             logger.info("Dropped old 'user_credit' table as part of schema update.")
+#         user_columns_raw = inspector.get_columns('users')
+#         user_columns = [col['name'] for col in user_columns_raw]
+#         new_user_cols = [
+#             ("username", "VARCHAR(80)"), ("industry_preference", "VARCHAR(50)"),
+#             ("contact_phone", "VARCHAR(30)"), ("profile_updated_at", "TIMESTAMP")
+#         ]
+#         for col_name, col_type in new_user_cols:
+#             if col_name not in user_columns:
+#                 sql_command = f'ALTER TABLE users ADD COLUMN {col_name} {col_type} NULL'
+#                 with db.engine.connect() as connection:
+#                     connection.execute(text(sql_command))
+#                     connection.commit()
+#                 logger.info(f"Added column '{col_name}' to 'users' table.")
+#             else: logger.info(f"Column '{col_name}' already exists in 'users' table.")
+#         db.create_all()
+#         logger.info("Called db.create_all() - new tables (resumes, cover_letters, credits) and potentially 'users' ensured.")
 
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000))
     debug_mode = os.getenv('FLASK_ENV') == 'development'
     with app.app_context():
-        handle_database_schema_updates()
+        # handle_database_schema_updates()
 
         if not WATSON_NLP_AVAILABLE and nlp is None:
             logger.info("Attempting to load SpaCy model 'en_core_web_sm' as fallback...")

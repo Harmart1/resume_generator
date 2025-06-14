@@ -1,10 +1,13 @@
 from flask import Blueprint, request, render_template, redirect, url_for, flash, current_app
-from cov_let import CoverLetterForm
-from file_utils import extract_text_from_file
-from prompt_engine import build_cover_letter_prompt
-from security import rate_limited, validate_input_length
+from .forms import CoverLetterForm
+from .utils.file_utils import extract_text_from_file # UPDATED
+from .utils.prompt_engine import build_cover_letter_prompt # UPDATED
+from .utils.security import rate_limited, validate_input_length # UPDATED
 from flask_login import login_required, current_user
-from backend.app import db, CoverLetter, tier_required, MISTRAL_API_KEY, MISTRAL_API_URL, CREDIT_TYPE_COVER_LETTER_AI, consume_credit, FeatureUsageLog, logger # Import Credit items
+from backend.extensions import db # UPDATED
+from backend.models import CoverLetter, FeatureUsageLog # UPDATED
+from backend.utils import tier_required, MISTRAL_API_KEY, MISTRAL_API_URL, CREDIT_TYPE_COVER_LETTER_AI, consume_credit # UPDATED
+import logging # NEW
 import os
 import tempfile
 import requests
@@ -13,6 +16,7 @@ from sqlalchemy import func # Added func
 import json # Added json
 import uuid
 
+logger = logging.getLogger(__name__) # NEW
 bp = Blueprint('cover_letter', __name__, template_folder='../../frontend/templates')
 
 # Helper function to count monthly cover letter saves

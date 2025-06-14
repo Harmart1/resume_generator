@@ -2,9 +2,14 @@
 from .utils import translation  # NEW
 from .utils.translation import detect_language, translate_text  # NEW
 from flask_login import login_required, current_user
-from backend.app import db, Resume, tier_required, CREDIT_TYPE_RESUME_AI, consume_credit, FeatureUsageLog, logger # Added Credit constants and functions
+from backend.extensions import db # Changed
+from backend.models import Resume, FeatureUsageLog # UPDATED: Models from models.py
+from backend.utils import tier_required, CREDIT_TYPE_RESUME_AI, consume_credit # UPDATED
+import logging # NEW
 from . import bp # Import bp from the local __init__.py
 from flask import render_template, session, redirect, url_for, flash, jsonify, request # Added request
+
+logger = logging.getLogger(__name__) # NEW
 import json
 from datetime import datetime, date
 from sqlalchemy import func
