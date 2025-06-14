@@ -45,10 +45,21 @@
 
             <div>
                 {{ form.subject.label(class="block text-md font-sora font-semibold text-tech-blue mb-2") }}
-                {{ form.subject(class="w-full p-3 rounded-lg shadow-sm focus:ring-electric-cyan focus:border-electric-cyan transition duration-200 glass-card-inner border border-electric-cyan border-opacity-30 text-primary-light placeholder-secondary-light", placeholder="Subject of your message") }}
+                {# Ensure select also gets the right styling; WTForms renders select for SelectField #}
+                {{ form.subject(class="w-full p-3 rounded-lg shadow-sm focus:ring-electric-cyan focus:border-electric-cyan transition duration-200 glass-card-inner border border-electric-cyan border-opacity-30 text-primary-light") }}
                 {% if form.subject.errors %}
                     <ul class="text-red-400 text-xs mt-1 space-y-0.5">
                         {% for error in form.subject.errors %}<li>{{ error }}</li>{% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+
+            <div id="other_subject_div" style="display: none;">
+                {{ form.other_subject.label(class="block text-md font-sora font-semibold text-tech-blue mb-2") }}
+                {{ form.other_subject(class="w-full p-3 rounded-lg shadow-sm focus:ring-electric-cyan focus:border-electric-cyan transition duration-200 glass-card-inner border border-electric-cyan border-opacity-30 text-primary-light placeholder-secondary-light", placeholder="Please specify your subject") }}
+                {% if form.other_subject.errors %}
+                    <ul class="text-red-400 text-xs mt-1 space-y-0.5">
+                        {% for error in form.other_subject.errors %}<li>{{ error }}</li>{% endfor %}
                     </ul>
                 {% endif %}
             </div>
@@ -63,10 +74,41 @@
                 {% endif %}
             </div>
 
-            <div class="pt-4 text-center">
+            <div class="pt-4 flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-4">
+                <a href="{{ url_for('serve_homepage_file') }}" class="btn-glow btn-secondary inline-flex items-center justify-center px-8 py-3 font-bold rounded-full shadow-lg text-white text-lg transition duration-300 ease-in-out transform hover:scale-105 w-full sm:w-auto text-center">Cancel</a>
                 {{ form.submit(class="btn-glow btn-primary inline-flex items-center justify-center px-8 py-3 font-bold rounded-full shadow-lg text-white text-lg transition duration-300 ease-in-out transform hover:scale-105 w-full sm:w-auto") }}
             </div>
         </form>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const subjectField = document.getElementById('subject'); // Default ID for WTForms fields
+    const otherSubjectDiv = document.getElementById('other_subject_div');
+    const otherSubjectField = document.getElementById('other_subject');
+
+    if (subjectField && otherSubjectDiv && otherSubjectField) {
+        // Function to toggle visibility and requirement
+        function toggleOtherSubject() {
+            if (subjectField.value === 'other') {
+                otherSubjectDiv.style.display = 'block';
+                otherSubjectField.required = true;
+            } else {
+                otherSubjectDiv.style.display = 'none';
+                otherSubjectField.required = false;
+                otherSubjectField.value = ''; // Clear value when hidden
+            }
+        }
+
+        // Initial check in case the form is re-rendered with 'other' selected
+        toggleOtherSubject();
+
+        // Add event listener
+        subjectField.addEventListener('change', toggleOtherSubject);
+    } else {
+        console.error('Contact form script: One or more elements (subject, other_subject_div, other_subject) not found.');
+    }
+});
+</script>
 {% endblock %}
