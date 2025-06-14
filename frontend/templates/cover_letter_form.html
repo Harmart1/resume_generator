@@ -3,152 +3,158 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cover Letter Generator</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Cover Letter Generator - Revisume.ai</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Sora:wght@400;600;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
-        body {
-            background-color: #f8f9fa;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        .form-container {
-            background-color: white;
-            border-radius: 10px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
-            padding: 30px;
-            margin-top: 30px;
-            margin-bottom: 30px;
-        }
-        .form-header {
-            text-align: center;
-            margin-bottom: 25px;
-            color: #8B0000;
-            border-bottom: 2px solid #8B0000;
-            padding-bottom: 15px;
-        }
-        .btn-primary {
-            background-color: #8B0000;
-            border-color: #8B0000;
-        }
-        .btn-primary:hover {
-            background-color: #A52A2A;
-            border-color: #A52A2A;
-        }
-        .form-label {
-            font-weight: 500;
-        }
-        .required:after {
-            content: " *";
-            color: #dc3545;
-        }
+        body { font-family: 'Inter', sans-serif; }
+        /* Minimal style if needed, or rely purely on Tailwind */
     </style>
 </head>
-<body>
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-lg-8">
-                <div class="form-container">
-                    <h2 class="form-header">Professional Cover Letter Generator</h2>
-                    
-                    {% with messages = get_flashed_messages(with_categories=true) %}
-                        {% if messages %}
-                            {% for category, message in messages %}
-                                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                                    {{ message }}
-                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                                </div>
-                            {% endfor %}
-                        {% endif %}
-                    {% endwith %}
-                    
-                    <form method="POST" enctype="multipart/form-data">
-                        {{ form.hidden_tag() }}
-                        
-                        <div class="mb-3">
-                            <label class="form-label required">Your Full Name</label>
-                            {{ form.your_name(class="form-control", placeholder="John Smith") }}
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label required">Your Email</label>
-                            {{ form.your_email(class="form-control", placeholder="john.smith@example.com") }}
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label required">Job Title</label>
-                            {{ form.job_title(class="form-control", placeholder="Senior Software Engineer") }}
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Company Name</label>
-                            {{ form.company_name(class="form-control", placeholder="Tech Innovations Inc.") }}
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label required">Job Description</label>
-                            {{ form.job_description(class="form-control", rows=6) }}
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Your Resume Content</label>
-                            {{ form.resume_text(class="form-control", rows=6, placeholder="Paste your resume text (optional but recommended for better results)") }}
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Refinement Type</label>
-                            {{ form.refinement_type(class="form-select") }}
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Existing Cover Letter</label>
-                            {{ form.previous_cover_letter(class="form-control", rows=6, placeholder="Paste existing cover letter to refine...") }}
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Or Upload Cover Letter File</label>
-                            {{ form.cover_letter_file(class="form-control") }}
-                            <div class="form-text">Supports PDF, DOC, DOCX, TXT files (max 5MB)</div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Writing Tone</label>
-                            {{ form.tone(class="form-select") }}
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Key Points to Highlight</label>
-                            {{ form.key_points(class="form-control", rows=3, placeholder="Specific achievements, skills, or experiences to emphasize...") }}
-                        </div>
-                        
-                        <div class="d-grid">
-                            {{ form.submit(class="btn btn-primary btn-lg") }}
-                        </div>
-                    </form>
-                </div>
+<body class="bg-gradient-dark font-inter min-h-screen flex flex-col" style="background-color: #1A1A2E; color: #E0E0E0;">
+
+    <header class="p-4 shadow-lg md:p-6" style="background-color: rgba(15, 15, 26, 0.8); border-bottom: 1px solid rgba(0, 216, 255, 0.3); box-shadow: 0 3px 15px rgba(0, 0, 0, 0.3);">
+        <div class="container mx-auto flex flex-col md:flex-row justify-between items-center">
+            <div class="flex items-center mb-4 md:mb-0">
+                <a href="/"> {# Simplified link to root #}
+                    <img src="/static/logo.png" alt="Revisume.ai Logo" class="h-10 sm:h-12 mr-3" onerror="this.onerror=null;this.src='https://placehold.co/48x48/1A1A2E/00D8FF?text=AI';">
+                </a>
+                <a href="/"> {# Simplified link to root #}
+                    <h1 class="text-2xl sm:text-3xl font-space-grotesk font-bold" style="color: #00D8FF;">Revisume.ai</h1>
+                </a>
             </div>
+            <nav class="mb-4 md:mb-0">
+                <ul class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 md:space-x-6 text-base sm:text-lg text-center sm:text-left">
+                    <li><a href="/#analyzer" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light">Analyzer</a></li>
+                    <li><a href="/#results" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light">Results</a></li>
+                    <li><a href="/#pricing-section" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light">Pricing</a></li>
+                    {# Login/Logout links could be added if current_user is available, simplified for now #}
+                </ul>
+            </nav>
         </div>
-    </div>
-    
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    </header>
+
+    <main class="container mx-auto py-6 sm:py-10 flex-grow">
+        <div class="max-w-3xl mx-auto p-6 sm:p-8 md:p-10 rounded-2xl shadow-2xl bg-gray-800 bg-opacity-70 backdrop-filter backdrop-blur-xl border border-electric-cyan border-opacity-40">
+            <h2 class="text-2xl sm:text-3xl font-sora font-extrabold text-electric-cyan mb-8 text-center border-b-2 border-neon-purple pb-4">Professional Cover Letter Generator</h2>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="mb-6">
+                        {% for category, message in messages %}
+                            <div class="p-4 mb-4 border-l-4 rounded-md shadow-md
+                                        {% if category == 'error' or category == 'danger' %} bg-red-800 bg-opacity-60 border-red-500 text-red-100
+                                        {% elif category == 'success' %} bg-green-800 bg-opacity-60 border-green-500 text-green-100
+                                        {% else %} bg-blue-800 bg-opacity-60 border-blue-500 text-blue-100 {% endif %}"
+                                 role="alert">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <form method="POST" enctype="multipart/form-data" class="space-y-6">
+                {{ form.hidden_tag() }}
+
+                <div>
+                    <label for="{{ form.your_name.id }}" class="block text-sm font-medium text-gray-300 mb-1">Your Full Name <span class="text-red-500">*</span></label>
+                    {{ form.your_name(class="w-full p-3 rounded-lg shadow-sm focus:ring-electric-cyan focus:border-electric-cyan transition duration-200 bg-gray-700 text-gray-200 border border-gray-600 placeholder-gray-400", placeholder="John Smith") }}
+                </div>
+
+                <div>
+                    <label for="{{ form.your_email.id }}" class="block text-sm font-medium text-gray-300 mb-1">Your Email <span class="text-red-500">*</span></label>
+                    {{ form.your_email(class="w-full p-3 rounded-lg shadow-sm focus:ring-electric-cyan focus:border-electric-cyan transition duration-200 bg-gray-700 text-gray-200 border border-gray-600 placeholder-gray-400", placeholder="john.smith@example.com") }}
+                </div>
+
+                <div>
+                    <label for="{{ form.job_title.id }}" class="block text-sm font-medium text-gray-300 mb-1">Job Title <span class="text-red-500">*</span></label>
+                    {{ form.job_title(class="w-full p-3 rounded-lg shadow-sm focus:ring-electric-cyan focus:border-electric-cyan transition duration-200 bg-gray-700 text-gray-200 border border-gray-600 placeholder-gray-400", placeholder="Senior Software Engineer") }}
+                </div>
+
+                <div>
+                    <label for="{{ form.company_name.id }}" class="block text-sm font-medium text-gray-300 mb-1">Company Name</label>
+                    {{ form.company_name(class="w-full p-3 rounded-lg shadow-sm focus:ring-electric-cyan focus:border-electric-cyan transition duration-200 bg-gray-700 text-gray-200 border border-gray-600 placeholder-gray-400", placeholder="Tech Innovations Inc.") }}
+                </div>
+
+                <div>
+                    <label for="{{ form.job_description.id }}" class="block text-sm font-medium text-gray-300 mb-1">Job Description <span class="text-red-500">*</span></label>
+                    {{ form.job_description(class="w-full p-3 rounded-lg shadow-sm focus:ring-electric-cyan focus:border-electric-cyan transition duration-200 bg-gray-700 text-gray-200 border border-gray-600 placeholder-gray-400", rows=6) }}
+                </div>
+
+                <div>
+                    <label for="{{ form.resume_text.id }}" class="block text-sm font-medium text-gray-300 mb-1">Your Resume Content</label>
+                    {{ form.resume_text(class="w-full p-3 rounded-lg shadow-sm focus:ring-electric-cyan focus:border-electric-cyan transition duration-200 bg-gray-700 text-gray-200 border border-gray-600 placeholder-gray-400", rows=6, placeholder="Paste your resume text (optional but recommended for better results)") }}
+                </div>
+
+                <div>
+                    <label for="{{ form.refinement_type.id }}" class="block text-sm font-medium text-gray-300 mb-1">Refinement Type</label>
+                    {{ form.refinement_type(class="w-full p-3 rounded-lg shadow-sm focus:ring-electric-cyan focus:border-electric-cyan transition duration-200 bg-gray-700 text-gray-200 border border-gray-600") }}
+                </div>
+
+                <div>
+                    <label for="{{ form.previous_cover_letter.id }}" class="block text-sm font-medium text-gray-300 mb-1">Existing Cover Letter</label>
+                    {{ form.previous_cover_letter(class="w-full p-3 rounded-lg shadow-sm focus:ring-electric-cyan focus:border-electric-cyan transition duration-200 bg-gray-700 text-gray-200 border border-gray-600 placeholder-gray-400", rows=6, placeholder="Paste existing cover letter to refine...") }}
+                </div>
+
+                <div>
+                    <label for="{{ form.cover_letter_file.id }}" class="block text-sm font-medium text-gray-300 mb-1">Or Upload Cover Letter File</label>
+                    {{ form.cover_letter_file(class="w-full text-sm text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-electric-cyan file:text-gray-900 hover:file:bg-opacity-80 cursor-pointer bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-electric-cyan focus:border-electric-cyan") }}
+                    <p class="text-xs text-gray-400 mt-1">Supports PDF, DOC, DOCX, TXT files (max 5MB)</p>
+                </div>
+
+                <div>
+                    <label for="{{ form.tone.id }}" class="block text-sm font-medium text-gray-300 mb-1">Writing Tone</label>
+                    {{ form.tone(class="w-full p-3 rounded-lg shadow-sm focus:ring-electric-cyan focus:border-electric-cyan transition duration-200 bg-gray-700 text-gray-200 border border-gray-600") }}
+                </div>
+
+                <div>
+                    <label for="{{ form.key_points.id }}" class="block text-sm font-medium text-gray-300 mb-1">Key Points to Highlight</label>
+                    {{ form.key_points(class="w-full p-3 rounded-lg shadow-sm focus:ring-electric-cyan focus:border-electric-cyan transition duration-200 bg-gray-700 text-gray-200 border border-gray-600 placeholder-gray-400", rows=3, placeholder="Specific achievements, skills, or experiences to emphasize...") }}
+                </div>
+
+                <div class="pt-4">
+                    {{ form.submit(class="w-full btn-glow btn-primary inline-flex items-center justify-center px-8 py-3 font-bold rounded-full shadow-lg text-white text-lg transition duration-300 ease-in-out transform hover:scale-105", style="background: linear-gradient(45deg, #007BFF, #00D8FF);") }}
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <footer class="p-4 text-center mt-auto md:p-6" style="background-color: rgba(15, 15, 26, 0.8); border-top: 1px solid rgba(0, 216, 255, 0.3); box-shadow: 0 -3px 15px rgba(0, 0, 0, 0.3);">
+        <div class="container mx-auto">
+            <p class="text-sm sm:text-base md:text-lg font-sora text-primary-light">&copy; {% now 'utc', '%Y' %} Revisume.ai. All rights reserved.</p> {# Assuming 'now' filter or variable might not be standard Jinja without Flask context processor #}
+            <p class="text-xs sm:text-sm mt-2 text-secondary-light font-inter">Crafted with AI for your career success. 🚀</p>
+        </div>
+    </footer>
+
     <script>
-        // Dynamic form behavior
+        // Dynamic form behavior (should still work if IDs are preserved)
         document.addEventListener('DOMContentLoaded', function() {
-            const refinementType = document.querySelector('#refinement_type');
-            const coverLetterField = document.querySelector('#previous_cover_letter');
-            const fileField = document.querySelector('#cover_letter_file');
-            
-            function toggleCoverLetterFields() {
-                const show = refinementType.value !== 'generate';
-                coverLetterField.disabled = !show;
-                fileField.disabled = !show;
-                
-                if (!show) {
-                    coverLetterField.value = '';
-                    fileField.value = '';
+            const refinementType = document.querySelector('#refinement_type'); // Ensure your Flask form field ID is 'refinement_type'
+            const coverLetterField = document.querySelector('#previous_cover_letter'); // Ensure ID is 'previous_cover_letter'
+            const fileField = document.querySelector('#cover_letter_file'); // Ensure ID is 'cover_letter_file'
+
+            if (refinementType && coverLetterField && fileField) {
+                function toggleCoverLetterFields() {
+                    const show = refinementType.value !== 'generate';
+                    coverLetterField.disabled = !show;
+                    fileField.disabled = !show;
+
+                    // Visually indicate disabled state with Tailwind
+                    coverLetterField.classList.toggle('opacity-50', !show);
+                    coverLetterField.classList.toggle('cursor-not-allowed', !show);
+                    fileField.classList.toggle('opacity-50', !show);
+                    fileField.classList.toggle('cursor-not-allowed', !show);
+
+                    if (!show) {
+                        coverLetterField.value = '';
+                        fileField.value = '';
+                    }
                 }
+
+                refinementType.addEventListener('change', toggleCoverLetterFields);
+                toggleCoverLetterFields(); // Initialize
             }
-            
-            refinementType.addEventListener('change', toggleCoverLetterFields);
-            toggleCoverLetterFields(); // Initialize
         });
     </script>
 </body>

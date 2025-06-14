@@ -3,184 +3,103 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Professional Cover Letter</title>
+    <title>Professional Cover Letter - Revisume.ai</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Sora:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        /* SHARED STYLING WITH RESUME APP */
         @page {
-            margin: 0.5cm 1.5cm 1.2cm 1.5cm;
+            margin: 1.5cm; /* Standard A4 margins for printing */
             size: A4;
         }
-        
-        body {
-            font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif;
-            font-size: 11pt;
-            color: #000000;
-            line-height: 1.3;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 0;
-            background-color: #ffffff;
-        }
-        
-        /* COVER LETTER SPECIFIC STYLING */
-        .cover-letter-container {
-            margin-top: 1.5cm;
-            position: relative;
-        }
-        
-        .letter-head {
-            text-align: right;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-        }
-        
-        .letter-head p {
-            margin: 3px 0;
-            font-size: 10.5pt;
-        }
-        
-        .sender-info {
-            margin-bottom: 15px;
-            text-align: left;
-        }
-        
-        .recipient-block {
-            margin-bottom: 25px;
-        }
-        
-        .recipient-block p {
-            margin: 3px 0;
-        }
-        
-        .letter-body {
-            text-align: left;
-            margin-bottom: 10px;
-        }
-        
-        .paragraph {
-            margin-bottom: 12px;
-            text-align: justify;
-            text-justify: inter-word;
-        }
-        
-        .signature-block {
-            margin-top: 50px;
-        }
-        
-        /* CONSISTENT WITH RESUME STYLING */
-        h1 {
-            font-size: 24pt;
-            text-align: center;
-            margin-top: 0;
-            margin-bottom: 10px;
-            font-variant: small-caps;
-            color: #8B0000;
-        }
-        
-        h2 {
-            font-size: 14pt;
-            border-bottom: 1px solid #8B0000;
-            padding-bottom: 2px;
-            margin-top: 15px;
-            margin-bottom: 8px;
-            font-variant: small-caps;
-        }
-        
-        .red-accent {
-            color: #8B0000;
-            font-weight: bold;
-        }
-        
-        /* PRINT OPTIMIZATION */
+        /* Retain print-specific body font if Inter is too modern for formal letters */
         @media print {
             body {
+                font-family: serif; /* Fallback to generic serif for print if Palatino-like is desired */
                 font-size: 11pt;
                 line-height: 1.3;
             }
-            .no-print {
-                display: none;
-            }
-            .cover-letter-container {
-                margin-top: 0.5cm;
-            }
-        }
-        
-        /* DOWNLOAD BUTTON */
-        .download-btn {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 10px 15px;
-            background-color: #8B0000;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-family: sans-serif;
-            z-index: 1000;
-        }
-        
-        .download-btn:hover {
-            background-color: #A52A2A;
         }
     </style>
 </head>
-<body>
-    <button class="download-btn no-print" onclick="window.print()">Download as PDF</button>
+<body class="bg-gray-900 text-gray-200 font-inter text-base leading-relaxed print:bg-white print:text-black print:font-serif">
+
+    <button
+        onclick="window.print()"
+        class="fixed top-5 right-5 z-50 no-print px-6 py-3 font-bold rounded-full shadow-lg text-white text-base transition duration-300 ease-in-out transform hover:scale-105"
+        style="background: linear-gradient(45deg, #007BFF, #00D8FF);">
+        Download as PDF
+    </button>
     
-    <div class="cover-letter-container">
-        <div class="letter-head">
-            <p>{{ your_name }}</p>
-            <p>{{ your_email }}</p>
-            <p>{{ phone_number if phone_number else '[Your Phone]' }}</p>
-            <p>{{ linkedin_url if linkedin_url else '[Your LinkedIn]' }}</p>
-        </div>
-        
-        <div class="letter-head">
-            <p>{{ current_date }}</p>
-        </div>
-        
-        <div class="recipient-block">
-            <p>Hiring Manager</p>
-            {% if company %}
-            <p>{{ company }}</p>
-            {% else %}
-            <p>[Company Name]</p>
-            {% endif %}
-            <p>[Company Address]</p>
-            <p>[City, State, Zip Code]</p>
-        </div>
-        
-        <p class="salutation">Dear Hiring Manager,</p>
-        
-        <div class="letter-body">
-            {% for paragraph in content.split('\n\n') if paragraph.strip() %}
-                <p class="paragraph">{{ paragraph }}</p>
-            {% endfor %}
-        </div>
-        
-        <div class="signature-block">
-            <p>Sincerely,</p>
-            <p>{{ your_name }}</p>
+    <div class="max-w-4xl mx-auto p-8 sm:p-12 md:p-16 print:p-0">
+        <div class="cover-letter-container print:mt-0">
+            <div class="letter-head text-right mb-8 print:mb-6">
+                <p class="my-1 text-sm print:text-xs">{{ your_name }}</p>
+                <p class="my-1 text-sm print:text-xs">{{ your_email }}</p>
+                <p class="my-1 text-sm print:text-xs">{{ phone_number if phone_number else '[Your Phone]' }}</p>
+                <p class="my-1 text-sm print:text-xs">{{ linkedin_url if linkedin_url else '[Your LinkedIn]' }}</p>
+            </div>
+
+            <div class="letter-head text-right mb-8 print:mb-6"> {# Kept second letter-head for date as in original #}
+                <p class="my-1 text-sm print:text-xs">{{ current_date }}</p>
+            </div>
+
+            <div class="recipient-block mb-10 print:mb-8">
+                <p class="my-1">Hiring Manager</p>
+                {% if company %}
+                <p class="my-1">{{ company }}</p>
+                {% else %}
+                <p class="my-1">[Company Name]</p>
+                {% endif %}
+                <p class="my-1">[Company Address]</p>
+                <p class="my-1">[City, State, Zip Code]</p>
+            </div>
+
+            <p class="salutation mb-6 print:mb-5">Dear Hiring Manager,</p>
+
+            <div class="letter-body text-left">
+                {% for paragraph in content.split('
+
+') if paragraph.strip() %}
+                    <p class="paragraph mb-4 print:mb-3 text-justify">{{ paragraph }}</p>
+                {% endfor %}
+            </div>
+
+            <div class="signature-block mt-12 print:mt-10">
+                <p>Sincerely,</p>
+                <p class="mt-8 print:mt-6">{{ your_name }}</p> {# Increased space for signature #}
+            </div>
         </div>
     </div>
     
     <script>
-        // Add page breaks for printing
+        // Original script for page breaks - its effectiveness may vary.
         document.addEventListener('DOMContentLoaded', function() {
-            const paragraphs = document.querySelectorAll('.paragraph');
-            let pageHeight = 0;
-            const maxPageHeight = 900; // Approximate height for A4
-            
-            paragraphs.forEach(p => {
-                const pHeight = p.offsetHeight;
-                if (pageHeight + pHeight > maxPageHeight) {
-                    p.style.pageBreakBefore = 'always';
-                    pageHeight = pHeight;
-                } else {
-                    pageHeight += pHeight;
-                }
-            });
+            // This script attempts to add page breaks for printing.
+            // It's a client-side heuristic and might not be perfect for all content lengths or browsers.
+            // For robust PDF generation, server-side tools are usually recommended.
+            if (window.matchMedia('print').matches) { // Only run logic if actually printing
+                const paragraphs = document.querySelectorAll('.paragraph');
+                let currentApproxPageHeight = 0;
+                // A4 height in pixels at 96 DPI is roughly 1123px. Usable height is less due to margins.
+                // Margins are 1.5cm top/bottom = ~113px. So usable height ~1010px.
+                // This is highly approximate.
+                const maxUsablePageHeight = 800; // Adjusted based on typical content flow & font size
+
+                paragraphs.forEach((p, index) => {
+                    if (index === 0) { // Reset for first paragraph on a new "page" context
+                        currentApproxPageHeight = p.offsetHeight;
+                        return;
+                    }
+
+                    const pHeight = p.offsetHeight;
+                    if (currentApproxPageHeight + pHeight > maxUsablePageHeight) {
+                        p.style.pageBreakBefore = 'always';
+                        currentApproxPageHeight = pHeight;
+                    } else {
+                        currentApproxPageHeight += pHeight;
+                    }
+                });
+            }
         });
     </script>
 </body>

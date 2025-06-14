@@ -3,128 +3,172 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Resume Preview</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/resume-builder.css') }}">
+    <title>Resume Preview - Revisume.ai</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Sora:wght@400;600;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
-        {{ industry_css|safe }}
+        body { font-family: 'Inter', sans-serif; }
+        {{ industry_css|safe }} /* Kept for industry-specific text colors/fonts, hoping it complements */
+
+        @media print {
+            body {
+                font-family: serif; /* Or keep Inter if preferred for print */
+                font-size: 10pt;
+                line-height: 1.2;
+            }
+            .no-print { display: none !important; }
+            .resume-preview-content {
+                box-shadow: none !important;
+                border: none !important;
+            }
+        }
     </style>
 </head>
-<body>
-    <div class="resume-preview">
-        <div class="resume-header">
-            <h1>{{ personal.full_name }}</h1>
-            <div class="contact-info">
-                {% if personal.email %}<span>{{ personal.email }}</span>{% endif %}
-                {% if personal.phone %}<span>{{ personal.phone }}</span>{% endif %}
-                {% if personal.location %}<span>{{ personal.location }}</span>{% endif %}
-                {% if personal.linkedin %}<span><a href="{{ personal.linkedin }}">LinkedIn</a></span>{% endif %}
-                {% if personal.portfolio %}<span><a href="{{ personal.portfolio }}">Portfolio</a></span>{% endif %}
+<body class="bg-gradient-dark font-inter min-h-screen flex flex-col" style="background-color: #1A1A2E; color: #E0E0E0;">
+
+    <header class="p-4 shadow-lg md:p-6 no-print" style="background-color: rgba(15, 15, 26, 0.8); border-bottom: 1px solid rgba(0, 216, 255, 0.3); box-shadow: 0 3px 15px rgba(0, 0, 0, 0.3);">
+        <div class="container mx-auto flex flex-col md:flex-row justify-between items-center">
+            <div class="flex items-center mb-4 md:mb-0">
+                <a href="/">
+                    <img src="/static/logo.png" alt="Revisume.ai Logo" class="h-10 sm:h-12 mr-3">
+                </a>
+                <a href="/">
+                    <h1 class="text-2xl sm:text-3xl font-space-grotesk font-bold" style="color: #00D8FF;">Revisume.ai</h1>
+                </a>
             </div>
+            <nav class="mb-4 md:mb-0">
+                 <ul class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 md:space-x-6 text-base sm:text-lg text-center sm:text-left">
+                    <li><a href="{{ url_for('resume_builder.start') }}" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light">New Resume</a></li>
+                    {# Add other relevant links if any #}
+                </ul>
+            </nav>
         </div>
-        
-        {% if personal.summary %}
-        <div class="section">
-            <h2 class="section-title">Professional Summary</h2>
-            <p>{{ personal.summary }}</p>
-        </div>
-        {% endif %}
-        
-        {% if experiences %}
-        <div class="section">
-            <h2 class="section-title">Work Experience</h2>
-            {% for job in experiences %}
-            <div class="job-item">
-                <div class="job-header">
-                    <div>
-                        <span class="job-title">{{ job.job_title }}</span>
-                        <span class="company">{{ job.company }}</span>
-                    </div>
-                    <div class="date">
-                        {{ job.start_date }} - {{ job.end_date or 'Present' }}
-                    </div>
-                </div>
-                <div class="job-location">{{ job.location }}</div>
-                <div class="achievements">
-                    {{ job.achievements|safe }}
+    </header>
+
+    <main class="container mx-auto py-6 sm:py-10 flex-grow">
+        <div class="resume-preview-content max-w-4xl mx-auto p-6 sm:p-10 bg-gray-800 shadow-2xl rounded-lg print:shadow-none print:border-none print:bg-white print:text-black">
+            <div class="resume-header text-center mb-8">
+                <h1 class="text-3xl sm:text-4xl font-sora font-bold text-electric-cyan mb-2 print:text-black">{{ personal.full_name }}</h1>
+                <div class="contact-info flex flex-wrap justify-center gap-x-4 sm:gap-x-6 gap-y-1 text-sm text-gray-400 print:text-gray-700">
+                    {% if personal.email %}<span>{{ personal.email }}</span>{% endif %}
+                    {% if personal.phone %}<span>{{ personal.phone }}</span>{% endif %}
+                    {% if personal.location %}<span>{{ personal.location }}</span>{% endif %}
+                    {% if personal.linkedin %}<span><a href="{{ personal.linkedin }}" class="hover:text-electric-cyan print:text-blue-600 print:no-underline">{{ personal.linkedin }}</a></span>{% endif %}
+                    {% if personal.portfolio %}<span><a href="{{ personal.portfolio }}" class="hover:text-electric-cyan print:text-blue-600 print:no-underline">{{ personal.portfolio }}</a></span>{% endif %}
                 </div>
             </div>
-            {% endfor %}
-        </div>
-        {% endif %}
-        
-        {% if skills %}
-        <div class="section">
-            <h2 class="section-title">Skills</h2>
-            {% if skills.technical_skills %}
-            <div class="skills-container">
-                {% for skill in skills.technical_skills.split(',') %}
-                <span class="skill-badge">{{ skill.strip() }}</span>
+
+            {% if personal.summary %}
+            <div class="section mb-6">
+                <h2 class="section-title text-xl sm:text-2xl font-sora font-semibold text-neon-purple mb-3 pb-2 border-b border-gray-700 print:text-black print:border-gray-300">Professional Summary</h2>
+                <p class="text-gray-300 print:text-gray-800 text-sm sm:text-base">{{ personal.summary }}</p>
+            </div>
+            {% endif %}
+            
+            {% if experiences %}
+            <div class="section mb-6">
+                <h2 class="section-title text-xl sm:text-2xl font-sora font-semibold text-neon-purple mb-3 pb-2 border-b border-gray-700 print:text-black print:border-gray-300">Work Experience</h2>
+                {% for job in experiences %}
+                <div class="job-item mb-5">
+                    <div class="job-header flex flex-col sm:flex-row justify-between items-start mb-1">
+                        <div>
+                            <span class="job-title text-lg font-semibold text-gray-100 print:text-black">{{ job.job_title }}</span>
+                            <span class="company text-md text-gray-300 italic print:text-gray-700 ml-0 sm:ml-2">at {{ job.company }}</span>
+                        </div>
+                        <div class="date text-xs sm:text-sm text-gray-400 print:text-gray-600 mt-1 sm:mt-0">{{ job.start_date }} - {{ job.end_date or 'Present' }}</div>
+                    </div>
+                    <div class="job-location text-xs sm:text-sm text-gray-400 print:text-gray-600 mb-2">{{ job.location }}</div>
+                    <div class="achievements prose prose-sm prose-invert max-w-none text-gray-300 print:text-gray-800 print:prose-black">
+                        {{ job.achievements|safe }} {# Assuming achievements are pre-formatted HTML (e.g. ul/li) #}
+                    </div>
+                </div>
                 {% endfor %}
             </div>
             {% endif %}
             
-            {% if skills.soft_skills %}
-            <p><strong>Soft Skills:</strong> {{ skills.soft_skills }}</p>
-            {% endif %}
-            
-            {% if skills.certifications %}
-            <p><strong>Certifications:</strong> {{ skills.certifications }}</p>
-            {% endif %}
-        </div>
-        {% endif %}
-        
-        {% if education %}
-        <div class="section">
-            <h2 class="section-title">Education</h2>
-            {% for edu in education %}
-            <div class="education-item">
-                <div class="education-header">
-                    <div>
-                        <span class="degree">{{ edu.degree }}</span>
-                        <span class="institution">{{ edu.institution }}</span>
-                    </div>
-                    <div class="date">{{ edu.graduation_year }}</div>
+            {% if skills %}
+            <div class="section mb-6">
+                <h2 class="section-title text-xl sm:text-2xl font-sora font-semibold text-neon-purple mb-3 pb-2 border-b border-gray-700 print:text-black print:border-gray-300">Skills</h2>
+                {% if skills.technical_skills %}
+                <div class="skills-container flex flex-wrap gap-2 mb-3">
+                    {% for skill in skills.technical_skills.split(',') %}
+                    <span class="skill-badge bg-electric-cyan bg-opacity-20 text-electric-cyan text-xs font-medium px-2.5 py-1 rounded-full print:bg-gray-200 print:text-black print:border print:border-gray-400">{{ skill.strip() }}</span>
+                    {% endfor %}
                 </div>
-                {% if edu.field_of_study %}
-                <div class="field-of-study">{{ edu.field_of_study }}</div>
+                {% endif %}
+
+                {% if skills.soft_skills %}
+                <p class="text-sm text-gray-300 print:text-gray-800 mb-1"><strong class="font-semibold text-gray-200 print:text-black">Soft Skills:</strong> {{ skills.soft_skills }}</p>
+                {% endif %}
+
+                {% if skills.certifications %}
+                <p class="text-sm text-gray-300 print:text-gray-800"><strong class="font-semibold text-gray-200 print:text-black">Certifications:</strong> {{ skills.certifications }}</p>
                 {% endif %}
             </div>
-            {% endfor %}
-        </div>
-        {% endif %}
-        
-        {% if additional %}
-        <div class="section">
-            {% if additional.projects %}
-            <h2 class="section-title">Projects</h2>
-            <p>{{ additional.projects }}</p>
             {% endif %}
             
-            {% if additional.languages %}
-            <h2 class="section-title">Languages</h2>
-            <p>{{ additional.languages }}</p>
+            {% if education %}
+            <div class="section mb-6">
+                <h2 class="section-title text-xl sm:text-2xl font-sora font-semibold text-neon-purple mb-3 pb-2 border-b border-gray-700 print:text-black print:border-gray-300">Education</h2>
+                {% for edu in education %}
+                <div class="education-item mb-4">
+                    <div class="education-header flex flex-col sm:flex-row justify-between items-start mb-1">
+                        <div>
+                            <span class="degree text-lg font-semibold text-gray-100 print:text-black">{{ edu.degree }}</span>
+                            <span class="institution text-md text-gray-300 italic print:text-gray-700 ml-0 sm:ml-2">from {{ edu.institution }}</span>
+                        </div>
+                        <div class="date text-xs sm:text-sm text-gray-400 print:text-gray-600 mt-1 sm:mt-0">{{ edu.graduation_year }}</div>
+                    </div>
+                    {% if edu.field_of_study %}
+                    <div class="field-of-study text-sm text-gray-400 print:text-gray-600">{{ edu.field_of_study }}</div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
             {% endif %}
             
-            {% if additional.volunteer %}
-            <h2 class="section-title">Volunteer Experience</h2>
-            <p>{{ additional.volunteer }}</p>
-            {% endif %}
-        </div>
-        {% endif %}
+            {% if additional %}
+            <div class="section mb-6">
+                {% if additional.projects %}
+                <h3 class="text-lg font-sora font-semibold text-neon-purple mb-2 print:text-black">Projects</h3>
+                <p class="text-gray-300 print:text-gray-800 mb-3 text-sm sm:text-base">{{ additional.projects }}</p>
+                {% endif %}
 
-        <div class="language-options mb-4">
-    <label>Download in:</label>
-    <a href="?lang=en" class="btn btn-sm btn-outline-primary">English</a>
-    <a href="?lang=es" class="btn btn-sm btn-outline-primary">Spanish</a>
-    <a href="?lang=fr" class="btn btn-sm btn-outline-primary">French</a>
-    <a href="?lang=de" class="btn btn-sm btn-outline-primary">German</a>
-    <a href="?lang=zh" class="btn btn-sm btn-outline-primary">Chinese</a>
-</div>
-        <div class="text-center mt-5">
-            <button onclick="window.print()" class="btn btn-primary">Download as PDF</button>
-            <a href="{{ url_for('resume_builder.start') }}" class="btn btn-secondary">Create Another Resume</a>
+                {% if additional.languages %}
+                <h3 class="text-lg font-sora font-semibold text-neon-purple mb-2 print:text-black">Languages</h3>
+                <p class="text-gray-300 print:text-gray-800 mb-3 text-sm sm:text-base">{{ additional.languages }}</p>
+                {% endif %}
+
+                {% if additional.volunteer %}
+                <h3 class="text-lg font-sora font-semibold text-neon-purple mb-2 print:text-black">Volunteer Experience</h3>
+                <p class="text-gray-300 print:text-gray-800 text-sm sm:text-base">{{ additional.volunteer }}</p>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <div class="language-options mb-6 text-center no-print">
+                <label class="block text-sm font-medium text-gray-300 mb-2">Download in:</label>
+                <div class="flex flex-wrap justify-center gap-2">
+                    <a href="?lang=en" class="px-3 py-1 border border-gray-600 rounded-md text-gray-300 hover:bg-gray-700 hover:text-electric-cyan text-xs sm:text-sm">English</a>
+                    <a href="?lang=es" class="px-3 py-1 border border-gray-600 rounded-md text-gray-300 hover:bg-gray-700 hover:text-electric-cyan text-xs sm:text-sm">Spanish</a>
+                    <a href="?lang=fr" class="px-3 py-1 border border-gray-600 rounded-md text-gray-300 hover:bg-gray-700 hover:text-electric-cyan text-xs sm:text-sm">French</a>
+                    <a href="?lang=de" class="px-3 py-1 border border-gray-600 rounded-md text-gray-300 hover:bg-gray-700 hover:text-electric-cyan text-xs sm:text-sm">German</a>
+                    <a href="?lang=zh" class="px-3 py-1 border border-gray-600 rounded-md text-gray-300 hover:bg-gray-700 hover:text-electric-cyan text-xs sm:text-sm">Chinese</a>
+                </div>
+            </div>
+
+            <div class="text-center mt-8 space-x-0 space-y-3 sm:space-x-4 sm:space-y-0 no-print">
+                <button onclick="window.print()" class="w-full sm:w-auto btn-glow btn-primary inline-flex items-center justify-center px-6 py-3 font-bold rounded-full shadow-lg text-white text-base transition duration-300 ease-in-out transform hover:scale-105" style="background: linear-gradient(45deg, #007BFF, #00D8FF);">Download as PDF</button>
+                <a href="{{ url_for('resume_builder.start') }}" class="w-full sm:w-auto btn-glow inline-flex items-center justify-center px-6 py-3 font-bold rounded-full shadow-lg text-white text-base transition duration-300 ease-in-out transform hover:scale-105" style="background: linear-gradient(45deg, #4A5568, #2D3748);">Create Another Resume</a>
+            </div>
         </div>
-    </div>
+    </main>
+
+    <footer class="p-4 text-center mt-auto md:p-6 no-print" style="background-color: rgba(15, 15, 26, 0.8); border-top: 1px solid rgba(0, 216, 255, 0.3); box-shadow: 0 -3px 15px rgba(0, 0, 0, 0.3);">
+        <div class="container mx-auto">
+            <p class="text-sm sm:text-base md:text-lg font-sora">&copy; {% now 'utc', '%Y' %} Revisume.ai. All rights reserved.</p>
+            <p class="text-xs sm:text-sm mt-2 text-secondary-light">Crafted with AI for your career success. 🚀</p>
+        </div>
+    </footer>
 </body>
 </html>
