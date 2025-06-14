@@ -442,9 +442,9 @@ main > section {
 }
 .sso-options .button {
     margin: 6px;
-    background-color: var(--primary-accent); /* New: Tech Blue */
-    color: #FFFFFF; /* New: White text for strong contrast */
-    border: 1px solid var(--primary-accent); /* New: Tech Blue border */
+    background-color: #2C3E50; /* New: Dark Slate Gray */
+    color: #FFFFFF; /* White text for strong contrast */
+    border: 1px solid #2C3E50; /* New: Matching Dark Slate Gray border */
     padding: 8px 18px;
     display: inline-flex;
     align-items: center;
@@ -452,9 +452,9 @@ main > section {
     transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 .sso-options .button:hover {
-    background-color: #0056b3; /* Darker blue for hover */
+    background-color: #1A252F; /* Darker Slate Gray for hover */
     color: #FFFFFF;
-    border-color: #004085; /* Darker blue border for hover */
+    border-color: #1A252F; /* Matching darker border for hover */
     text-decoration: none;
 }
 

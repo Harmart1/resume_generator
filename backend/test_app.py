@@ -441,11 +441,11 @@ if __name__ == '__main__':
 
 # Test Name: test_sso_button_styles_on_homepage
 # Description: Verify that the Single Sign-On (SSO) buttons on new_homepage.html (or where they are implemented)
-#              have the new styles (blue background, white text).
+#              have the updated dark styles.
 # How to test: Manually run the app, navigate to the page with SSO buttons (likely new_homepage.html or login/register pages).
 #              Use browser developer tools to inspect the CSS applied to `.sso-options .button`.
-# Expected: `background-color` should be `rgb(0, 123, 255)` (from `var(--primary-accent)`) and `color` should be `rgb(255, 255, 255)` (white).
-#           Hover styles should also match the darker blue background and border.
+# Expected: `background-color` should be `#2C3E50` (Dark Slate Gray), and `color` should be `#FFFFFF` (White).
+#           Hover styles should show `background-color: #1A252F` (Darker Slate Gray).
 
 # Test Name: test_edit_account_page_content_display
 # Description: Verify that the content on the /account/edit page (edit_account.html) correctly displays current_user's information.
