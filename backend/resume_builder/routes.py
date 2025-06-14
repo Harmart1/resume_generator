@@ -52,6 +52,8 @@ def step1_industry():
 
 # Updated experience handler with translation
 @bp.route('/step3', methods=['GET', 'POST'])
+@login_required
+@tier_required('free') # Assuming 'free' is the base tier for accessing this step
 def step3_experience():
     form = ExperienceForm()
     experiences = session.get('experiences', [])

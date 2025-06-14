@@ -51,6 +51,38 @@
         header nav ul li a { color: #E0E0E0; font-weight: 500; } header nav ul li a:hover { color: #00FFFF; }
         footer { background-color: rgba(15, 15, 26, 0.8); border-top: 1px solid rgba(0, 216, 255, 0.3); box-shadow: 0 -3px 15px rgba(0, 0, 0, 0.3); }
         footer p { color: #E0E0E0; font-weight: 500; } footer p.text-gray-500 { color: #A0AEC0; }
+
+        .revisume-nav-button {
+            /* Style to match other nav links, but with Space Grotesk font */
+            padding: 0.5rem 1rem; /* Adjust as needed */
+            cursor: pointer;
+            color: #E0E0E0; /* text-primary-light */
+            font-weight: 600; /* Make it slightly bolder */
+            transition: color 0.3s ease;
+            position: relative; /* For dropdown positioning */
+        }
+        .revisume-nav-button:hover {
+            color: #00FFFF; /* text-electric-cyan or similar highlight */
+        }
+        #revisume-dropdown-menu {
+            min-width: 12rem; /* Or adjust as needed */
+            /* Tailwind classes will handle most styling like bg, shadow, rounded */
+        }
+        /* Basic hover animation for Revisume button */
+        .revisume-nav-button::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -2px; /* Adjust position */
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #00FFFF; /* text-electric-cyan */
+            transition: width 0.3s ease;
+        }
+        .revisume-nav-button:hover::after {
+            width: 80%; /* Or 100% */
+        }
     </style>
 </head>
 <body class="bg-gradient-dark font-inter min-h-screen flex flex-col">
@@ -65,16 +97,49 @@
                 </a>
             </div>
             <nav class="mb-4 md:mb-0">
-                <ul class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 md:space-x-6 text-base sm:text-lg text-center sm:text-left">
-                    <li><a href="{{ url_for('index') }}#analyzer" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light">Analyzer</a></li>
-                    <li><a href="{{ url_for('resume_builder.start') }}" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light">Resume Builder</a></li>
-                    <li><a href="{{ url_for('cover_letter.index') }}" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light">Cover Letter AI</a></li>
-                    <li><a href="{{ url_for('index') }}#pricing-section" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light">Pricing</a></li>
-                    <li><a href="{{ url_for('contact') }}" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light">Contact Us</a></li>
+                <ul class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 md:space-x-6 text-base sm:text-lg text-center sm:text-left items-center">
                     {% if current_user.is_authenticated %}
+                        <!-- New Revisume Dropdown -->
+                        <li class="relative">
+                            <button type="button" class="revisume-nav-button font-space-grotesk hover:text-electric-cyan transition duration-300 ease-in-out font-semibold text-primary-light flex items-center" aria-expanded="false" aria-haspopup="true">
+                                Revisume
+                                <svg class="ml-1 h-5 w-5 text-primary-light group-hover:text-electric-cyan" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                    <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0L5.23 8.29a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                            <div id="revisume-dropdown-menu" class="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-gray-800 ring-1 ring-black ring-opacity-5 focus:outline-none hidden z-50">
+                                <ul class="py-1" role="menu" aria-orientation="vertical" aria-labelledby="revisume-menu-button">
+                                    <li><a href="{{ url_for('index') }}#analyzer" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white" role="menuitem">Resume Reviser</a></li>
+                                    <li><a href="{{ url_for('resume_builder.start') }}" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white" role="menuitem">Resume Builder</a></li>
+                                    {% if current_user.tier == 'free' %}
+                                        <li class="px-4 py-2 text-sm text-gray-400 flex justify-between items-center" role="menuitem">
+                                            <span>Cover Letter AI</span>
+                                            <a href="{{ url_for('serve_homepage_file') }}#pricing" class="ml-2 text-xs bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-1 px-2 rounded transition-colors duration-150">Upgrade</a>
+                                        </li>
+                                    {% else %} {# User is starter or pro #}
+                                        <li><a href="{{ url_for('cover_letter.index') }}" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white" role="menuitem">Cover Letter AI</a></li>
+                                    {% endif %}
+                                    <li><hr class="my-1 border-gray-600"></li>
+                                    <li><a href="{{ url_for('user_profile') }}" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white" role="menuitem">My Profile</a></li>
+                                    <li><a href="{{ url_for('logout') }}" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white" role="menuitem">Logout</a></li>
+                                </ul>
+                            </div>
+                        </li>
+                        <li><a href="{{ url_for('index') }}#pricing-section" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light">Pricing</a></li>
+                        <li><a href="{{ url_for('contact') }}" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light">Contact Us</a></li>
+                        {# Old direct links - commented out for reference
+                        <li><a href="{{ url_for('index') }}#analyzer" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light">Analyzer</a></li>
+                        <li><a href="{{ url_for('resume_builder.start') }}" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light">Resume Builder</a></li>
+                        <li><a href="{{ url_for('cover_letter.index') }}" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light">Cover Letter AI</a></li>
                         <li><a href="{{ url_for('user_profile') }}" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light">My Profile</a></li>
                         <li><a href="{{ url_for('logout') }}" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light">Logout</a></li>
+                        #}
                     {% else %}
+                        <li><a href="{{ url_for('index') }}#analyzer" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light">Analyzer</a></li>
+                        <li><a href="{{ url_for('resume_builder.start') }}" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light">Resume Builder</a></li>
+                        <li><a href="{{ url_for('cover_letter.index') }}" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light">Cover Letter AI</a></li>
+                        <li><a href="{{ url_for('index') }}#pricing-section" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light">Pricing</a></li>
+                        <li><a href="{{ url_for('contact') }}" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light">Contact Us</a></li>
                         <li><a href="{{ url_for('login') }}" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light">Login</a></li>
                         <li><a href="{{ url_for('register') }}" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light">Register</a></li>
                     {% endif %}
@@ -132,6 +197,27 @@
                 console.error('redirectToCheckout error:', error);
             }
         }
+    </script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const revisumeButton = document.querySelector('.revisume-nav-button');
+        const dropdownMenu = document.getElementById('revisume-dropdown-menu');
+
+        if (revisumeButton && dropdownMenu) {
+            // Toggle on click
+            revisumeButton.addEventListener('click', function(event) {
+                event.stopPropagation(); // Prevent click from immediately closing due to document listener
+                dropdownMenu.classList.toggle('hidden');
+            });
+
+            // Close when clicking outside
+            document.addEventListener('click', function(event) {
+                if (!dropdownMenu.contains(event.target) && !revisumeButton.contains(event.target)) {
+                    dropdownMenu.classList.add('hidden');
+                }
+            });
+        }
+    });
     </script>
 </body>
 </html>
