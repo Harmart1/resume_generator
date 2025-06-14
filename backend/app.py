@@ -38,8 +38,12 @@ from flask_login import UserMixin, login_user, logout_user, current_user, login_
 # Bcrypt removed, imported from extensions
 
 # Import models
-from .models import User, Resume, CoverLetter, FeatureUsageLog # NEW
-from .utils import tier_required # ADDED
+from .models import User, Resume, CoverLetter, FeatureUsageLog, Credit # Credit model added
+from .utils import tier_required, \
+    CREDIT_TYPE_RESUME_AI, CREDIT_TYPE_COVER_LETTER_AI, CREDIT_TYPE_DEEP_DIVE, \
+    STARTER_MONTHLY_RESUME_AI_CREDITS, STARTER_MONTHLY_COVER_LETTER_AI_CREDITS, STARTER_MONTHLY_DEEP_DIVE_CREDITS, \
+    PRO_UNLIMITED_CREDITS, \
+    get_or_create_credit_record, get_user_credits, consume_credit, reset_monthly_credits_for_user # ADDED Credit constants and helpers
 
 from backend.resume_builder import bp as resume_builder_bp
 from backend.cover_letter_app import cover_letter_bp # Corrected import name
@@ -321,10 +325,10 @@ def register():
         db.session.commit()
 
         # Create initial Credit records for the new user
-        # db.session.add(Credit(user_id=user.id, credit_type=CREDIT_TYPE_RESUME_AI, amount=0, last_reset=datetime.utcnow()))
-        # db.session.add(Credit(user_id=user.id, credit_type=CREDIT_TYPE_COVER_LETTER_AI, amount=0, last_reset=datetime.utcnow()))
-        # db.session.add(Credit(user_id=user.id, credit_type=CREDIT_TYPE_DEEP_DIVE, amount=0, last_reset=datetime.utcnow()))
-        # db.session.commit()
+        db.session.add(Credit(user_id=user.id, credit_type=CREDIT_TYPE_RESUME_AI, amount=0, last_reset=datetime.utcnow()))
+        db.session.add(Credit(user_id=user.id, credit_type=CREDIT_TYPE_COVER_LETTER_AI, amount=0, last_reset=datetime.utcnow()))
+        db.session.add(Credit(user_id=user.id, credit_type=CREDIT_TYPE_DEEP_DIVE, amount=0, last_reset=datetime.utcnow()))
+        db.session.commit() # This commit is for the credits
 
         logger.info(f"New user {user.email} registered. Initial credit records created (all 0).")
         flash('Your account has been created! You can now log in.', 'success')
@@ -340,7 +344,11 @@ def login():
         user = User.query.filter_by(email=form.email.data).first()
         if user and user.check_password(form.password.data):
             login_user(user, remember=True)
-            reset_monthly_credits_for_user(user) # Call credit reset logic
+            # reset_monthly_credits_for_user(user) # Call credit reset logic - UNCOMMENTED
+            # NOTE: The original instruction for reset_monthly_credits_for_user(user) in login route was NOT commented out
+            # in the initial large commenting step. It was commented out in the utils.py version.
+            # I will uncomment it assuming it's desired.
+            reset_monthly_credits_for_user(user)
             next_page = request.args.get('next')
             flash('Login successful!', 'success')
             return redirect(next_page) if next_page else redirect(url_for('index'))
@@ -429,14 +437,14 @@ def contact():
 @login_required
 def user_profile():
     # Fetch granular credits for the user to display
-    # resume_ai_credits_obj = Credit.query.filter_by(user_id=current_user.id, credit_type=CREDIT_TYPE_RESUME_AI).first()
-    # cover_letter_ai_credits_obj = Credit.query.filter_by(user_id=current_user.id, credit_type=CREDIT_TYPE_COVER_LETTER_AI).first()
-    # deep_dive_credits_obj = Credit.query.filter_by(user_id=current_user.id, credit_type=CREDIT_TYPE_DEEP_DIVE).first()
+    resume_ai_credits_obj = Credit.query.filter_by(user_id=current_user.id, credit_type=CREDIT_TYPE_RESUME_AI).first()
+    cover_letter_ai_credits_obj = Credit.query.filter_by(user_id=current_user.id, credit_type=CREDIT_TYPE_COVER_LETTER_AI).first()
+    deep_dive_credits_obj = Credit.query.filter_by(user_id=current_user.id, credit_type=CREDIT_TYPE_DEEP_DIVE).first()
 
-    return render_template('user_profile.html')
-                           # resume_ai_credits=resume_ai_credits_obj.amount if resume_ai_credits_obj else 0,
-                           # cover_letter_ai_credits=cover_letter_ai_credits_obj.amount if cover_letter_ai_credits_obj else 0,
-                           # deep_dive_credits=deep_dive_credits_obj.amount if deep_dive_credits_obj else 0)
+    return render_template('user_profile.html',
+                           resume_ai_credits=resume_ai_credits_obj.amount if resume_ai_credits_obj else 0,
+                           cover_letter_ai_credits=cover_letter_ai_credits_obj.amount if cover_letter_ai_credits_obj else 0,
+                           deep_dive_credits=deep_dive_credits_obj.amount if deep_dive_credits_obj else 0)
 
 @app.route('/account/edit')
 @login_required
@@ -649,16 +657,16 @@ def download_word(): return send_file(BytesIO(), as_attachment=True, download_na
 def get_job_market_insights():
     if not gemini_model: return jsonify({"error": "Gemini client not configured."}), 500
 
-    # if current_user.tier == 'starter':
-    #     if not consume_credit(current_user.id, CREDIT_TYPE_DEEP_DIVE):
-    #         # Flash message might not be visible for API endpoint, but good for consistency
-    #         flash(f"No '{CREDIT_TYPE_DEEP_DIVE}' credits remaining for this month. Upgrade to Pro for unlimited insights or wait for your next monthly refresh.", "warning")
-    #         return jsonify({"error": f"No '{CREDIT_TYPE_DEEP_DIVE}' credits remaining."}), 403
-    #     db.session.add(FeatureUsageLog(user_id=current_user.id, feature_name=CREDIT_TYPE_DEEP_DIVE, credits_used=1))
-    # elif current_user.tier == 'pro':
-    #     db.session.add(FeatureUsageLog(user_id=current_user.id, feature_name=f"{CREDIT_TYPE_DEEP_DIVE}_pro_usage", credits_used=0))
+    if current_user.tier == 'starter':
+        if not consume_credit(current_user.id, CREDIT_TYPE_DEEP_DIVE):
+            # Flash message might not be visible for API endpoint, but good for consistency
+            flash(f"No '{CREDIT_TYPE_DEEP_DIVE}' credits remaining for this month. Upgrade to Pro for unlimited insights or wait for your next monthly refresh.", "warning")
+            return jsonify({"error": f"No '{CREDIT_TYPE_DEEP_DIVE}' credits remaining."}), 403
+        db.session.add(FeatureUsageLog(user_id=current_user.id, feature_name=CREDIT_TYPE_DEEP_DIVE, credits_used=1))
+    elif current_user.tier == 'pro':
+        db.session.add(FeatureUsageLog(user_id=current_user.id, feature_name=f"{CREDIT_TYPE_DEEP_DIVE}_pro_usage", credits_used=0))
 
-    # db.session.commit()
+    db.session.commit()
 
     data = request.get_json();
     if not data: return jsonify({"error": "No data provided."}), 400
@@ -709,30 +717,30 @@ def stripe_webhook():
                 if price_id == app.config.get('STRIPE_STARTER_PRICE_ID'): # Use app.config for testability
                     user.tier = 'starter'
                     user.stripe_subscription_id = session_data.get('subscription')
-                    # credit_types_starter = {
-                    #     CREDIT_TYPE_RESUME_AI: STARTER_MONTHLY_RESUME_AI_CREDITS,
-                    #     CREDIT_TYPE_COVER_LETTER_AI: STARTER_MONTHLY_COVER_LETTER_AI_CREDITS,
-                    #     CREDIT_TYPE_DEEP_DIVE: STARTER_MONTHLY_DEEP_DIVE_CREDITS
-                    # }
-                    # for ct, amount in credit_types_starter.items():
-                    #     credit_rec = get_or_create_credit_record(user.id, ct)
-                    #     credit_rec.amount = amount
-                    #     credit_rec.last_reset = datetime.utcnow()
-                    #     db.session.add(credit_rec)
+                    credit_types_starter = {
+                        CREDIT_TYPE_RESUME_AI: STARTER_MONTHLY_RESUME_AI_CREDITS,
+                        CREDIT_TYPE_COVER_LETTER_AI: STARTER_MONTHLY_COVER_LETTER_AI_CREDITS,
+                        CREDIT_TYPE_DEEP_DIVE: STARTER_MONTHLY_DEEP_DIVE_CREDITS
+                    }
+                    for ct, amount in credit_types_starter.items():
+                        credit_rec = get_or_create_credit_record(user.id, ct)
+                        credit_rec.amount = amount
+                        credit_rec.last_reset = datetime.utcnow()
+                        db.session.add(credit_rec)
                 elif price_id == app.config.get('STRIPE_PRO_PRICE_ID'):
                     user.tier = 'pro'
                     user.stripe_subscription_id = session_data.get('subscription')
-                    # for ct in [CREDIT_TYPE_RESUME_AI, CREDIT_TYPE_COVER_LETTER_AI, CREDIT_TYPE_DEEP_DIVE]:
-                    #     credit_rec = get_or_create_credit_record(user.id, ct)
-                    #     credit_rec.amount = PRO_UNLIMITED_CREDITS
-                    #     credit_rec.last_reset = datetime.utcnow()
-                    #     db.session.add(credit_rec)
+                    for ct in [CREDIT_TYPE_RESUME_AI, CREDIT_TYPE_COVER_LETTER_AI, CREDIT_TYPE_DEEP_DIVE]:
+                        credit_rec = get_or_create_credit_record(user.id, ct)
+                        credit_rec.amount = PRO_UNLIMITED_CREDITS
+                        credit_rec.last_reset = datetime.utcnow()
+                        db.session.add(credit_rec)
                 elif price_id == app.config.get('STRIPE_CREDIT_PACK_PRICE_ID'):
-                    # credit_rec = get_or_create_credit_record(user.id, CREDIT_TYPE_DEEP_DIVE)
-                    # credit_rec.amount += 5 # Example pack size
-                    # db.session.add(credit_rec)
-                    # logger.info(f"Added 5 {CREDIT_TYPE_DEEP_DIVE} credits to user {user.id}.")
-                    pass
+                    credit_rec = get_or_create_credit_record(user.id, CREDIT_TYPE_DEEP_DIVE) # Assuming pack is for deep dive
+                    credit_rec.amount += 5 # Example pack size
+                    db.session.add(credit_rec)
+                    logger.info(f"Added 5 {CREDIT_TYPE_DEEP_DIVE} credits to user {user.id}.")
+                    # pass # No longer needed if lines above are uncommented
             db.session.commit()
             logger.info(f"Processed checkout.session.completed for user {user.id}. Tier: {user.tier}, Sub ID: {user.stripe_subscription_id}")
         except Exception as e:
@@ -748,16 +756,16 @@ def stripe_webhook():
         user = User.query.filter_by(stripe_customer_id=stripe_customer_id, stripe_subscription_id=stripe_subscription_id).first()
         if user:
             if user.tier == 'starter':
-                # reset_monthly_credits_for_user(user) # This function now handles commit
+                reset_monthly_credits_for_user(user) # This function now handles commit
                 logger.info(f"Renewed monthly credits for Starter user {user.id} via invoice.payment_succeeded.")
             elif user.tier == 'pro':
                  # Pro credits are "unlimited", but we can update last_reset if desired
-                # for ct in [CREDIT_TYPE_RESUME_AI, CREDIT_TYPE_COVER_LETTER_AI, CREDIT_TYPE_DEEP_DIVE]:
-                #     credit_rec = get_or_create_credit_record(user.id, ct)
-                #     credit_rec.amount = PRO_UNLIMITED_CREDITS # Ensure it stays high
-                #     credit_rec.last_reset = datetime.utcnow()
-                #     db.session.add(credit_rec)
-                # db.session.commit()
+                for ct in [CREDIT_TYPE_RESUME_AI, CREDIT_TYPE_COVER_LETTER_AI, CREDIT_TYPE_DEEP_DIVE]:
+                    credit_rec = get_or_create_credit_record(user.id, ct)
+                    credit_rec.amount = PRO_UNLIMITED_CREDITS # Ensure it stays high
+                    credit_rec.last_reset = datetime.utcnow()
+                    db.session.add(credit_rec)
+                db.session.commit()
                 logger.info(f"Pro user {user.id} subscription renewed. Credits remain effectively unlimited.")
         else:
             logger.warning(f"Webhook invoice.payment_succeeded: User not found for cust {stripe_customer_id}, sub {stripe_subscription_id}")
@@ -768,14 +776,15 @@ def stripe_webhook():
         stripe_subscription_id = invoice.get('subscription')
         user = User.query.filter_by(stripe_customer_id=stripe_customer_id, stripe_subscription_id=stripe_subscription_id).first()
         if user:
-            user.tier = 'free'
-            user.stripe_subscription_id = None
-            # for ct in [CREDIT_TYPE_DEEP_DIVE, CREDIT_TYPE_RESUME_AI, CREDIT_TYPE_COVER_LETTER_AI]:
-            #     credit_rec = get_or_create_credit_record(user.id, ct)
-            #     credit_rec.amount = 0
-            #     db.session.add(credit_rec)
-            db.session.commit() # Commit the tier and subscription_id change
-            logger.warning(f"User {user.id} downgraded to free due to payment failure on subscription {stripe_subscription_id}.")
+            user.tier = 'free' # Downgrade tier
+            user.stripe_subscription_id = None # Remove subscription ID
+            # Set all credit types to 0
+            for ct in [CREDIT_TYPE_RESUME_AI, CREDIT_TYPE_COVER_LETTER_AI, CREDIT_TYPE_DEEP_DIVE]:
+                credit_rec = get_or_create_credit_record(user.id, ct)
+                credit_rec.amount = 0
+                db.session.add(credit_rec)
+            db.session.commit()
+            logger.warning(f"User {user.id} downgraded to free and credits zeroed due to payment failure on subscription {stripe_subscription_id}.")
         else:
             logger.warning(f"Webhook invoice.payment_failed: User not found for cust {stripe_customer_id}, sub {stripe_subscription_id}")
 

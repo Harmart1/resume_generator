@@ -6,22 +6,20 @@ from datetime import datetime
 # If Resume is in app.py, it might be: from ..app import Resume
 
 class MockInterview(db.Model):
+    __tablename__ = 'mock_interview' # Added as per convention from migration script
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False) # Corrected table name
-    # resume_id might need to refer to a Resume table if it's separate
-    # If Resume model is defined in app.py, user.id and resume.id are fine.
-    resume_id = db.Column(db.Integer, db.ForeignKey('resumes.id'), nullable=True) # Corrected table name
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    resume_id = db.Column(db.Integer, db.ForeignKey('resumes.id'), nullable=True)
     job_description = db.Column(db.Text, nullable=False)
-    questions = db.Column(db.JSON, nullable=False) # Store questions as a list
-    answers = db.Column(db.JSON, nullable=True)    # Store answers as a list
-    scores = db.Column(db.JSON, nullable=True)     # Store scores for each answer
-    feedback = db.Column(db.JSON, nullable=True)   # Store feedback for each answer
+    questions = db.Column(db.JSON, nullable=False)
+    answers = db.Column(db.JSON, nullable=True)
+    scores = db.Column(db.JSON, nullable=True)
+    feedback = db.Column(db.JSON, nullable=True)
     overall_score = db.Column(db.Float, nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False) # nullable=False as per user script
 
-    # Relationship to User (assuming User model is in app.py or a shared models.py)
+    # Relationships can be defined here if User and Resume models are imported.
     # user = db.relationship('User', backref=db.backref('mock_interviews', lazy=True))
-    # Relationship to Resume (assuming Resume model is in app.py or a shared models.py)
     # resume = db.relationship('Resume', backref=db.backref('mock_interviews', lazy=True))
 
     def __repr__(self):

@@ -6,14 +6,14 @@ class User(db.Model, UserMixin):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
-    username = db.Column(db.String(80), unique=True, nullable=False) # Uncommented
+    username = db.Column(db.String(80), unique=True, nullable=False) # Re-added
     password_hash = db.Column(db.String(128), nullable=False)
     tier = db.Column(db.String(50), nullable=False, default='free')
     stripe_customer_id = db.Column(db.String(120), nullable=True, unique=True)
     stripe_subscription_id = db.Column(db.String(120), nullable=True, unique=True)
-    industry_preference = db.Column(db.String(50), nullable=True) # Uncommented
-    contact_phone = db.Column(db.String(30), nullable=True) # Uncommented
-    profile_updated_at = db.Column(db.DateTime, nullable=True, onupdate=datetime.utcnow) # Uncommented
+    industry_preference = db.Column(db.String(50), nullable=True) # Re-added
+    contact_phone = db.Column(db.String(30), nullable=True) # Re-added
+    profile_updated_at = db.Column(db.DateTime, nullable=True, onupdate=datetime.utcnow) # Re-added
 
     # Relationships will be defined here or through backrefs in other models
     # resumes = db.relationship('Resume', backref='user', lazy=True) # Example if Resume is defined here
@@ -88,10 +88,14 @@ class FeatureUsageLog(db.Model):
     def __repr__(self):
         return f'<FeatureUsageLog user_id={self.user_id} feature={self.feature_name} time={self.timestamp}>'
 
-class UserCredit(db.Model):
-    __tablename__ = 'user_credit' # Matches the original migration's table
+class Credit(db.Model):
+    __tablename__ = 'credits'
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False) # Ensure ForeignKey points to 'users.id'
-    credits_remaining = db.Column(db.Integer, nullable=False)
-    last_updated = db.Column(db.DateTime, nullable=True, default=datetime.utcnow) # Added default
-    user = db.relationship('User', backref=db.backref('user_credit_old', lazy=True, uselist=False))
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    credit_type = db.Column(db.String(50), nullable=False)
+    amount = db.Column(db.Integer, default=0, nullable=False)
+    last_reset = db.Column(db.DateTime, default=datetime.utcnow, nullable=True)
+    user = db.relationship('User', backref=db.backref('credits', lazy=True))
+    __table_args__ = (db.UniqueConstraint('user_id', 'credit_type', name='uq_user_credit_type'),)
+
+# UserCredit model deleted as per instruction for baseline migration, will be defined by user-provided script
