@@ -65,6 +65,21 @@ class CoverLetter(db.Model):
 
     user = db.relationship('User', backref=db.backref('cover_letters', lazy=True))
 
+class MockInterview(db.Model):
+    __tablename__ = 'mock_interviews'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    job_description = db.Column(db.Text, nullable=True)
+    questions = db.Column(db.Text, nullable=False) # Storing JSON string of questions
+    answers = db.Column(db.Text, nullable=True)    # Storing JSON string of answers
+    scores = db.Column(db.Text, nullable=True)     # Storing JSON string of scores per question
+    feedback = db.Column(db.Text, nullable=True)   # Storing JSON string of feedback per question
+    overall_score = db.Column(db.Float, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    is_archived = db.Column(db.Boolean, default=False, nullable=False)
+    user = db.relationship('User', backref=db.backref('mock_interviews', lazy=True))
+
 # class Credit(db.Model):
 #     __tablename__ = 'credits'
 #     id = db.Column(db.Integer, primary_key=True)

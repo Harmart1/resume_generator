@@ -1,246 +1,67 @@
-from flask import Blueprint, request, render_template, redirect, url_for, flash, current_app
-from .forms import CoverLetterForm
-from .utils.file_utils import extract_text_from_file # UPDATED
-from .utils.prompt_engine import build_cover_letter_prompt # UPDATED
-from .utils.security import rate_limited, validate_input_length # UPDATED
+from flask import render_template, redirect, url_for, flash, request
 from flask_login import login_required, current_user
-from backend.extensions import db # UPDATED
-from backend.models import CoverLetter, FeatureUsageLog # UPDATED
-from backend.utils import tier_required, MISTRAL_API_KEY, MISTRAL_API_URL, CREDIT_TYPE_COVER_LETTER_AI, consume_credit # UPDATED
-import logging # NEW
-import os
-import tempfile
-import requests
-from datetime import datetime, date # Added date
-from sqlalchemy import func # Added func
-import json # Added json
-import uuid
+from backend.models import CoverLetter, Credit # Ensure Credit model is correctly named
+from backend.extensions import db
+from . import cover_letter_bp # Import the blueprint defined in __init__.py
 
-logger = logging.getLogger(__name__) # NEW
-bp = Blueprint('cover_letter', __name__, template_folder='../../frontend/templates')
+# Helper function for CSRF token placeholder (similar to resume_builder)
+def csrf_token_field():
+    # This is a placeholder. Actual CSRF implementation might vary.
+    return ""
 
-# Helper function to count monthly cover letter saves
-def get_monthly_cover_letter_save_count(user_id):
-    today = date.today()
-    start_of_month = today.replace(day=1)
-    count = db.session.query(func.count(CoverLetter.id)).filter(
-        CoverLetter.user_id == user_id,
-        CoverLetter.created_at >= start_of_month,
-        CoverLetter.is_archived == False # Count only non-archived saves against the limit
-    ).scalar()
-    return count
-
-# Mistral API Configuration removed from here, will use imported ones.
-
-def generate_with_mistral(prompt):
-    """Send prompt to Mistral AI API with enhanced error handling"""
-    if not MISTRAL_API_KEY:
-        current_app.logger.warning("MISTRAL_API_KEY not found. Cover letter generation via Mistral is disabled.")
-        return None
-
-    headers = {
-        "Authorization": f"Bearer {MISTRAL_API_KEY}",
-        "Content-Type": "application/json"
-    }
-    
-    payload = {
-        "model": "mistral-large-latest",
-        "messages": [{"role": "user", "content": prompt}],
-        "temperature": 0.7,
-        "max_tokens": 2000
-    }
-    
-    try:
-        response = requests.post(
-            MISTRAL_API_URL,
-            headers=headers,
-            json=payload,
-            timeout=30  # 30 seconds timeout
-        )
-        response.raise_for_status()
-        return response.json()["choices"][0]["message"]["content"]
-    except requests.exceptions.RequestException as e:
-        current_app.logger.error(f"Mistral API request failed: {str(e)}")
-        return None
-    except (KeyError, ValueError) as e:
-        current_app.logger.error(f"Error parsing Mistral response: {str(e)}")
-        return None
-
-@bp.route('/', methods=['GET'])
+@cover_letter_bp.route('/')
 @login_required
-@tier_required('free')
 def index():
-    form = CoverLetterForm()
-    return render_template('cover_letter_form.html', form=form)
+    """Displays a list of the user's cover letters."""
+    cover_letters = CoverLetter.query.filter_by(user_id=current_user.id, is_archived=False).order_by(CoverLetter.updated_at.desc()).all()
+    return render_template('cover_letter/index.html', cover_letters=cover_letters)
 
-@bp.route('/generate', methods=['POST'])
+@cover_letter_bp.route('/create', methods=['GET', 'POST'])
 @login_required
-@tier_required(['starter', 'pro']) # Allow starter tier
-@rate_limited
-def generate():
-    form = CoverLetterForm()
-    if not form.validate_on_submit():
-        return render_template('cover_letter_form.html', form=form)
+def create():
+    """Handles creation of a new cover letter, with credit checking."""
 
-    # Credit consumption logic
-    if current_user.tier == 'starter':
-        if not consume_credit(current_user.id, CREDIT_TYPE_COVER_LETTER_AI):
-            flash(f"No '{CREDIT_TYPE_COVER_LETTER_AI}' credits left for this month. Upgrade to Pro for unlimited drafts or wait for your next monthly refresh.", "warning")
-            # Assuming 'form' is available in this scope to pass back
-            return redirect(url_for('cover_letter.index')) # Or render_template if redirect needs form context
-        db.session.add(FeatureUsageLog(user_id=current_user.id, feature_name=CREDIT_TYPE_COVER_LETTER_AI + "_generate", credits_used=1))
+    # Credit Checking for 'legacy' credits
+    user_credit = Credit.query.filter_by(user_id=current_user.id, credit_type='legacy').first()
+
+    if not user_credit or user_credit.amount <= 0:
+        flash('You do not have enough credits to create a new cover letter. Please purchase more credits.', 'warning')
+        return redirect(url_for('cover_letter.index'))
+
+    if request.method == 'POST':
+        title = request.form.get('title')
+        content = request.form.get('content')
+
+        if not title or not content:
+            flash('Title and content are required.', 'danger')
+            return render_template('cover_letter/create.html', csrf_token_field=csrf_token_field)
+
+        new_cover_letter = CoverLetter(
+            user_id=current_user.id,
+            title=title,
+            content=content
+        )
+
+        user_credit.amount -= 1
+
+        db.session.add(new_cover_letter)
+        db.session.add(user_credit)
+
         try:
             db.session.commit()
-        except Exception as e:
-            db.session.rollback()
-            logger.error(f"Error committing credits for starter user {current_user.id} in cover letter generate: {e}")
-            flash("An error occurred while processing your request. Please try again.", "error")
+            flash('Cover Letter created successfully!', 'success')
             return redirect(url_for('cover_letter.index'))
-    elif current_user.tier == 'pro':
-        db.session.add(FeatureUsageLog(user_id=current_user.id, feature_name=CREDIT_TYPE_COVER_LETTER_AI + "_generate_pro", credits_used=0))
-        try:
-            db.session.commit()
         except Exception as e:
             db.session.rollback()
-            logger.error(f"Error committing feature log for pro user {current_user.id} in cover letter generate: {e}")
-            # Non-critical, so proceed without returning error for pro users
-
-    # Process uploaded cover letter file
-    cover_letter_text = ""
-    if form.cover_letter_file.data:
-        file = form.cover_letter_file.data
-        _, ext = os.path.splitext(file.filename)
-        with tempfile.NamedTemporaryFile(suffix=ext, delete=False) as tmp:
-            file.save(tmp.name)
-            cover_letter_text = extract_text_from_file(tmp.name)
-        os.unlink(tmp.name)
-    elif form.previous_cover_letter.data:
-        cover_letter_text = form.previous_cover_letter.data
-
-    # Validate input sizes
-    validation_error = validate_input_length(
-        form.job_description.data,
-        form.resume_text.data,
-        cover_letter_text
-    )
+            flash(f'Error creating cover letter: {str(e)}', 'danger')
+            # Consider logging the error e
     
-    if validation_error:
-        flash(validation_error, 'danger')
-        return redirect(url_for('index'))
-    
-    # Prepare form data
-    form_data = {
-        'job_title': form.job_title.data,
-        'company_name': form.company_name.data,
-        'your_name': form.your_name.data,
-        'your_email': form.your_email.data,
-        'job_description': form.job_description.data,
-        'resume_text': form.resume_text.data,
-        'tone': form.tone.data,
-        'key_points': form.key_points.data,
-        'refinement_type': form.refinement_type.data
-    }
-    
-    # Build optimized prompt
-    prompt = build_cover_letter_prompt(form_data, cover_letter_text)
-    
-    # Generate cover letter with Mistral AI
-    generated_content = generate_with_mistral(prompt)
-    
-    if not generated_content:
-        flash('Failed to generate cover letter. Please try again.', 'danger')
-        return redirect(url_for('index'))
-    
-    # Add tracking ID for analytics
-    tracking_id = str(uuid.uuid4())[:8]
-    current_app.logger.info(f"Generated cover letter - Tracking ID: {tracking_id}")
-    
-    # Render with consistent styling
-    return render_template(
-        'cover_letter_template.html',
-        content=generated_content,
-        company=form.company_name.data,
-        job_title=form.job_title.data,
-        your_name=form.your_name.data,
-        your_email=form.your_email.data,
-        current_date=datetime.now().strftime("%B %d, %Y"),
-        tracking_id=tracking_id
-    )
+    return render_template('cover_letter/create.html', csrf_token_field=csrf_token_field)
 
-@bp.errorhandler(413)
-def request_entity_too_large(error):
-    return 'File too large (max 5MB)', 413
-
-@bp.errorhandler(429)
-def ratelimit_handler(error):
-    return 'Too many requests. Please try again in a minute.', 429
-
-@bp.route('/save-cover-letter', methods=['POST'])
-@login_required
-def save_cover_letter():
-    title = request.form.get('cover_letter_title', f"Cover Letter - {datetime.now().strftime('%Y-%m-%d %H:%M')}")
-    content = request.form.get('cover_letter_content')
-
-    if not content:
-        flash("No content to save.", "error")
-        return redirect(request.referrer or url_for('cover_letter.index'))
-
-    if current_user.tier == 'free':
-        flash("Please upgrade to a Starter or Pro plan to save your cover letters.", "warning")
-        return redirect(request.referrer or url_for('cover_letter.index'))
-
-    if current_user.tier == 'starter':
-        save_count = get_monthly_cover_letter_save_count(current_user.id)
-        if save_count >= 3: # Starter tier limit
-            flash("You have reached your monthly save limit (3) for cover letters on the Starter tier. Please upgrade to Pro for unlimited saves or wait until next month.", "warning")
-            return redirect(request.referrer or url_for('cover_letter.index'))
-
-    # Pro tier has unlimited saves (or Starter tier within limit)
-    new_cover_letter = CoverLetter(
-        user_id=current_user.id,
-        title=title,
-        content=content # Assuming content is the full letter text
-    )
-    db.session.add(new_cover_letter)
-    db.session.commit()
-    flash(f"Cover letter '{title}' saved successfully!", "success")
-    return redirect(url_for('cover_letter.my_cover_letters'))
-
-@bp.route('/my-cover-letters', methods=['GET'])
-@login_required
-def my_cover_letters():
-    letters = CoverLetter.query.filter_by(user_id=current_user.id, is_archived=False).order_by(CoverLetter.updated_at.desc()).all()
-    return render_template('my_cover_letters.html', letters=letters)
-
-@bp.route('/load-cover-letter/<int:letter_id>')
-@login_required
-def load_cover_letter(letter_id):
-    letter = CoverLetter.query.filter_by(id=letter_id, user_id=current_user.id, is_archived=False).first_or_404()
-    # For "loading", we are re-displaying it on the template used for generated letters.
-    # The template needs to be able to distinguish between newly generated content vs loaded.
-    # Or, more simply, just pass the necessary parts.
-    # The cover_letter_template.html expects 'content', 'company', 'job_title', 'your_name', 'your_email', 'current_date'.
-    # We only have 'title' and 'content' stored directly. Others would need to be parsed or omitted.
-
-    # Simplification: Pass what we have. The template will need to be robust.
-    # Or, we can try to parse details from the content if it follows a strict format, which is complex.
-    # For now, just pass title and content. Other details might be missing on "view" unless stored.
-
-    # To make it more useful, we can pass some context to the template to indicate it's a loaded letter
-    # and potentially not try to extract all original form fields if they weren't saved.
-    # The `generate` route passes: content, company, job_title, your_name, your_email, current_date, tracking_id
-    # We have: letter.title, letter.content, letter.user.name (if we add that to User), letter.user.email
-
-    # For simplicity in this step, we'll just pass the core content.
-    # The `cover_letter_template.html` will need to be robust to missing context variables
-    # or we adjust what we pass / how it's rendered.
-    return render_template(
-        'cover_letter_template.html',
-        content=letter.content,
-        title=letter.title, # Pass the title
-        your_name=current_user.username or current_user.email, # Best effort
-        your_email=current_user.email,
-        current_date=letter.updated_at.strftime("%B %d, %Y"), # Use updated_at as a relevant date
-        is_loaded=True, # Flag to template that this is a loaded letter
-        letter_id=letter.id # For potential re-save or other actions
-    )
+# Note: This simplified version replaces the previous complex logic involving AI generation,
+# file processing, and specific forms. It focuses on basic CRUD and credit checking.
+# Assumes CoverLetter model has fields: user_id, title, content, created_at, updated_at, is_archived.
+# Assumes Credit model has fields: user_id, credit_type, amount.
+# `is_archived` default should be False for new CoverLetters.
+# `created_at` and `updated_at` are assumed to be handled by the model (e.g., default=datetime.utcnow).
+# The template names `cover_letter/index.html` and `cover_letter/create.html` match the blueprint's template_folder.

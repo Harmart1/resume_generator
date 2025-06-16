@@ -1,0 +1,18 @@
+{% extends 'app_base.html' %}
+{% block title %}Cover Letter - Your Cover Letters{% endblock %}
+{% block content %}
+<h1 class="text-3xl font-bold mb-6">Your Cover Letters</h1>
+<a href="{{ url_for('cover_letter.create') }}" class="mb-4 inline-block bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Create New Cover Letter</a>
+{% if cover_letters and cover_letters|length > 0 %}
+<ul class="space-y-4">
+    {% for letter in cover_letters %}
+        <li class="bg-gray-800 p-4 rounded shadow-md">
+            <h2 class="text-xl font-semibold text-electric-cyan">{{ letter.title }}</h2>
+            <p class="text-gray-400">Created: {{ letter.created_at.strftime('%Y-%m-%d %H:%M') if letter.created_at else 'N/A' }}</p>
+        </li>
+    {% endfor %}
+</ul>
+{% else %}
+<p class="text-gray-400">You haven't created any cover letters yet. <a href="{{ url_for('cover_letter.create') }}" class="text-electric-cyan hover:underline">Create one now!</a></p>
+{% endif %}
+{% endblock %}

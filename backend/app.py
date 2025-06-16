@@ -121,13 +121,13 @@ try:
     from backend.cover_letter_app import bp as cover_letter_bp
     from backend.mock_interview_app import bp as mock_interview_bp
     # Import main_bp for core routes like /, /contact etc.
-    from backend.routes import main_bp as core_main_bp # Renamed to avoid clash if user had main_bp
+    from backend.routes import main_bp # Renamed to avoid clash if user had main_bp
 
     app.register_blueprint(resume_builder_bp, url_prefix='/resume-builder')
     app.register_blueprint(cover_letter_bp, url_prefix='/cover-letter')
     app.register_blueprint(mock_interview_bp, url_prefix='/mock-interview')
-    app.register_blueprint(core_main_bp) # Register core routes
-    logger.info("Blueprints (resume_builder, cover_letter, mock_interview, core_main_bp) registered.")
+    app.register_blueprint(main_bp) # Register core routes
+    logger.info("Blueprints (resume_builder, cover_letter, mock_interview, main_bp) registered.")
 except ImportError as e:
     logger.error(f"Failed to import or register blueprints: {e}. Check blueprint definitions and imports.", exc_info=True)
 except Exception as e:

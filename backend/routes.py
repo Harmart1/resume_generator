@@ -1,143 +1,85 @@
-# backend/cover_letter/routes.py
+from flask import Blueprint, render_template, redirect, url_for, flash, request
+from flask_login import login_required, current_user, login_user, logout_user
+from backend.models import User, Resume, CoverLetter, MockInterview, Credit
+from backend.extensions import db, bcrypt
 
-import os
-import tempfile
-import uuid
-import requests
-from datetime import datetime
-from flask import render_template, request, flash, redirect, url_for, current_app
-from .forms import CoverLetterForm
-from .utils.file_processing import extract_text_from_file
-from .utils.prompt_engine import build_cover_letter_prompt
-from .utils.security import rate_limited, validate_input_length
-from config.cover_letter_config import CoverLetterConfig
+main_bp = Blueprint('main', __name__, template_folder='../../frontend/templates')
 
-# Create config instance
-config = CoverLetterConfig()
+@main_bp.route('/')
+def home():
+    if current_user.is_authenticated:
+        return redirect(url_for('main.dashboard'))
+    return render_template('home.html')
 
-@current_app.route('/cover-letter', methods=['GET'])
-def index():
-    form = CoverLetterForm()
-    return render_template('cover_letter/generate.html', form=form)
+@main_bp.route('/dashboard')
+@login_required
+def dashboard():
+    resumes = Resume.query.filter_by(user_id=current_user.id).all()
+    cover_letters = CoverLetter.query.filter_by(user_id=current_user.id).all()
+    interviews = MockInterview.query.filter_by(user_id=current_user.id).all()
+    credits_list = Credit.query.filter_by(user_id=current_user.id).all()
+    return render_template('dashboard.html', resumes=resumes, cover_letters=cover_letters, interviews=interviews, credits=credits_list, user=current_user)
 
-@current_app.route('/cover-letter/generate', methods=['POST'])
-@rate_limited(max_requests=config.MAX_REQUESTS_PER_MINUTE)
-def generate():
-    form = CoverLetterForm()
-    if not form.validate_on_submit():
-        return render_template('cover_letter/generate.html', form=form), 400
-    
-    # Process uploaded cover letter file
-    cover_letter_text = ""
-    if form.cover_letter_file.data:
-        file = form.cover_letter_file.data
-        _, ext = os.path.splitext(file.filename)
-        with tempfile.NamedTemporaryFile(suffix=ext, delete=False) as tmp:
-            file.save(tmp.name)
-            cover_letter_text = extract_text_from_file(tmp.name)
-        os.unlink(tmp.name)
-    elif form.previous_cover_letter.data:
-        cover_letter_text = form.previous_cover_letter.data
+@main_bp.route('/pricing')
+def pricing():
+    return render_template('pricing.html')
 
-    # Validate input sizes
-    validation_error = validate_input_length(
-        form.job_description.data,
-        form.resume_text.data,
-        cover_letter_text,
-        max_length=5000  # characters per field
-    )
-    if validation_error:
-        flash(validation_error, 'danger')
-        return redirect(url_for('cover_letter.index'))
-    
-    # Prepare form data
-    form_data = {
-        'job_title': form.job_title.data,
-        'company_name': form.company_name.data or '[Company Name]',
-        'your_name': form.your_name.data,
-        'your_email': form.your_email.data,
-        'job_description': form.job_description.data,
-        'resume_text': form.resume_text.data,
-        'tone': form.tone.data,
-        'key_points': form.key_points.data,
-        'refinement_type': form.refinement_type.data
-    }
-    
-    # Build optimized prompt
-    prompt = build_cover_letter_prompt(form_data, cover_letter_text)
-    
-    # Generate cover letter with Mistral AI
-    generated_content = generate_with_mistral(prompt)
-    
-    if generated_content is None:
-        flash('Failed to generate cover letter. Please try again.', 'danger')
-        return redirect(url_for('cover_letter.index'))
-    
-    # Add tracking ID for analytics
-    tracking_id = str(uuid.uuid4())[:8]
-    
-    # Render with consistent styling
-    return render_template(
-        'cover_letter/result.html',
-        content=generated_content,
-        company=form_data['company_name'],
-        job_title=form_data['job_title'],
-        your_name=form_data['your_name'],
-        your_email=form_data['your_email'],
-        current_date=datetime.now().strftime("%B %d, %Y"),
-        tracking_id=tracking_id
-    )
+@main_bp.route('/contact')
+def contact():
+    return render_template('contact.html')
 
-def generate_with_mistral(prompt):
-    """Send prompt to Mistral AI API with enhanced error handling"""
-    headers = {
-        "Authorization": f"Bearer {config.MISTRAL_API_KEY}",
-        "Content-Type": "application/json"
-    }
-    
-    payload = {
-        "model": "mistral-large-latest",
-        "messages": [{"role": "user", "content": prompt}],
-        "temperature": 0.7,
-        "max_tokens": 2000
-    }
-    
-    try:
-        response = requests.post(
-            config.MISTRAL_API_URL,
-            headers=headers,
-            json=payload,
-            timeout=30  # 30 seconds timeout
-        )
-        response.raise_for_status()
-        return response.json()["choices"][0]["message"]["content"]
-    except Exception as e:
-        current_app.logger.error(f"Error generating cover letter: {str(e)}")
-        return None
+@main_bp.route('/analyzer')
+def analyzer():
+    return render_template('index.html')
 
-@bp.route('/save-progress', methods=['POST'])
-def save_progress():
-    """Save resume progress to database"""
-    resume_data = {
-        'personal': session.get('personal', {}),
-        'experiences': session.get('experiences', []),
-        'skills': session.get('skills', {}),
-        'education': session.get('education', []),
-        'additional': session.get('additional', {}),
-        'industry': session.get('industry', 'technology'),
-        'languages': {
-            'input': session.get('input_lang', 'auto'),
-            'output': session.get('output_lang', 'en')
-        }
-    }
-    
-    # Generate unique resume ID
-    resume_id = str(uuid.uuid4())
-    
-    # Save to database (pseudo-code)
-    db.save_resume(resume_id, resume_data)
-    
-    return jsonify({
-        'resume_id': resume_id,
-        'message': 'Progress saved successfully'
-    })
+@main_bp.route('/login', methods=['GET', 'POST'])
+def login():
+    if current_user.is_authenticated:
+        return redirect(url_for('main.home'))
+    if request.method == 'POST':
+        email = request.form.get('email')
+        password = request.form.get('password')
+        # Ensure User model has check_password method
+        user = User.query.filter_by(email=email).first()
+        if user and hasattr(user, 'check_password') and user.check_password(password):
+            login_user(user)
+            flash('Logged in successfully!', 'success')
+            next_page = request.args.get('next')
+            return redirect(next_page or url_for('main.dashboard'))
+        else:
+            flash('Invalid email or password.', 'danger')
+    return render_template('auth/login.html')
+
+@main_bp.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    flash('You have been logged out.', 'success')
+    return redirect(url_for('main.home'))
+
+@main_bp.route('/register', methods=['GET', 'POST'])
+def register():
+    if current_user.is_authenticated:
+        return redirect(url_for('main.home'))
+    if request.method == 'POST':
+        username = request.form.get('username')
+        email = request.form.get('email')
+        password = request.form.get('password')
+        # Ensure User model has set_password method
+        existing_user = User.query.filter((User.email == email) | (User.username == username)).first()
+        if existing_user:
+            flash('Username or email already exists.', 'danger')
+        elif not (username and email and password):
+            flash('All fields are required.', 'danger')
+        else:
+            new_user = User(username=username, email=email, tier='free')
+            if hasattr(new_user, 'set_password'):
+                new_user.set_password(password)
+                db.session.add(new_user)
+                db.session.commit()
+                flash('Account created successfully! Please log in.', 'success')
+                return redirect(url_for('main.login'))
+            else:
+                flash('Error setting up user. Please contact support.', 'danger')
+                # Log this server-side, User model is missing set_password
+    return render_template('auth/register.html')

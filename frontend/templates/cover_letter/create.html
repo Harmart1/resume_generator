@@ -1,0 +1,17 @@
+{% extends 'app_base.html' %}
+{% block title %}Create New Cover Letter - Cover Letter App{% endblock %}
+{% block content %}
+<h1 class="text-3xl font-bold mb-6">Create New Cover Letter</h1>
+<form method="POST" action="{{ url_for('cover_letter.create') }}" class="max-w-lg mx-auto bg-gray-800 p-8 rounded-lg shadow-xl">
+    {% if csrf_token_field %}{{ csrf_token_field() }}{% endif %} {# Assuming wtf-forms or similar #}
+    <div class="mb-6">
+        <label for="title" class="block text-gray-300 font-semibold mb-2">Title</label>
+        <input type="text" name="title" id="title" class="w-full p-3 rounded bg-gray-700 text-white border border-gray-600 focus:border-electric-cyan focus:ring-electric-cyan" required>
+    </div>
+    <div class="mb-6">
+        <label for="content" class="block text-gray-300 font-semibold mb-2">Content</label>
+        <textarea name="content" id="content" class="w-full p-3 rounded bg-gray-700 text-white border border-gray-600 focus:border-electric-cyan focus:ring-electric-cyan" rows="10" required></textarea>
+    </div>
+    <button type="submit" class="w-full bg-blue-500 text-white px-4 py-3 rounded hover:bg-blue-600 font-semibold transition duration-300">Save Cover Letter</button>
+</form>
+{% endblock %}

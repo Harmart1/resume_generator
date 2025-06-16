@@ -57,13 +57,13 @@
     <header class="p-4 shadow-lg md:p-6">
         <div class="container flex flex-col md:flex-row justify-between items-center">
             <div class="flex items-center mb-4 md:mb-0">
-                <a href="{{ url_for('serve_homepage_file') }}"> <!-- Link logo to welcome page -->
+                <a href="{{ url_for('main.home') }}"> <!-- Link logo to welcome page -->
                     <img src="/static/logo.png" alt="Revisume.ai Logo" class="h-10 sm:h-12 mr-3" onerror="this.onerror=null;this.src='https://placehold.co/48x48/1A1A2E/00D8FF?text=AI';">
                 </a>
             </div>
             <nav class="mb-4 md:mb-0">
                 <ul class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 md:space-x-6 text-base sm:text-lg text-center sm:text-left">
-                    <li><a href="{{ url_for('index') }}#analyzer" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light">Analyzer</a></li>
+                    <li><a href="{{ url_for('main.analyzer') }}" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light">Analyzer</a></li>
 
                     <li class="relative group"> <!-- Dropdown container -->
                         <a href="#" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light py-2 sm:py-0">Revisume Tools</a>
@@ -76,7 +76,7 @@
                                 {% else %} {# Free tier or not authenticated #}
                                     <div class="flex justify-between items-center">
                                         <span class="text-sm text-gray-400">Resume Builder</span>
-                                        <a href="{{ url_for('serve_homepage_file') }}#pricing" class="text-xs bg-tech-blue text-white hover:bg-electric-cyan py-1 px-2 rounded">Upgrade</a>
+                                        <a href="{{ url_for('main.pricing') }}" class="text-xs bg-tech-blue text-white hover:bg-electric-cyan py-1 px-2 rounded">Upgrade</a>
                                     </div>
                                 {% endif %}
                             </div>
@@ -87,7 +87,7 @@
                                 {% else %} {# Free tier or not authenticated #}
                                      <div class="flex justify-between items-center">
                                         <span class="text-sm text-gray-400">Cover Letter AI</span>
-                                        <a href="{{ url_for('serve_homepage_file') }}#pricing" class="text-xs bg-tech-blue text-white hover:bg-electric-cyan py-1 px-2 rounded">Upgrade</a>
+                                        <a href="{{ url_for('main.pricing') }}" class="text-xs bg-tech-blue text-white hover:bg-electric-cyan py-1 px-2 rounded">Upgrade</a>
                                     </div>
                                 {% endif %}
                             </div>
@@ -98,7 +98,7 @@
                                 {% else %} {# Free tier or not authenticated #}
                                      <div class="flex justify-between items-center">
                                         <span class="text-sm text-gray-400">Mock Interview AI</span>
-                                        <a href="{{ url_for('serve_homepage_file') }}#pricing" class="text-xs bg-tech-blue text-white hover:bg-electric-cyan py-1 px-2 rounded">Upgrade</a>
+                                        <a href="{{ url_for('main.pricing') }}" class="text-xs bg-tech-blue text-white hover:bg-electric-cyan py-1 px-2 rounded">Upgrade</a>
                                     </div>
                                 {% endif %}
                             </div>
@@ -109,15 +109,15 @@
                                 {% else %} {# Free or Starter tier or not authenticated #}
                                     <div class="flex justify-between items-center">
                                         <span class="text-sm text-gray-400">Resume Reviser (Pro)</span>
-                                        <a href="{{ url_for('serve_homepage_file') }}#pricing" class="text-xs bg-tech-blue text-white hover:bg-electric-cyan py-1 px-2 rounded">Upgrade</a>
+                                        <a href="{{ url_for('main.pricing') }}" class="text-xs bg-tech-blue text-white hover:bg-electric-cyan py-1 px-2 rounded">Upgrade</a>
                                     </div>
                                 {% endif %}
                             </div>
                         </div>
                     </li>
 
-                    <li><a href="{{ url_for('index') }}#pricing-section" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light">Pricing</a></li>
-                    <li><a href="{{ url_for('contact') }}" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light">Contact Us</a></li>
+                    <li><a href="{{ url_for('main.pricing') }}" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light">Pricing</a></li>
+                    <li><a href="{{ url_for('main.contact') }}" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light">Contact Us</a></li>
 
                     {% if current_user.is_authenticated %}
                     <li class="relative group" id="user-account-button-container"> <!-- This will be the container for the new button and its dropdown -->
@@ -127,20 +127,23 @@
                         <!-- User Account Dropdown Menu -->
                         <div class="absolute right-0 mt-2 w-56 bg-gray-800 border border-gray-700 rounded-md shadow-lg z-20 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-300 ease-in-out invisible group-hover:visible group-focus-within:visible py-1">
                             <div class="px-4 py-3 hover:bg-gray-700">
-                                <a href="{{ url_for('edit_account') }}" class="block text-sm text-primary-light hover:text-electric-cyan">View/Edit Account</a>
+                                <a href="{{ url_for('main.dashboard') }}" class="block text-sm text-primary-light hover:text-electric-cyan">Dashboard</a>
                             </div>
                             <div class="px-4 py-3 hover:bg-gray-700">
-                                <a href="{{ url_for('index', _anchor='pricing-section') }}" class="block text-sm text-primary-light hover:text-electric-cyan">View Tier / Upgrade</a>
+                                <a href="{{ url_for('main.edit_account') }}" class="block text-sm text-primary-light hover:text-electric-cyan">View/Edit Account</a>
+                            </div>
+                            <div class="px-4 py-3 hover:bg-gray-700">
+                                <a href="{{ url_for('main.pricing') }}" class="block text-sm text-primary-light hover:text-electric-cyan">View Tier / Upgrade</a>
                             </div>
                             <div class="border-t border-gray-700 my-1"></div> <!-- Divider -->
                             <div class="px-4 py-3 hover:bg-gray-700">
-                                <a href="{{ url_for('logout') }}" class="block text-sm text-primary-light hover:text-electric-cyan">Sign Out</a>
+                                <a href="{{ url_for('main.logout') }}" class="block text-sm text-primary-light hover:text-electric-cyan">Sign Out</a>
                             </div>
                         </div>
                     </li>
                     {% else %}
-                    <li><a href="{{ url_for('login') }}" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light">Login</a></li>
-                    <li><a href="{{ url_for('register') }}" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light">Register</a></li>
+                    <li><a href="{{ url_for('main.login') }}" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light">Login</a></li>
+                    <li><a href="{{ url_for('main.register') }}" class="hover:text-electric-cyan transition duration-300 ease-in-out font-medium text-primary-light">Register</a></li>
                     {% endif %}
                 </ul>
             </nav>
@@ -172,7 +175,7 @@
         async function redirectToCheckout(priceId) {
             if (!IS_USER_AUTHENTICATED_JS_VAR) {
                 alert("Please log in or register to subscribe or purchase credits.");
-                window.location.href = "{{ url_for('login') }}?next=" + encodeURIComponent(window.location.pathname + window.location.hash);
+                window.location.href = "{{ url_for('main.login') }}?next=" + encodeURIComponent(window.location.pathname + window.location.hash);
                 return;
             }
             if (!priceId || priceId.includes("YOUR_")) {
@@ -180,7 +183,7 @@
                 return;
             }
             try {
-                const response = await fetch("{{ url_for('create_checkout_session') }}", {
+                const response = await fetch("{{ url_for('main.create_checkout_session') }}", {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRFToken': document.querySelector('input[name="csrf_token"]').value },
                     body: JSON.stringify({ price_id: priceId })
