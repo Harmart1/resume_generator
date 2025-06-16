@@ -1,0 +1,29 @@
+{% extends 'app_base.html' %}
+{% block title %}Home - Career App{% endblock %}
+
+{% block content %}
+<div class="text-center">
+    <h1 class="text-4xl font-bold mb-4">Welcome to Career App</h1>
+    <p class="text-lg mb-8">Boost your career with our tools for resume building, cover letter creation, and mock interviews.</p>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div class="bg-gray-800 p-6 rounded-lg">
+            <h2 class="text-2xl font-semibold mb-2">Resume Builder</h2>
+            <p class="text-gray-300 mb-4">Create professional resumes tailored to your industry.</p>
+            <a href="{{ url_for('resume_builder.index') }}" class="inline-block bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Get Started</a>
+        </div>
+        <div class="bg-gray-800 p-6 rounded-lg">
+            <h2 class="text-2xl font-semibold mb-2">Cover Letter</h2>
+            <p class="text-gray-300 mb-4">Craft compelling cover letters to stand out.</p>
+            <a href="{{ url_for('cover_letter.index') }}" class="inline-block bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Get Started</a>
+        </div>
+        <div class="bg-gray-800 p-6 rounded-lg">
+            <h2 class="text-2xl font-semibold mb-2">Mock Interview</h2>
+            <p class="text-gray-300 mb-4">Practice interviews with AI-driven feedback.</p>
+            <a href="{{ url_for('mock_interview.index') }}" class="inline-block bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Get Started</a>
+        </div>
+    </div>
+    <div class="mt-8">
+        <a href="{{ url_for('main.pricing') }}" class="inline-block bg-green-500 text-white px-6 py-3 rounded hover:bg-green-600">Explore Pricing Plans</a>
+    </div>
+</div>
+{% endblock %}

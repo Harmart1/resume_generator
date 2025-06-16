@@ -1,0 +1,81 @@
+{% extends 'app_base.html' %}
+{% block title %}Dashboard - Career App{% endblock %}
+
+{% block content %}
+<div class="text-center">
+    <h1 class="text-3xl font-bold mb-4">Welcome, {{ user.username if user and user.username else 'User' }}!</h1>
+    <p class="text-lg mb-8">Manage your career tools and track your progress.</p>
+
+    {% if user %}
+    <div class="mb-8 p-6 bg-gray-800 rounded-lg shadow-md">
+        <h2 class="text-2xl font-semibold mb-4 text-electric-cyan">Account Summary</h2>
+        <p class="text-gray-300 text-lg">Tier: <span class="font-semibold text-neon-purple">{{ user.tier | capitalize if user.tier else 'N/A' }}</span></p>
+        {% if credits_list and credits_list|length > 0 %}
+            <h3 class="text-xl font-semibold mt-3 mb-2 text-gray-200">Credits:</h3>
+            <ul class="list-disc list-inside text-left mx-auto max-w-md">
+                {% for credit in credits_list %}
+                    <li class="text-gray-300">{{ credit.credit_type | capitalize }}: <span class="font-semibold text-white">{{ credit.amount }}</span></li>
+                {% else %}
+                    <li class="text-gray-400">No credits information available.</li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p class="text-gray-400 mt-2">No credits information available.</p>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div class="bg-gray-800 p-6 rounded-lg shadow-md">
+            <h2 class="text-2xl font-semibold mb-2">Resumes ({{ resumes|length if resumes else 0 }})</h2>
+            {% if resumes and resumes|length > 0 %}
+            <ul class="text-gray-300 mb-4 text-left">
+                {% for resume in resumes[:3] %} {# Show first 3 as examples #}
+                    <li>{{ resume.title | truncate(30) }} - Created: {{ resume.created_at.strftime('%Y-%m-%d') if resume.created_at else 'N/A' }}</li>
+                {% endfor %}
+                {% if resumes|length > 3 %}
+                    <li>... and {{ resumes|length - 3 }} more.</li>
+                {% endif %}
+            </ul>
+            {% else %}
+            <p class="text-gray-400 mb-4">No resumes created yet.</p>
+            {% endif %}
+            <a href="{{ url_for('resume_builder.index') }}" class="inline-block bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Manage Resumes</a>
+        </div>
+
+        <div class="bg-gray-800 p-6 rounded-lg shadow-md">
+            <h2 class="text-2xl font-semibold mb-2">Cover Letters ({{ cover_letters|length if cover_letters else 0 }})</h2>
+            {% if cover_letters and cover_letters|length > 0 %}
+            <ul class="text-gray-300 mb-4 text-left">
+                {% for letter in cover_letters[:3] %} {# Show first 3 as examples #}
+                    <li>{{ letter.title | truncate(30) }} - Created: {{ letter.created_at.strftime('%Y-%m-%d') if letter.created_at else 'N/A' }}</li>
+                {% endfor %}
+                {% if cover_letters|length > 3 %}
+                    <li>... and {{ cover_letters|length - 3 }} more.</li>
+                {% endif %}
+            </ul>
+            {% else %}
+            <p class="text-gray-400 mb-4">No cover letters created yet.</p>
+            {% endif %}
+            <a href="{{ url_for('cover_letter.index') }}" class="inline-block bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Manage Cover Letters</a>
+        </div>
+
+        <div class="bg-gray-800 p-6 rounded-lg shadow-md">
+            <h2 class="text-2xl font-semibold mb-2">Mock Interviews ({{ interviews|length if interviews else 0 }})</h2>
+            {% if interviews and interviews|length > 0 %}
+            <ul class="text-gray-300 mb-4 text-left">
+                {% for interview in interviews[:3] %} {# Show first 3 as examples #}
+                    <li>{{ interview.job_description | truncate(30) if interview.job_description else 'General Interview' }} - Created: {{ interview.created_at.strftime('%Y-%m-%d') if interview.created_at else 'N/A' }}</li>
+                {% endfor %}
+                {% if interviews|length > 3 %}
+                    <li>... and {{ interviews|length - 3 }} more.</li>
+                {% endif %}
+            </ul>
+            {% else %}
+            <p class="text-gray-400 mb-4">No mock interviews started yet.</p>
+            {% endif %}
+            <a href="{{ url_for('mock_interview.index') }}" class="inline-block bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Manage Interviews</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
