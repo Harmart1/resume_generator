@@ -52,14 +52,14 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Log effective database URI (from user's script)
 effective_db_uri = app.config['SQLALCHEMY_DATABASE_URI']
-if 'postgresql' in effective_db_uri.lower() and os.getenv('DATABASE_URL'): # Check if DATABASE_URL was source
+if 'postgresql' in effective_db_uri and os.getenv('DATABASE_URL'):
     logger.info(f"Using PostgreSQL database URI from DATABASE_URL: {effective_db_uri}")
-elif 'sqlite' in effective_db_uri.lower() and os.getenv('DATABASE_URL'): # Check if DATABASE_URL was source
+elif 'sqlite' in effective_db_uri and os.getenv('DATABASE_URL'):
     logger.info(f"Using SQLite database URI from DATABASE_URL: {effective_db_uri}")
-elif default_sqlite_db_path in effective_db_uri: # Check if it's the default SQLite path
+elif 'sqlite:///instance/site.db' in effective_db_uri: # Specifically check if it's the new default
     logger.info(f"Using default SQLite database URI: {effective_db_uri} (DATABASE_URL not set)")
 else:
-    logger.warning(f"Using custom database URI from DATABASE_URL: {effective_db_uri}")
+    logger.info(f"Using custom database URI from DATABASE_URL: {effective_db_uri}")
 
 
 # Session Configuration (Combining original and user's suggestions)
