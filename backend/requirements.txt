@@ -3,19 +3,21 @@ Flask-WTF==1.2.1
 Flask-Login==0.6.3
 Flask-SQLAlchemy==3.1.1
 Flask-Migrate==4.0.7
-alembic==1.13.2 # Explicitly added by user
+alembic==1.13.2
 python-docx==1.1.2
 spacy==3.7.6
 textblob==0.18.0.post0
 gunicorn==22.0.0
 psycopg2-binary==2.9.9 # For PostgreSQL, optional for SQLite
 python-dotenv==1.0.1
-# Adding other dependencies that were in the project previously and are still needed
-Flask-Session>=0.4 # From previous merge
-Flask-Bcrypt>=1.0  # From previous merge
-SQLAlchemy>=1.4 # Ensure this is compatible with Flask-SQLAlchemy 3.1.1 (SQLAlchemy 1.4.x to 2.0.x is generally ok)
-WTForms>=3.0 # For Flask-WTF
+# Adding other dependencies that were in the project previously and are still needed,
+# ensuring compatibility with the pinned versions above.
+Flask-Session>=0.4 # User did not pin, using previous version
+Flask-Bcrypt>=1.0  # User did not pin, using previous version
+SQLAlchemy>=1.4,<2.1 # Flask-SQLAlchemy 3.1.1 supports SQLAlchemy 1.4+ and 2.0. Pinning upper to avoid surprises.
+WTForms>=3.0 # Flask-WTF 1.2.1 usually pulls WTForms ~3.1
 email-validator>=1.0 # For Email validation in WTForms
+# Core libraries from original project that should persist
 langdetect
 ibm-watson
 ibm-cloud-sdk-core
@@ -25,4 +27,4 @@ stripe
 pdfplumber
 PyPDF2 # Fallback for pdfplumber
 textract==1.6.3 # Pinned due to issues with newer versions
-# redis==4.6.0 # User mentioned for future Redis session, not adding yet unless specified for current setup
+# redis==4.6.0 # User mentioned for future Redis session, not adding yet.
