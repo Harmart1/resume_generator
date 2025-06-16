@@ -5,3 +5,11 @@ instance/*.db
 instance/site.db
 flask_session/
 *.log
+# Add other typical Python/Flask ignores if missing
+*.swp
+*.swo
+dist/
+build/
+*.egg-info/
+venv/
+.vscode/

@@ -1,25 +1,26 @@
-Flask>=2.0
-Flask-SQLAlchemy>=2.5
-Flask-Migrate>=3.0
-Flask-WTF>=1.0
-Flask-Login>=0.5
-Flask-Session>=0.4
-Flask-Bcrypt>=1.0 # If used (it was in backend.extensions)
-python-dotenv>=0.19
-psycopg2-binary==2.9.10 # For PostgreSQL, not required if using the default SQLite configuration
-SQLAlchemy>=1.4
-WTForms>=3.0
-email-validator # Often a validator for EmailField in WTForms
-# Dependencies from the original app.py and refactoring:
-langdetect
-ibm-watson
-ibm-cloud-sdk-core
-requests
-google-generativeai
-stripe
-pdfplumber
-PyPDF2 # Fallback for pdfplumber
-spacy
-textract==1.6.3 # Pinned due to issues with newer versions
-textblob # Added by user in their setup steps
-gunicorn # For deployment, as per user's Render steps
+Flask==2.3.2
+Flask-WTF==1.2.1
+Flask-Login==0.6.3
+Flask-SQLAlchemy==3.1.1
+Flask-Migrate==4.0.7
+Flask-Session>=0.4 # Retained from my previous merge, user didn't specify version
+Flask-Bcrypt>=1.0 # Retained from my previous merge
+python-docx==1.1.2 # User specified this version
+spacy==3.7.6       # User specified this version
+textblob==0.18.0.post0 # User specified this version
+gunicorn==22.0.0   # User specified this version
+psycopg2-binary==2.9.9 # User specified this version, For PostgreSQL, optional for SQLite
+python-dotenv==1.0.1 # User specified this version
+SQLAlchemy>=1.4 # Retained from my previous merge, ensure compatibility with Flask-SQLAlchemy 3.1.1
+WTForms>=3.0    # Retained from my previous merge
+email-validator>=1.0 # Retained from my previous merge
+langdetect # Retained from original
+ibm-watson # Retained from original
+ibm-cloud-sdk-core # Retained from original
+requests # Retained from original
+google-generativeai # Retained from original
+stripe # Retained from original
+pdfplumber # Retained from original
+PyPDF2 # Retained from original
+textract==1.6.3 # Retained from original, pinned
+alembic==1.13.2 # Added by user
