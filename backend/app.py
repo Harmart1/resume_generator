@@ -5,6 +5,7 @@ from datetime import datetime
 from functools import wraps # Added for tier_required
 
 from flask import Flask, render_template, redirect, url_for, flash, session, g, request, jsonify, send_from_directory, abort
+from sqlalchemy import text # ADDED for db connection validation
 # Removed current_user from flask_login import here, will be imported where needed or via g.user
 from flask_wtf import FlaskForm # For ContactForm example
 from flask_wtf.csrf import CSRFProtect
@@ -90,6 +91,14 @@ try:
     bcrypt.init_app(app)
     login_manager.init_app(app)
     logger.info("Flask extensions (SQLAlchemy, Migrate, Bcrypt, LoginManager) initialized.")
+
+    # Database connection validation
+    with app.app_context():
+        try:
+            db.session.execute(text('SELECT 1')) # Use text() for literal SQL
+            logger.info("Database connection established successfully.")
+        except Exception as e:
+            logger.error(f"Database connection failed: {str(e)}", exc_info=True)
 except ImportError:
     logger.error("Failed to import extensions from backend.extensions. Ensure extensions.py is correctly set up.", exc_info=True)
 except Exception as e:
