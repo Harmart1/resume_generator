@@ -1,34 +1,75 @@
 {% extends 'app_base.html' %}
-{% block title %}Home - Career App{% endblock %}
+{% block title %}Home - Career Success Tools{% endblock %}
 
 {% block content %}
-<div class="text-center">
-    <h1 class="text-4xl font-bold mb-4">Welcome to Career App</h1>
-    <p class="text-lg mb-8">Boost your career with our tools for resume building, cover letter creation, and mock interviews.</p>
-    {% if current_user.is_authenticated %}
-        <a href="{{ url_for('main.dashboard') }}" class="inline-block bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mb-8">Go to Dashboard</a>
-    {% else %}
-        <a href="{{ url_for('main.register') }}" class="inline-block bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mb-8">Get Started</a>
-    {% endif %}
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <div class="bg-gray-800 p-6 rounded-lg">
-            <h2 class="text-2xl font-semibold mb-2">Resume Builder</h2>
-            <p class="text-gray-300 mb-4">Create professional resumes tailored to your industry.</p>
-            <a href="{{ url_for('resume_builder.index') }}" class="inline-block bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Get Started</a>
+<div class="container mx-auto px-4 py-8 text-primary-light">
+
+    <section class="hero text-center py-12 md:py-20">
+        <h1 class="text-4xl sm:text-5xl md:text-6xl font-bold font-sora mb-6">
+            Craft Your Future: <span class="text-electric-cyan">Career Success Tools</span>
+        </h1>
+        <p class="text-lg sm:text-xl md:text-2xl text-secondary-light mb-10 max-w-3xl mx-auto">
+            Elevate your job application with our AI-powered resume builder, cover letter generator, and mock interview simulator.
+        </p>
+        <div>
+            {% if current_user.is_authenticated %}
+                <a href="{{ url_for('main.dashboard') }}" class="btn-primary text-lg sm:text-xl px-8 sm:px-10 py-3 sm:py-4 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 transform hover:scale-105">
+                    Go to Dashboard
+                </a>
+            {% else %}
+                <a href="{{ url_for('main.register') }}" class="btn-primary text-lg sm:text-xl px-8 sm:px-10 py-3 sm:py-4 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 transform hover:scale-105">
+                    Get Started Free
+                </a>
+            {% endif %}
         </div>
-        <div class="bg-gray-800 p-6 rounded-lg">
-            <h2 class="text-2xl font-semibold mb-2">Cover Letter</h2>
-            <p class="text-gray-300 mb-4">Craft compelling cover letters to stand out.</p>
-            <a href="{{ url_for('cover_letter.index') }}" class="inline-block bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Get Started</a>
+    </section>
+
+    <section class="features py-12 md:py-20">
+        <h2 class="text-3xl sm:text-4xl font-bold font-sora text-center mb-12 md:mb-16">
+            Everything You Need to <span class="text-electric-cyan">Succeed</span>
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12">
+            {# Card 1: Resume Builder #}
+            <div class="glass-card p-6 md:p-8 flex flex-col items-center text-center">
+                <div class="text-4xl sm:text-5xl mb-4">📄</div>
+                <h3 class="text-xl sm:text-2xl font-semibold font-sora mb-3 text-primary-light">AI Resume Builder</h3>
+                <p class="text-secondary-light mb-6 flex-grow">Create professional, ATS-friendly resumes tailored to your industry with AI assistance.</p>
+                <a href="{{ url_for('resume_builder.index') }}" class="btn-primary w-full sm:w-auto px-6 py-3 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
+                    Build Your Resume
+                </a>
+            </div>
+            {# Card 2: Cover Letter #}
+            <div class="glass-card p-6 md:p-8 flex flex-col items-center text-center">
+                <div class="text-4xl sm:text-5xl mb-4">✉️</div>
+                <h3 class="text-xl sm:text-2xl font-semibold font-sora mb-3 text-primary-light">AI Cover Letter Generator</h3>
+                <p class="text-secondary-light mb-6 flex-grow">Craft compelling cover letters that stand out from the crowd, powered by AI.</p>
+                <a href="{{ url_for('cover_letter.index') }}" class="btn-primary w-full sm:w-auto px-6 py-3 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
+                    Write Your Cover Letter
+                </a>
+            </div>
+            {# Card 3: Mock Interview #}
+            <div class="glass-card p-6 md:p-8 flex flex-col items-center text-center">
+                <div class="text-4xl sm:text-5xl mb-4">🎙️</div>
+                <h3 class="text-xl sm:text-2xl font-semibold font-sora mb-3 text-primary-light">AI Mock Interview</h3>
+                <p class="text-secondary-light mb-6 flex-grow">Practice for your interviews with AI-driven questions and feedback to boost your confidence.</p>
+                <a href="{{ url_for('mock_interview.index') }}" class="btn-primary w-full sm:w-auto px-6 py-3 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
+                    Start Practicing
+                </a>
+            </div>
         </div>
-        <div class="bg-gray-800 p-6 rounded-lg">
-            <h2 class="text-2xl font-semibold mb-2">Mock Interview</h2>
-            <p class="text-gray-300 mb-4">Practice interviews with AI-driven feedback.</p>
-            <a href="{{ url_for('mock_interview.index') }}" class="inline-block bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Get Started</a>
-        </div>
-    </div>
-    <div class="mt-8">
-        <a href="{{ url_for('main.pricing') }}" class="inline-block bg-green-500 text-white px-6 py-3 rounded hover:bg-green-600">Explore Pricing Plans</a>
-    </div>
+    </section>
+
+    <section class="cta text-center py-12 md:py-20">
+         <h2 class="text-3xl sm:text-4xl font-bold font-sora mb-6">
+            Ready to <span class="text-neon-purple">Upgrade</span> Your Career?
+        </h2>
+        <p class="text-lg sm:text-xl text-secondary-light mb-10 max-w-2xl mx-auto">
+            Unlock premium features and accelerate your job search with our comprehensive plans.
+        </p>
+        <a href="{{ url_for('main.pricing') }}" class="btn-download text-lg sm:text-xl px-8 sm:px-10 py-3 sm:py-4 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 transform hover:scale-105">
+            View Pricing Plans
+        </a>
+    </section>
+
 </div>
 {% endblock %}
