@@ -1,20 +1,13 @@
+import logging # Added for logging
 from flask import render_template, redirect, url_for, flash, request
 from flask_login import login_required, current_user
 from backend.models import Resume, Credit # Make sure Credit model is correctly named and imported
 from backend.extensions import db
 from . import bp # Import bp from the local __init__.py
+from .forms import ResumeForm # Added for Flask-WTF form
 
-# Helper function to get CSRF token if not using Flask-WTF forms explicitly
-# This is a placeholder; actual CSRF protection might be handled globally
-# or via a more specific Flask-WTF integration if forms are used.
-def csrf_token_field():
-    # In a real app, you might generate a CSRF token and pass it to the template
-    # For Flask-WTF, it's often {{ form.csrf_token }}
-    # If CSRFProtect is enabled globally, it might inject it or expect it in headers
-    # For simplicity, if not using Flask-WTF forms here, this might be an empty string
-    # or a custom solution. The template calls csrf_token_field().
-    # Let's assume it's available in template context via an extension or app.context_processor
-    return ""
+# Configure logger for this blueprint
+logger = logging.getLogger(__name__) # Added for logging
 
 @bp.route('/')
 @login_required
@@ -26,36 +19,35 @@ def index():
 @bp.route('/create', methods=['GET', 'POST'])
 @login_required
 def create():
-    """Handles creation of a new resume, with credit checking."""
+    """Handles creation of a new resume, with credit checking and Flask-WTF form."""
+    form = ResumeForm()
     
     # Credit Checking
-    # Using 'legacy' as specified, adjust if a different credit_type is used for resumes
     user_credit = Credit.query.filter_by(user_id=current_user.id, credit_type='legacy').first()
 
     if not user_credit or user_credit.amount <= 0:
+        # Flash message even if form is not submitted yet, or on GET request if no credits
+        # This check should ideally happen before showing the form or on form submission
         flash('You do not have enough credits to create a new resume. Please purchase more credits.', 'warning')
-        return redirect(url_for('resume_builder.index'))
+        return redirect(url_for('resume_builder.index')) # Redirect if no credits
 
-    if request.method == 'POST':
-        title = request.form.get('title')
-        content = request.form.get('content') # This would be raw text or JSON depending on design
+    if form.validate_on_submit():
+        # Credit check again, in case state changed between page load and submission
+        # Though for this simple flow, the above check might be sufficient if credits are only decremented here
+        if not user_credit or user_credit.amount <= 0:
+             flash('Credit check failed upon submission. Please ensure you have enough credits.', 'warning')
+             return redirect(url_for('resume_builder.index'))
 
-        if not title or not content:
-            flash('Title and content are required.', 'danger')
-            return render_template('resume_builder/create_resume.html', csrf_token_field=csrf_token_field)
-
-        # Proceed with creation if credit check passed and form is valid
         new_resume = Resume(
             user_id=current_user.id,
-            title=title,
-            content=content # Store as is; could be structured JSON if form supports it
+            title=form.title.data,
+            content=form.content.data
         )
 
-        # Decrement credit
         user_credit.amount -= 1
 
         db.session.add(new_resume)
-        db.session.add(user_credit) # Add updated credit object to session
+        db.session.add(user_credit)
 
         try:
             db.session.commit()
@@ -63,10 +55,12 @@ def create():
             return redirect(url_for('resume_builder.index'))
         except Exception as e:
             db.session.rollback()
+            logger.error(f"Error creating resume: {str(e)}", exc_info=True)
             flash(f'Error creating resume: {str(e)}', 'danger')
-            # Log the error e for debugging
+            # Error already logged, no need for the comment "Log the error e for debugging"
     
-    return render_template('resume_builder/create_resume.html', csrf_token_field=csrf_token_field)
+    # For GET request or if form validation fails
+    return render_template('resume_builder/create_resume.html', form=form)
 
 # Note: The original routes.py had many other routes for a multi-step resume building process.
 # This overwrite simplifies it to just an index and a direct create route as per the subtask.

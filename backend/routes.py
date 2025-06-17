@@ -1,8 +1,12 @@
+import logging # Added for logging
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_required, current_user, login_user, logout_user
 from backend.models import User, Resume, CoverLetter, MockInterview, Credit, FeatureUsageLog
 from backend.extensions import db, bcrypt
 from datetime import datetime
+
+# Configure logger for this blueprint
+logger = logging.getLogger(__name__) # Added for logging
 
 main_bp = Blueprint('main', __name__, template_folder='../../frontend/templates')
 
@@ -49,7 +53,7 @@ def dashboard():
     except Exception as e:
         # Log or handle the exception if the database commit fails
         # For now, let's assume it's important to still render the dashboard
-        print(f"Error logging feature usage: {e}") # Replace with actual logging
+        logger.error(f"Error logging feature usage: {e}", exc_info=True)
         db.session.rollback()
 
 

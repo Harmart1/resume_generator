@@ -43,6 +43,44 @@ For testing the `/stripe_webhook` endpoint locally, it's recommended to use the 
 This command will provide you with a webhook signing secret to use for `STRIPE_WEBHOOK_SECRET` for local testing if you haven't configured a persistent one in your dashboard for the local endpoint.
 ```
 
+## Security Configuration
+
+Ensuring the security of your application is critical. Proper configuration of security-related settings is essential, especially when deploying to production.
+
+### Secret Key
+
+The `SECRET_KEY` is a crucial part of your Flask application's security. It is used for:
+
+*   **Session Management:** Securing user sessions to prevent tampering.
+*   **CSRF Protection:** Protecting your application against Cross-Site Request Forgery attacks.
+*   **Other Security-Related Functions:** Any other features that rely on a cryptographic signature.
+
+**Importance in Production:**
+In a production environment, it is **imperative** to use a strong, unique, and unpredictable `SECRET_KEY`. Using a weak or default key can expose your application to serious vulnerabilities, including session hijacking and data breaches. The application will log a warning if the default key is used.
+
+**How to Set the `SECRET_KEY`:**
+
+The `SECRET_KEY` should be set as an environment variable. This keeps the key out of your codebase and allows for different keys in different environments (development, testing, production).
+
+1.  **Generate a Strong Key:**
+    You can generate a cryptographically strong key using Python's `secrets` module:
+    ```bash
+    python -c 'import secrets; print(secrets.token_hex(32))'
+    ```
+    This will output a long hexadecimal string (e.g., `d2a1f3a7...`).
+
+2.  **Set the Environment Variable:**
+    *   **Using a `.env` file (recommended for development):**
+        Create or open the `.env` file in your `backend` directory and add the following line:
+        ```
+        SECRET_KEY='your_generated_strong_secret_key_here'
+        ```
+        Ensure `.env` is listed in your `.gitignore` file to prevent committing it to version control.
+    *   **In your Production Environment:**
+        The method for setting environment variables depends on your deployment platform (e.g., Docker, Heroku, AWS, Render). Refer to your platform's documentation for setting environment variables. For example, in Render, you would set this in the service's "Environment" settings.
+
+**Never commit your production `SECRET_KEY` to version control.**
+
 ## Frontend Notes
 
 ## Deployment on Render

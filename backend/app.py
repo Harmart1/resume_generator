@@ -187,13 +187,13 @@ if __name__ == '__main__':
         spacy.load('en_core_web_sm') # User had en_core_web_sm
         logger.info("SpaCy en_core_web_sm model found.")
     except OSError:
-        logger.warning('SpaCy en_core_web_sm model not found. Attempting to download...')
+        logger.error('SpaCy en_core_web_sm model not found. Attempting to download...')
         try:
             import subprocess
             subprocess.run(['python', '-m', 'spacy', 'download', 'en_core_web_sm'], check=True)
             logger.info("Successfully downloaded en_core_web_sm.")
         except Exception as e_spacy:
-            logger.error(f"Failed to download en_core_web_sm: {e_spacy}", exc_info=True)
+            logger.error(f"Failed to download Spacy model 'en_core_web_sm': {e_spacy}. This could be due to network issues, an incorrect model name, or insufficient permissions. Please check your internet connection and the model name.", exc_info=True)
 
     port = int(os.getenv('PORT', 5000))
     # Debug mode should come from FLASK_DEBUG=1 env var ideally, not FLASK_ENV

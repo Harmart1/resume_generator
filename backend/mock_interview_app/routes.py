@@ -1,14 +1,14 @@
+import logging # Added for logging
 from flask import render_template, redirect, url_for, flash, request
 from flask_login import login_required, current_user
 from backend.models import MockInterview, Credit # Ensure Credit model is correctly named
 from backend.extensions import db
 from . import mock_interview_bp # Import the blueprint defined in __init__.py
+from .forms import MockInterviewStartForm # Added for Flask-WTF form
 import json # For storing sample questions as JSON
 
-# Helper function for CSRF token placeholder
-def csrf_token_field():
-    # This is a placeholder. Actual CSRF implementation might vary.
-    return ""
+# Configure logger for this blueprint
+logger = logging.getLogger(__name__) # Added for logging
 
 @mock_interview_bp.route('/')
 @login_required
@@ -20,17 +20,23 @@ def index():
 @mock_interview_bp.route('/start', methods=['GET', 'POST'])
 @login_required
 def start():
-    """Handles starting a new mock interview, with credit checking."""
+    """Handles starting a new mock interview, with credit checking and Flask-WTF form."""
+    form = MockInterviewStartForm()
 
     # Credit Checking for 'legacy' credits
     user_credit = Credit.query.filter_by(user_id=current_user.id, credit_type='legacy').first()
 
     if not user_credit or user_credit.amount <= 0:
         flash('You do not have enough credits to start a new mock interview. Please purchase more credits.', 'warning')
-        return redirect(url_for('mock_interview.index'))
+        return redirect(url_for('mock_interview.index')) # Redirect if no credits
 
-    if request.method == 'POST':
-        job_description = request.form.get('job_description', '') # Optional field
+    if form.validate_on_submit():
+        # Re-check credits on submission
+        if not user_credit or user_credit.amount <= 0:
+            flash('Credit check failed upon submission. Please ensure you have enough credits.', 'warning')
+            return redirect(url_for('mock_interview.index'))
+
+        job_description = form.job_description.data
 
         # Placeholder for sample questions. In a real app, these might be generated
         # or selected based on the job description.
@@ -63,10 +69,11 @@ def start():
             return redirect(url_for('mock_interview.index'))
         except Exception as e:
             db.session.rollback()
+            logger.error(f"Error starting mock interview: {str(e)}", exc_info=True)
             flash(f'Error starting mock interview: {str(e)}', 'danger')
-            # Consider logging the error e
+            # Error already logged
 
-    return render_template('mock_interview/start.html', csrf_token_field=csrf_token_field)
+    return render_template('mock_interview/start.html', form=form)
 
 # Note: This simplified version replaces the previous complex logic.
 # Assumes MockInterview model has fields like: user_id, job_description, questions (TEXT/JSON),
