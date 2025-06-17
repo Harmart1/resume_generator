@@ -47,14 +47,15 @@ This command will provide you with a webhook signing secret to use for `STRIPE_W
 
 ## Deployment on Render
 
-To deploy this application on Render, follow these steps:
+To deploy this Python application (using Poetry for dependency management) on Render, follow these steps:
 
-1.  **Ensure you have a `requirements.txt` file:**
-    This file lists all the Python dependencies required by your application. You can generate it using:
+1.  **Ensure `pyproject.toml` and `poetry.lock` are in your repository:**
+    These files are essential for Poetry to manage your project's dependencies. Make sure they are committed to your Git repository.
+    If you've added dependencies, ensure your `poetry.lock` file is up-to-date by running:
     ```bash
-    pip freeze > requirements.txt
+    poetry lock
     ```
-    Commit this file to your repository.
+    And commit any changes.
 
 2.  **Create a new Web Service on Render:**
     - Go to the Render Dashboard and click "New +".
@@ -66,11 +67,14 @@ To deploy this application on Render, follow these steps:
     - **Region:** Choose a region closest to your users.
     - **Branch:** Select the branch you want to deploy (e.g., `main` or `master`).
     - **Root Directory:** If your application is not in the root of the repository, specify the path here. Otherwise, leave it blank.
-    - **Runtime:** Select "Python 3".
-    - **Build Command:** Render usually auto-detects this for Python projects. A common command is `pip install -r requirements.txt`.
-    - **Start Command:** This command starts your web application.
-        - For Flask applications using Gunicorn: `gunicorn app:app` (assuming your main Flask app instance is named `app` in a file named `app.py`).
-        - For Django applications using Gunicorn: `gunicorn myproject.wsgi:application` (replace `myproject` with your project's name).
+    - **Runtime:** Select "Python 3". Render should automatically detect you're using Poetry if `pyproject.toml` is present.
+    - **Build Command:** Render will likely auto-detect the build command for Poetry projects. Common options are:
+        - `poetry install --no-dev --no-root` (to install only production dependencies)
+        - Render might also default to `poetry install` or handle it automatically. You can often leave this as "auto" or set it explicitly if needed.
+        - *Based on the user's log, Render detected Poetry, so this step might be automatically handled. The key is ensuring `pyproject.toml` and `poetry.lock` are correct.*
+    - **Start Command:** This command starts your web application using Poetry.
+        - For Flask applications using Gunicorn: `poetry run gunicorn app:app` (assuming your main Flask app instance is named `app` in a file named `app.py`).
+        - For Django applications using Gunicorn: `poetry run gunicorn myproject.wsgi:application` (replace `myproject` with your project's name).
         - Adjust the command based on your application structure and WSGI server.
     - **Instance Type:** Choose an appropriate instance type based on your application's needs. The free tier is available for small projects.
 
@@ -79,13 +83,13 @@ To deploy this application on Render, follow these steps:
     - Add any necessary environment variables your application requires (e.g., `DATABASE_URL`, `SECRET_KEY`, `FLASK_ENV=production`).
 
 5.  **Deploy:**
-    - Click "Create Web Service". Render will automatically build and deploy your application.
-    - You can monitor the deployment logs in the Render dashboard.
+    - Click "Create Web Service". Render will automatically build and deploy your application using your Poetry setup.
+    - You can monitor the deployment logs in the Render dashboard. If the build fails, check that `pyproject.toml` and `poetry.lock` are consistent and that your start command is correct.
 
 6.  **Set up a Custom Domain (Optional):**
     - Once deployed, you can add a custom domain in your service's settings on Render.
 
-**Example `app.py` (for Flask):**
+**Example `app.py` (for Flask, compatible with Poetry execution):**
 
 ```python
 from flask import Flask
@@ -98,12 +102,16 @@ def hello_world():
     return 'Hello from Render!'
 
 if __name__ == "__main__":
+    # When run with Gunicorn via `poetry run gunicorn app:app`,
+    # Gunicorn handles the port and host.
+    # This __main__ block is useful for local development: `poetry run python app.py`
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
 ```
 
 **Notes:**
 
-*   Make sure your application's host is set to `0.0.0.0` to be accessible externally.
-*   Render injects a `PORT` environment variable that your application should listen on. The example above shows how to use it.
-*   For more complex applications or specific frameworks, refer to the official Render documentation for Python.
+*   Ensure your application's host is set to `0.0.0.0` in your WSGI server command (Gunicorn does this by default) to be accessible externally.
+*   Render injects a `PORT` environment variable that your WSGI server (like Gunicorn) should listen on. Gunicorn typically handles this automatically.
+*   The `poetry.lock` file ensures reproducible builds. Keep it consistent with `pyproject.toml`.
+*   If you encounter issues, Render's logs are the first place to check. They often provide specific error messages related to Poetry or your application.
