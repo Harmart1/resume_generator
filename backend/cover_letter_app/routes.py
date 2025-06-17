@@ -1,13 +1,13 @@
+import logging # Added for logging
 from flask import render_template, redirect, url_for, flash, request
 from flask_login import login_required, current_user
 from backend.models import CoverLetter, Credit # Ensure Credit model is correctly named
 from backend.extensions import db
 from . import cover_letter_bp # Import the blueprint defined in __init__.py
+from .forms import CoverLetterForm # Added for Flask-WTF form
 
-# Helper function for CSRF token placeholder (similar to resume_builder)
-def csrf_token_field():
-    # This is a placeholder. Actual CSRF implementation might vary.
-    return ""
+# Configure logger for this blueprint
+logger = logging.getLogger(__name__) # Added for logging
 
 @cover_letter_bp.route('/')
 @login_required
@@ -19,27 +19,26 @@ def index():
 @cover_letter_bp.route('/create', methods=['GET', 'POST'])
 @login_required
 def create():
-    """Handles creation of a new cover letter, with credit checking."""
+    """Handles creation of a new cover letter, with credit checking and Flask-WTF form."""
+    form = CoverLetterForm()
 
     # Credit Checking for 'legacy' credits
     user_credit = Credit.query.filter_by(user_id=current_user.id, credit_type='legacy').first()
 
     if not user_credit or user_credit.amount <= 0:
         flash('You do not have enough credits to create a new cover letter. Please purchase more credits.', 'warning')
-        return redirect(url_for('cover_letter.index'))
+        return redirect(url_for('cover_letter.index')) # Redirect if no credits
 
-    if request.method == 'POST':
-        title = request.form.get('title')
-        content = request.form.get('content')
-
-        if not title or not content:
-            flash('Title and content are required.', 'danger')
-            return render_template('cover_letter/create.html', csrf_token_field=csrf_token_field)
+    if form.validate_on_submit():
+        # Re-check credits on submission, though it might be redundant if only decremented here
+        if not user_credit or user_credit.amount <= 0: # Should be checked before form processing
+            flash('Credit check failed upon submission. Please ensure you have enough credits.', 'warning')
+            return redirect(url_for('cover_letter.index'))
 
         new_cover_letter = CoverLetter(
             user_id=current_user.id,
-            title=title,
-            content=content
+            title=form.title.data,
+            content=form.content.data
         )
 
         user_credit.amount -= 1
@@ -53,10 +52,11 @@ def create():
             return redirect(url_for('cover_letter.index'))
         except Exception as e:
             db.session.rollback()
+            logger.error(f"Error creating cover letter: {str(e)}", exc_info=True)
             flash(f'Error creating cover letter: {str(e)}', 'danger')
-            # Consider logging the error e
+            # Error already logged
     
-    return render_template('cover_letter/create.html', csrf_token_field=csrf_token_field)
+    return render_template('cover_letter/create.html', form=form)
 
 # Note: This simplified version replaces the previous complex logic involving AI generation,
 # file processing, and specific forms. It focuses on basic CRUD and credit checking.

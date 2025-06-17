@@ -2,20 +2,29 @@
 {% block title %}Create New Resume - Resume Builder{% endblock %}
 {% block content %}
 <h1 class="text-3xl font-bold mb-6">Create New Resume</h1>
-<form method="POST" action="{{ url_for('resume_builder.create') }}" class="max-w-lg mx-auto bg-gray-800 p-8 rounded-lg shadow-xl">
-    {# This assumes csrf_token_field is a macro or variable passed from the route providing the CSRF token #}
-    {% if csrf_token_field %}
-        {{ csrf_token_field() }}
-    {% endif %}
-    {# If using Flask-WTF Form object `form` passed to template, it would be `{{ form.csrf_token }}` #}
+<form method="POST" action="{{ url_for('resume_builder.create') }}" class="max-w-lg mx-auto bg-gray-800 p-8 rounded-lg shadow-xl" novalidate>
+    {{ form.csrf_token }} {# CSRF token from Flask-WTF #}
+
     <div class="mb-6">
-        <label for="title" class="block text-gray-300 font-semibold mb-2">Title</label>
-        <input type="text" name="title" id="title" class="w-full p-3 rounded bg-gray-700 text-white border border-gray-600 focus:border-electric-cyan focus:ring-electric-cyan" required>
+        {{ form.title.label(class="block text-gray-300 font-semibold mb-2") }}
+        {{ form.title(class="w-full p-3 rounded bg-gray-700 text-white border border-gray-600 focus:border-electric-cyan focus:ring-electric-cyan" + (" border-red-500" if form.title.errors else ""), **{'required': 'required'}) }}
+        {% if form.title.errors %}
+            <ul class="text-red-500 text-xs mt-1">
+                {% for error in form.title.errors %}<li>{{ error }}</li>{% endfor %}
+            </ul>
+        {% endif %}
     </div>
+
     <div class="mb-6">
-        <label for="content" class="block text-gray-300 font-semibold mb-2">Content</label>
-        <textarea name="content" id="content" class="w-full p-3 rounded bg-gray-700 text-white border border-gray-600 focus:border-electric-cyan focus:ring-electric-cyan" rows="10" required></textarea>
+        {{ form.content.label(class="block text-gray-300 font-semibold mb-2") }}
+        {{ form.content(class="w-full p-3 rounded bg-gray-700 text-white border border-gray-600 focus:border-electric-cyan focus:ring-electric-cyan" + (" border-red-500" if form.content.errors else ""), rows="10", **{'required': 'required'}) }}
+        {% if form.content.errors %}
+            <ul class="text-red-500 text-xs mt-1">
+                {% for error in form.content.errors %}<li>{{ error }}</li>{% endfor %}
+            </ul>
+        {% endif %}
     </div>
-    <button type="submit" class="w-full bg-blue-500 text-white px-4 py-3 rounded hover:bg-blue-600 font-semibold transition duration-300">Save Resume</button>
+
+    {{ form.submit(class="w-full bg-blue-500 text-white px-4 py-3 rounded hover:bg-blue-600 font-semibold transition duration-300") }}
 </form>
 {% endblock %}
