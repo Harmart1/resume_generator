@@ -1,13 +1,24 @@
 import random
 import spacy
+import logging # Added
 
-# Ensure model is loaded. May need: python -m spacy download en_core_web_sm
+logger = logging.getLogger(__name__) # Added
+
+# Ensure model is loaded.
 try:
     nlp = spacy.load('en_core_web_sm')
 except OSError:
-    print("Downloading spacy model en_core_web_sm...")
-    spacy.cli.download("en_core_web_sm")
-    nlp = spacy.load('en_core_web_sm')
+    logger.error("Spacy model 'en_core_web_sm' not found. This model should be downloaded at application startup. Question generation will be impaired.")
+    # Fallback or raise exception: For question generation, a dummy might be less useful.
+    # For now, let it proceed (Spacy might raise error later or work with blank nlp object if it allows)
+    # or define a simple dummy if Spacy calls will fail hard.
+    # To be safe, let's use a similar dummy as in analyzer to avoid crashes.
+    class DummySpacyNLP:
+        def __call__(self, text):
+            class Doc:
+                def __init__(self, text): self.text = text; self.ents = []; self.noun_chunks = []
+            return Doc(text)
+    nlp = DummySpacyNLP()
 
 def generate_questions(job_desc, resume_text="", num_skill_questions=3, num_behavioral_questions=2):
     doc = nlp(job_desc)

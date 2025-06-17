@@ -48,8 +48,9 @@ def detect_language(text):
         response.raise_for_status()
         lang_code = response.json()["choices"][0]["message"]["content"].strip().lower()
         return lang_code if lang_code in SUPPORTED_LANGUAGES else 'en'
-    except Exception:
-        return 'en'
+    except Exception as e:
+        logger.error(f"Language detection error: {str(e)}", exc_info=True)
+        return 'en' # Fallback to English
 
 def translate_text(text, target_lang='en', source_lang=None):
     """Translate text to target language"""

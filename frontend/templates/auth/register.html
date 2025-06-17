@@ -9,44 +9,61 @@
 <body>
     <div class="container">
         <h2>Register</h2>
-        <form method="POST" action="{{ url_for('register') }}">
+        <form method="POST" action="{{ url_for('main.register') }}" novalidate>
             {{ form.csrf_token }}
             <div class="form-group">
-                {{ form.email.label }}
-                {{ form.email(class="form-control") }}
+                {{ form.username.label(class="form-label") }}
+                {{ form.username(class="form-control" + (" is-invalid" if form.username.errors else "")) }}
+                {% if form.username.errors %}
+                    <div class="invalid-feedback">
+                        {% for error in form.username.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                {{ form.email.label(class="form-label") }}
+                {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else "")) }}
                 {% if form.email.errors %}
-                    <ul class="errors">
+                    <div class="invalid-feedback">
                         {% for error in form.email.errors %}
-                            <li>{{ error }}</li>
+                            <span>{{ error }}</span>
                         {% endfor %}
-                    </ul>
+                    </div>
                 {% endif %}
             </div>
+
             <div class="form-group">
-                {{ form.password.label }}
-                {{ form.password(class="form-control") }}
+                {{ form.password.label(class="form-label") }}
+                {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else "")) }}
                 {% if form.password.errors %}
-                    <ul class="errors">
+                    <div class="invalid-feedback">
                         {% for error in form.password.errors %}
-                            <li>{{ error }}</li>
+                            <span>{{ error }}</span>
                         {% endfor %}
-                    </ul>
+                    </div>
                 {% endif %}
             </div>
+
             <div class="form-group">
-                {{ form.confirm_password.label }}
-                {{ form.confirm_password(class="form-control") }}
+                {{ form.confirm_password.label(class="form-label") }}
+                {{ form.confirm_password(class="form-control" + (" is-invalid" if form.confirm_password.errors else "")) }}
                 {% if form.confirm_password.errors %}
-                    <ul class="errors">
+                    <div class="invalid-feedback">
                         {% for error in form.confirm_password.errors %}
-                            <li>{{ error }}</li>
+                            <span>{{ error }}</span>
                         {% endfor %}
-                    </ul>
+                    </div>
                 {% endif %}
             </div>
-            <button type="submit" class="btn btn-primary">Register</button>
+
+            <div class="form-group">
+                {{ form.submit(class="btn btn-primary") }}
+            </div>
         </form>
-        <p>Already have an account? <a href="{{ url_for('login') }}">Login here</a></p>
+        <p>Already have an account? <a href="{{ url_for('main.login') }}">Login here</a></p>
     </div>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
