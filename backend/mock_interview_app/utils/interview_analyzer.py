@@ -1,131 +1,136 @@
-import logging # Added
-import random # Added
+import logging
+import random
 from textblob import TextBlob
-import spacy
+import spacy # Keep spacy import for type hinting if desired, but model loaded by instance
 
-logger = logging.getLogger(__name__) # Added
+logger = logging.getLogger(__name__)
 
-try:
-    nlp = spacy.load('en_core_web_sm')
-except OSError:
-    logger.error("Spacy model 'en_core_web_sm' not found. This model should be downloaded at application startup.")
-    # Fallback to a dummy nlp to prevent crash, analysis will be significantly impacted.
-    class DummySpacyNLP:
-        def __call__(self, text):
-            class Doc:
-                def __init__(self, text): self.text = text; self.ents = []; self.noun_chunks = []
-                def similarity(self, other_doc): return 0.0 # Default similarity
-            return Doc(text)
-    nlp = DummySpacyNLP()
-
-
-def extract_skill_from_question(question_text):
-    # Simple keyword extraction, can be improved with NLP
-    # Looks for phrases like "experience with X", "used X", "proficiency in X"
-    question_doc = nlp(question_text.lower())
+# Helper function (can be static method or outside class if preferred)
+def _extract_skill_from_question(question_text, nlp_model):
+    if not nlp_model: return None
+    question_doc = nlp_model(question_text.lower())
     keywords = ["with", "using", "used", "proficiency in", "experience in", "knowledge of", "about"]
     skill = None
     for token in question_doc:
         if token.text in keywords:
-            # Next non-stopword noun/propn could be the skill
             for child in token.rights:
                 if child.pos_ in ["NOUN", "PROPN"] and not child.is_stop:
                     skill = child.text
                     break
             if skill: break
-    if not skill and len(question_doc.noun_chunks) > 0: # Fallback to last noun chunk
+    if not skill and len(question_doc.noun_chunks) > 0:
         skill = question_doc.noun_chunks[-1].text
     return skill
 
-def score_answer(question, answer_text, resume_text=""):
-    answer_doc = nlp(answer_text)
-    answer_blob = TextBlob(answer_text)
+class InterviewAnalyzer:
+    def __init__(self, user_answer, question, language_nlp, language_code='en', resume_text=""):
+        self.user_answer = user_answer
+        self.question = question
+        self.nlp = language_nlp # This is the language-specific model
+        self.language_code = language_code
+        self.resume_text = resume_text
 
-    skill_in_question = extract_skill_from_question(question)
+        if not self.nlp:
+            logger.error(f"NLP model not provided for language {self.language_code}. Analysis will be limited.")
+            # Create a dummy nlp if one wasn't provided to avoid crashes, though functionality will be basic
+            class DummySpacyNLP:
+                def __call__(self, text):
+                    class Doc:
+                        def __init__(self, text): self.text = text; self.ents = []; self.noun_chunks = []
+                        def similarity(self, other_doc): return 0.0
+                    return Doc(text)
+            self.nlp = DummySpacyNLP()
 
-    # Relevance: Check if skill from question is in answer, or general relevance.
-    relevance_score = 1
-    if skill_in_question:
-        if skill_in_question.lower() in answer_text.lower():
-            relevance_score = 5
-        else: # Check similarity
-            skill_doc = nlp(skill_in_question)
-            if any(token.similarity(skill_doc) > 0.6 for token in answer_doc if token.has_vector and skill_doc.has_vector):
-                relevance_score = 3
-    elif len(answer_text.split()) > 10: # General check if no specific skill
-        relevance_score = 3 # Default for a reasonable answer
-        if len(answer_text.split()) > 50: relevance_score = 4
+    def _score_answer_component(self):
+        answer_doc = self.nlp(self.user_answer)
+        answer_blob = TextBlob(self.user_answer) # TextBlob will attempt to detect language
 
-    # Specificity: Presence of numbers, named entities (examples, projects, results)
-    specificity_score = 1
-    if any(ent.label_ in ['CARDINAL', 'DATE', 'QUANTITY', 'PERCENT'] for ent in answer_doc.ents):
-        specificity_score = 5
-    elif len(answer_doc.ents) > 1: # Any other entities like ORG, PERSON, PRODUCT
-        specificity_score = 3
-    if specificity_score < 5 and resume_text: # Check if resume keywords are mentioned
-        resume_doc = nlp(resume_text)
-        resume_keywords = [ent.text.lower() for ent in resume_doc.ents if ent.label_ in ['ORG', 'PRODUCT', 'GPE']]
-        if any(keyword in answer_text.lower() for keyword in resume_keywords):
-            specificity_score = max(specificity_score, 4)
+        skill_in_question = _extract_skill_from_question(self.question, self.nlp)
 
-
-    # Clarity: Based on sentence structure, length. Penalize very short/long.
-    clarity_score = 3 # Default
-    word_count = len(answer_text.split())
-    if 30 <= word_count <= 250: # Good range
-        clarity_score = 5
-    elif 10 <= word_count < 30 or (word_count > 250 and word_count < 400):
-        clarity_score = 3
-    else: # Too short or too long
-        clarity_score = 1
-
-    # Confidence: Based on sentiment polarity.
-    confidence_score = 3 # Neutral default
-    if answer_blob.sentiment.polarity > 0.2:
-        confidence_score = 5
-    elif answer_blob.sentiment.polarity < -0.1: # Negative sentiment
-        confidence_score = 1
-
-    overall = round((relevance_score + specificity_score + clarity_score + confidence_score) / 4.0, 1)
-
-    return {
-        'relevance': relevance_score,
-        'specificity': specificity_score,
-        'clarity': clarity_score,
-        'confidence': confidence_score,
-        'overall': overall
-    }
-
-def generate_feedback(scores, question, answer_text, resume_text=""):
-    feedback_points = []
-    skill_in_question = extract_skill_from_question(question)
-
-    if scores['relevance'] < 3:
+        relevance_score = 1
         if skill_in_question:
-            feedback_points.append(f"Consider directly addressing your experience with '{skill_in_question}'.")
-        else:
-            feedback_points.append("Try to more directly answer the question. Providing specific examples can help.")
+            if skill_in_question.lower() in self.user_answer.lower():
+                relevance_score = 5
+            else:
+                skill_doc = self.nlp(skill_in_question)
+                # Check for vector similarity only if tokens have vectors
+                # and both skill_doc and answer_doc have them
+                if skill_doc.has_vector and any(token.has_vector for token in answer_doc):
+                     similarities = [token.similarity(skill_doc) for token in answer_doc if token.has_vector and token.vector_norm]
+                     if similarities and any(s > 0.6 for s in similarities):
+                        relevance_score = 3
+                elif len(self.user_answer.split()) > 10 : # Fallback if no vectors
+                    relevance_score = 2
 
-    if scores['specificity'] < 3:
-        feedback_points.append("Make your answer more specific. Include concrete examples, numbers, or outcomes if possible.")
-    elif scores['specificity'] < 5 and resume_text:
-        resume_doc = nlp(resume_text)
-        resume_entities = {ent.text.lower(): ent.label_ for ent in resume_doc.ents if ent.label_ in ['ORG', 'PRODUCT', 'GPE', 'EVENT']}
-        mentioned_entities = {ent.text.lower() for ent in nlp(answer_text).ents}
-        unmentioned_resume_entities = [k for k,v in resume_entities.items() if k not in mentioned_entities]
-        if unmentioned_resume_entities:
-             feedback_points.append(f"You could strengthen your answer by mentioning relevant experiences from your resume, such as your work with {random.choice(unmentioned_resume_entities)}.")
+        elif len(self.user_answer.split()) > 10:
+            relevance_score = 3
+            if len(self.user_answer.split()) > 50: relevance_score = 4
 
-    if scores['clarity'] < 3:
-        feedback_points.append("Aim for clear and concise answers. A typical good length is between 30 to 250 words.")
+        specificity_score = 1
+        if any(ent.label_ in ['CARDINAL', 'DATE', 'QUANTITY', 'PERCENT'] for ent in answer_doc.ents):
+            specificity_score = 5
+        elif len(answer_doc.ents) > 1:
+            specificity_score = 3
 
-    if scores['confidence'] < 3:
-        feedback_points.append("Try using more assertive and positive language to convey confidence.")
+        if specificity_score < 5 and self.resume_text:
+            resume_doc = self.nlp(self.resume_text)
+            resume_keywords = [ent.text.lower() for ent in resume_doc.ents if ent.label_ in ['ORG', 'PRODUCT', 'GPE']]
+            if any(keyword in self.user_answer.lower() for keyword in resume_keywords):
+                specificity_score = max(specificity_score, 4)
 
-    if not feedback_points:
-        if scores['overall'] >= 4.0:
-            feedback_points.append("Great job on this answer! It was clear, specific, and relevant.")
-        else:
-            feedback_points.append("This is a decent answer. Consider if you can add more detail or examples to make it stronger.")
+        clarity_score = 3
+        word_count = len(self.user_answer.split())
+        if 30 <= word_count <= 250: clarity_score = 5
+        elif 10 <= word_count < 30 or (word_count > 250 and word_count < 400): clarity_score = 3
+        else: clarity_score = 1
 
-    return feedback_points
+        confidence_score = 3
+        # TextBlob sentiment polarity is between -1 and 1
+        if answer_blob.sentiment.polarity > 0.2: confidence_score = 5
+        elif answer_blob.sentiment.polarity < -0.1: confidence_score = 1
+
+        overall = round((relevance_score + specificity_score + clarity_score + confidence_score) / 4.0, 1)
+        return {
+            'relevance': relevance_score, 'specificity': specificity_score,
+            'clarity': clarity_score, 'confidence': confidence_score, 'overall': overall
+        }
+
+    def _generate_feedback_points(self, scores):
+        feedback_points = []
+        skill_in_question = _extract_skill_from_question(self.question, self.nlp)
+
+        if scores['relevance'] < 3:
+            feedback_points.append(f"Consider directly addressing your experience with '{skill_in_question}'." if skill_in_question else "Try to more directly answer the question.")
+        if scores['specificity'] < 3:
+            feedback_points.append("Make your answer more specific. Include concrete examples, numbers, or outcomes.")
+        # elif scores['specificity'] < 5 and self.resume_text:
+        #     # This logic could be refined or made optional
+        #     pass
+        if scores['clarity'] < 3:
+            feedback_points.append("Aim for clear and concise answers. A typical good length is between 30 to 250 words.")
+        if scores['confidence'] < 3:
+            feedback_points.append("Try using more assertive and positive language.")
+
+        if not feedback_points:
+            feedback_points.append("Good answer overall." if scores['overall'] >= 4.0 else "This is a decent start. Consider adding more detail.")
+
+        # Language-specific feedback example
+        if self.language_code == 'es':
+            if "excelente" in self.user_answer.lower(): # Simple keyword example
+                feedback_points.append("(Detectada palabra clave en Español: excelente)")
+
+        # Add TextBlob sentiment to feedback for context
+        answer_blob = TextBlob(self.user_answer)
+        feedback_points.append(f"Sentiment (TextBlob): polarity={answer_blob.sentiment.polarity:.2f}, subjectivity={answer_blob.sentiment.subjectivity:.2f}")
+
+        return feedback_points
+
+    def analyze(self):
+        scores = self._score_answer_component()
+        feedback_texts = self._generate_feedback_points(scores)
+
+        return {
+            "scores": scores,
+            "feedback_summary": " ".join(feedback_texts), # Combine points into a single string
+            "feedback_points": feedback_texts # Or return as a list
+        }

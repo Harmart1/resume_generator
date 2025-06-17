@@ -78,6 +78,7 @@ class MockInterview(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     is_archived = db.Column(db.Boolean, default=False, nullable=False)
+    language = db.Column(db.String(10), nullable=True, default='en')
     user = db.relationship('User', backref=db.backref('mock_interviews', lazy=True))
 
 # class Credit(db.Model):
@@ -114,3 +115,43 @@ class Credit(db.Model):
     __table_args__ = (db.UniqueConstraint('user_id', 'credit_type', name='uq_user_credit_type'),)
 
 # UserCredit model deleted as per instruction for baseline migration, will be defined by user-provided script
+
+class EQFeedback(db.Model):
+    __tablename__ = 'eq_feedback' # Ensure table name is explicitly set
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    interview_id = db.Column(db.Integer, db.ForeignKey('mock_interviews.id'), nullable=False) # Corrected ForeignKey
+    empathy_score = db.Column(db.Float, nullable=False)
+    feedback = db.Column(db.Text, nullable=False)
+    # Add relationships if needed, e.g.,
+    # user = db.relationship('User', backref=db.backref('eq_feedbacks', lazy=True))
+    # interview = db.relationship('MockInterview', backref=db.backref('eq_feedbacks', lazy=True))
+
+class BrandingAsset(db.Model):
+    __tablename__ = 'branding_assets'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    asset_type = db.Column(db.String(50), nullable=False)  # e.g., 'linkedin_banner', 'elevator_pitch'
+    content = db.Column(db.Text, nullable=False) # For text or path to image
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    # user = db.relationship('User', backref=db.backref('branding_assets', lazy=True))
+
+class NegotiationScript(db.Model):
+    __tablename__ = 'negotiation_scripts'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    role = db.Column(db.String(100), nullable=False)
+    experience = db.Column(db.String(50), nullable=False)
+    script_text = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    # user = db.relationship('User', backref=db.backref('negotiation_scripts', lazy=True))
+
+class SkillGap(db.Model):
+    __tablename__ = 'skill_gaps'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    job_description_summary = db.Column(db.Text, nullable=True) # Or link to JD
+    identified_gaps = db.Column(db.Text, nullable=False) # Could be JSON string
+    suggested_resources = db.Column(db.Text, nullable=True) # Could be JSON string
+    analyzed_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    # user = db.relationship('User', backref=db.backref('skill_gaps', lazy=True))

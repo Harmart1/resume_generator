@@ -28,3 +28,4 @@ pdfplumber
 PyPDF2 # Fallback for pdfplumber
 textract==1.6.3 # Pinned due to issues with newer versions
 # redis==4.6.0 # User mentioned for future Redis session, not adding yet.
+Pillow==10.4.0

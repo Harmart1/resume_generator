@@ -76,6 +76,11 @@ app.config['SESSION_TYPE'] = 'filesystem' # Original, fine for now
 
 
 # --- Extensions Initialization (from backend.extensions) ---
+# Initialize to None to ensure they are defined even if import fails
+db = None
+migrate = None
+bcrypt = None
+login_manager = None
 try:
     from backend.extensions import db, migrate, bcrypt, login_manager
     db.init_app(app)
@@ -120,14 +125,22 @@ try:
     from backend.resume_builder import bp as resume_builder_bp
     from backend.cover_letter_app import bp as cover_letter_bp
     from backend.mock_interview_app import bp as mock_interview_bp
+    from backend.eq_coach_app import eq_bp # Import EQ Coach blueprint
+    from backend.branding_app import branding_bp # Import Branding Kit blueprint
+    from backend.negotiation_app import negotiation_bp # Import Negotiation Coach blueprint
+    from backend.skill_gap_app import skill_gap_bp # Import Skill Gap Analysis blueprint
     # Import main_bp for core routes like /, /contact etc.
     from backend.routes import main_bp # Renamed to avoid clash if user had main_bp
 
     app.register_blueprint(resume_builder_bp, url_prefix='/resume-builder')
     app.register_blueprint(cover_letter_bp, url_prefix='/cover-letter')
     app.register_blueprint(mock_interview_bp, url_prefix='/mock-interview')
+    app.register_blueprint(eq_bp, url_prefix='/eq-coach') # Register EQ Coach blueprint
+    app.register_blueprint(branding_bp, url_prefix='/branding-kit') # Register Branding Kit blueprint
+    app.register_blueprint(negotiation_bp, url_prefix='/negotiation-coach') # Register Negotiation Coach blueprint
+    app.register_blueprint(skill_gap_bp, url_prefix='/skill-gap') # Register Skill Gap Analysis blueprint
     app.register_blueprint(main_bp) # Register core routes
-    logger.info("Blueprints (resume_builder, cover_letter, mock_interview, main_bp) registered.")
+    logger.info("Blueprints (resume_builder, cover_letter, mock_interview, eq_coach, branding_kit, negotiation_coach, skill_gap, main_bp) registered.")
 except ImportError as e:
     logger.error(f"Failed to import or register blueprints: {e}. Check blueprint definitions and imports.", exc_info=True)
 except Exception as e:
@@ -190,10 +203,17 @@ if __name__ == '__main__':
         logger.error('SpaCy en_core_web_sm model not found. Attempting to download...')
         try:
             import subprocess
+            logger.info("Attempting to download en_core_web_sm...")
             subprocess.run(['python', '-m', 'spacy', 'download', 'en_core_web_sm'], check=True)
             logger.info("Successfully downloaded en_core_web_sm.")
+
+            logger.info("Attempting to download es_core_news_sm...")
+            subprocess.run(['python', '-m', 'spacy', 'download', 'es_core_news_sm'], check=True)
+            logger.info("Successfully downloaded es_core_news_sm.")
+        except subprocess.CalledProcessError as e_subproc:
+            logger.error(f"A Spacy model download command failed: {e_subproc}. Ensure you are online and the model names are correct.", exc_info=True)
         except Exception as e_spacy:
-            logger.error(f"Failed to download Spacy model 'en_core_web_sm': {e_spacy}. This could be due to network issues, an incorrect model name, or insufficient permissions. Please check your internet connection and the model name.", exc_info=True)
+            logger.error(f"Failed to download Spacy models: {e_spacy}. This could be due to network issues, incorrect model names, or insufficient permissions.", exc_info=True)
 
     port = int(os.getenv('PORT', 5000))
     # Debug mode should come from FLASK_DEBUG=1 env var ideally, not FLASK_ENV

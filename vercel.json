@@ -1,0 +1,42 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "backend/app.py",
+      "use": "@vercel/python",
+      "config": {
+        "maxLambdaSize": "50mb",
+        "runtime": "python3.9"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/static/(.*)",
+      "dest": "/backend/static/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "backend/app.py"
+    }
+  ],
+  "env": {
+    "FLASK_APP": "backend/app.py"
+  },
+  "functions": {
+    "backend/app.py": {
+      "memory": 1024,
+      "maxDuration": 30
+    }
+  },
+  "github": {
+    "enabled": true,
+    "autoAlias": true
+  },
+  "build": {
+    "env": {
+      "PIP_INSTALL_OPTIONS": "--use-deprecated=legacy-resolver"
+    },
+    "command": "pip install --upgrade pip && pip install -r backend/requirements.txt && python -m spacy download en_core_web_sm && python -m spacy download es_core_news_sm"
+  }
+}
