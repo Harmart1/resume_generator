@@ -2,10 +2,10 @@
 __pycache__/
 *.pyc
 instance/*.db
-instance/site.db
+instance/backups/
+migrations.log
 flask_session/
 *.log
-# Add other typical Python/Flask ignores if missing
 *.swp
 *.swo
 dist/
