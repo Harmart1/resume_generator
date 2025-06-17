@@ -1,17 +1,20 @@
+import logging # Added
+import random # Added
 from textblob import TextBlob
 import spacy
+
+logger = logging.getLogger(__name__) # Added
 
 try:
     nlp = spacy.load('en_core_web_sm')
 except OSError:
-    # This should ideally be handled at app startup or installation
-    print("Spacy model 'en_core_web_sm' not found. Please download it by running: python -m spacy download en_core_web_sm")
-    # Fallback to a dummy nlp if model is not found, to prevent crash, though analysis will be poor.
+    logger.error("Spacy model 'en_core_web_sm' not found. This model should be downloaded at application startup.")
+    # Fallback to a dummy nlp to prevent crash, analysis will be significantly impacted.
     class DummySpacyNLP:
         def __call__(self, text):
             class Doc:
                 def __init__(self, text): self.text = text; self.ents = []; self.noun_chunks = []
-                def similarity(self, other_doc): return 0.0
+                def similarity(self, other_doc): return 0.0 # Default similarity
             return Doc(text)
     nlp = DummySpacyNLP()
 

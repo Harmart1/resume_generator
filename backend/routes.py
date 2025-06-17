@@ -4,6 +4,7 @@ from flask_login import login_required, current_user, login_user, logout_user
 from backend.models import User, Resume, CoverLetter, MockInterview, Credit, FeatureUsageLog
 from backend.extensions import db, bcrypt
 from datetime import datetime
+from backend.forms import LoginForm, RegistrationForm # Added for auth forms
 
 # Configure logger for this blueprint
 logger = logging.getLogger(__name__) # Added for logging
@@ -79,19 +80,17 @@ def analyzer():
 def login():
     if current_user.is_authenticated:
         return redirect(url_for('main.home'))
-    if request.method == 'POST':
-        email = request.form.get('email')
-        password = request.form.get('password')
-        # Ensure User model has check_password method
-        user = User.query.filter_by(email=email).first()
-        if user and hasattr(user, 'check_password') and user.check_password(password):
-            login_user(user)
+    form = LoginForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(email=form.email.data).first()
+        if user and hasattr(user, 'check_password') and user.check_password(form.password.data):
+            login_user(user, remember=form.remember.data)
             flash('Logged in successfully!', 'success')
             next_page = request.args.get('next')
             return redirect(next_page or url_for('main.dashboard'))
         else:
-            flash('Invalid email or password.', 'danger')
-    return render_template('auth/login.html')
+            flash('Login Unsuccessful. Please check email and password.', 'danger')
+    return render_template('auth/login.html', title='Login', form=form)
 
 @main_bp.route('/logout')
 @login_required
@@ -104,25 +103,17 @@ def logout():
 def register():
     if current_user.is_authenticated:
         return redirect(url_for('main.home'))
-    if request.method == 'POST':
-        username = request.form.get('username')
-        email = request.form.get('email')
-        password = request.form.get('password')
-        # Ensure User model has set_password method
-        existing_user = User.query.filter((User.email == email) | (User.username == username)).first()
-        if existing_user:
-            flash('Username or email already exists.', 'danger')
-        elif not (username and email and password):
-            flash('All fields are required.', 'danger')
+    form = RegistrationForm()
+    if form.validate_on_submit():
+        new_user = User(username=form.username.data, email=form.email.data, tier='free')
+        if hasattr(new_user, 'set_password'):
+            new_user.set_password(form.password.data)
+            db.session.add(new_user)
+            db.session.commit()
+            flash('Your account has been created! You are now able to log in.', 'success')
+            return redirect(url_for('main.login'))
         else:
-            new_user = User(username=username, email=email, tier='free')
-            if hasattr(new_user, 'set_password'):
-                new_user.set_password(password)
-                db.session.add(new_user)
-                db.session.commit()
-                flash('Account created successfully! Please log in.', 'success')
-                return redirect(url_for('main.login'))
-            else:
-                flash('Error setting up user. Please contact support.', 'danger')
-                # Log this server-side, User model is missing set_password
-    return render_template('auth/register.html')
+            # This case should ideally not happen if User model is correctly defined
+            logger.error("Critical: User model is missing set_password method during registration.", exc_info=False)
+            flash('Error setting up user. Please contact support.', 'danger')
+    return render_template('auth/register.html', title='Register', form=form)

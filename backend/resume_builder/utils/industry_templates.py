@@ -1,5 +1,6 @@
 def get_industry_template(industry):
-    """Return enhanced industry-specific designs"""
+    """Return CSS template for different industries"""
+    # ... other industry designs ... (Comment moved here)
     templates = {
         'technology': """
             /* Tech Industry - Modern, Clean */
@@ -26,11 +27,7 @@ def get_industry_template(industry):
                 color: #6f42c1;
                 font-weight: 600;
             }
-          
-        # ... other industry designs ...
-        """Return CSS template for different industries"""
-    templates = {
-      
+        """,
         'marketing': """
             /* Marketing Industry Styles */
             .resume-header { background-color: #f8f9fa; border-bottom: 2px solid #20c997; }
