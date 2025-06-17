@@ -1,7 +1,8 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_required, current_user, login_user, logout_user
-from backend.models import User, Resume, CoverLetter, MockInterview, Credit
+from backend.models import User, Resume, CoverLetter, MockInterview, Credit, FeatureUsageLog
 from backend.extensions import db, bcrypt
+from datetime import datetime
 
 main_bp = Blueprint('main', __name__, template_folder='../../frontend/templates')
 
@@ -14,11 +15,49 @@ def home():
 @main_bp.route('/dashboard')
 @login_required
 def dashboard():
-    resumes = Resume.query.filter_by(user_id=current_user.id).all()
-    cover_letters = CoverLetter.query.filter_by(user_id=current_user.id).all()
-    interviews = MockInterview.query.filter_by(user_id=current_user.id).all()
-    credits_list = Credit.query.filter_by(user_id=current_user.id).all()
-    return render_template('dashboard.html', resumes=resumes, cover_letters=cover_letters, interviews=interviews, credits=credits_list, user=current_user)
+    # Tier limits
+    tier_limits = {
+        'free': {'resumes': 1, 'cover_letters': 1, 'interviews': 0},
+        'starter': {'resumes': 5, 'cover_letters': 3, 'interviews': 3},
+        'pro': {'resumes': float('inf'), 'cover_letters': float('inf'), 'interviews': float('inf')}
+    }
+
+    user_tier = current_user.tier if hasattr(current_user, 'tier') else 'free'
+    limits = tier_limits.get(user_tier, tier_limits['free'])
+
+    resumes = Resume.query.filter_by(user_id=current_user.id, is_archived=False).order_by(Resume.updated_at.desc()).all()
+    cover_letters = CoverLetter.query.filter_by(user_id=current_user.id, is_archived=False).order_by(CoverLetter.updated_at.desc()).all()
+    interviews = MockInterview.query.filter_by(user_id=current_user.id, is_archived=False).order_by(MockInterview.updated_at.desc()).all()
+
+    resumes_limited = resumes[:int(limits['resumes'])]
+    cover_letters_limited = cover_letters[:int(limits['cover_letters'])]
+    interviews_limited = interviews[:int(limits['interviews'])]
+
+    credit = Credit.query.filter_by(user_id=current_user.id, credit_type='legacy').first()
+    credit_amount = credit.amount if credit else 0
+
+    # Feature usage logging
+    try:
+        log = FeatureUsageLog(
+            user_id=current_user.id,
+            feature_name='dashboard_view',
+            usage_timestamp=datetime.utcnow()
+            # credits_used defaults to 0 as per model definition if not specified
+        )
+        db.session.add(log)
+        db.session.commit()
+    except Exception as e:
+        # Log or handle the exception if the database commit fails
+        # For now, let's assume it's important to still render the dashboard
+        print(f"Error logging feature usage: {e}") # Replace with actual logging
+        db.session.rollback()
+
+
+    return render_template('dashboard.html',
+                         resumes=resumes_limited,
+                         cover_letters=cover_letters_limited,
+                         interviews=interviews_limited,
+                         credit_amount=credit_amount)
 
 @main_bp.route('/pricing')
 def pricing():
