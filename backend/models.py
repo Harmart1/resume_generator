@@ -66,7 +66,7 @@ class CoverLetter(db.Model):
     user = db.relationship('User', backref=db.backref('cover_letters', lazy=True))
 
 class MockInterview(db.Model):
-    __tablename__ = 'mock_interviews'
+    __tablename__ = 'mock_interview' # Changed from 'mock_interviews'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     job_description = db.Column(db.Text, nullable=True)
@@ -124,7 +124,7 @@ class EQFeedback(db.Model):
     __tablename__ = 'eq_feedback'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    interview_id = db.Column(db.Integer, db.ForeignKey('mock_interviews.id'), nullable=True) # Changed from mock_interview.id
+    interview_id = db.Column(db.Integer, db.ForeignKey('mock_interview.id'), nullable=True) # Changed from mock_interview.id
     empathy_score = db.Column(db.Float, nullable=False)
     self_awareness_score = db.Column(db.Float, nullable=False)
     feedback = db.Column(db.Text, nullable=False)

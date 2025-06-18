@@ -1,0 +1,165 @@
+{% extends "app_base.html" %}
+{% import "bootstrap/wtf.html" as wtf %} {# Or your project's form rendering macro #}
+
+{% block title %}Generate AI Cover Letter - {{ super() }}{% endblock %}
+
+{% block page_content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-10 offset-md-1">
+            <h2><i class="fas fa-magic mr-2"></i>Generate AI-Powered Cover Letter</h2>
+            <p class="lead">Fill in the details below to generate a tailored cover letter using AI.</p>
+            <hr>
+
+            {# Flash messages #}
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category if category != 'message' else 'info' }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <form method="POST" action="{{ url_for('cover_letter.generate_ai_cover_letter') }}" enctype="multipart/form-data" novalidate>
+                {{ form.hidden_tag() }}
+
+                <h4>Basic Information</h4>
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        {{ form.your_name.label(class="font-weight-bold") }}
+                        {{ form.your_name(class="form-control" + (" is-invalid" if form.your_name.errors else "")) }}
+                        {% for error in form.your_name.errors %}
+                            <span class="invalid-feedback">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    <div class="form-group col-md-6">
+                        {{ form.your_email.label(class="font-weight-bold") }}
+                        {{ form.your_email(class="form-control" + (" is-invalid" if form.your_email.errors else "")) }}
+                        {% for error in form.your_email.errors %}
+                            <span class="invalid-feedback">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                 <div class="form-group">
+                    {{ form.title.label(class="font-weight-bold") }}
+                    {{ form.title(class="form-control" + (" is-invalid" if form.title.errors else "")) }}
+                    {% for error in form.title.errors %}
+                        <span class="invalid-feedback">{{ error }}</span>
+                    {% endfor %}
+                </div>
+
+
+                <h4 class="mt-4">Job Details</h4>
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        {{ form.job_title.label(class="font-weight-bold") }}
+                        {{ form.job_title(class="form-control" + (" is-invalid" if form.job_title.errors else "")) }}
+                        {% for error in form.job_title.errors %}
+                            <span class="invalid-feedback">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    <div class="form-group col-md-6">
+                        {{ form.company_name.label(class="font-weight-bold") }}
+                        {{ form.company_name(class="form-control" + (" is-invalid" if form.company_name.errors else "")) }}
+                        {% for error in form.company_name.errors %}
+                            <span class="invalid-feedback">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="form-group">
+                    {{ form.job_description.label(class="font-weight-bold") }}
+                    {{ form.job_description(class="form-control" + (" is-invalid" if form.job_description.errors else "")) }}
+                    {% for error in form.job_description.errors %}
+                        <span class="invalid-feedback">{{ error }}</span>
+                    {% endfor %}
+                </div>
+
+                <h4 class="mt-4">Your Resume</h4>
+                <div class="form-group">
+                    {{ form.resume_text.label(class="font-weight-bold") }}
+                    {{ form.resume_text(class="form-control" + (" is-invalid" if form.resume_text.errors else "")) }}
+                    <small class="form-text text-muted">Paste your full resume text here, or use the file upload option below.</small>
+                    {% for error in form.resume_text.errors %}
+                        <span class="invalid-feedback">{{ error }}</span>
+                    {% endfor %}
+                </div>
+                <div class="form-group">
+                    {{ form.resume_file.label(class="font-weight-bold") }}
+                    {{ form.resume_file(class="form-control-file" + (" is-invalid" if form.resume_file.errors else "")) }}
+                    {% for error in form.resume_file.errors %}
+                        <span class="invalid-feedback d-block">{{ error }}</span> {# d-block for file input errors #}
+                    {% endfor %}
+                </div>
+
+                <h4 class="mt-4">Refinement & Customization</h4>
+                <div class="form-group">
+                    {{ form.refinement_type.label(class="font-weight-bold") }}
+                    {{ form.refinement_type(class="form-control custom-select" + (" is-invalid" if form.refinement_type.errors else "")) }}
+                    {% for error in form.refinement_type.errors %}
+                        <span class="invalid-feedback">{{ error }}</span>
+                    {% endfor %}
+                </div>
+                <div class="form-group">
+                    {{ form.existing_cover_letter_text.label(class="font-weight-bold") }}
+                    {{ form.existing_cover_letter_text(class="form-control" + (" is-invalid" if form.existing_cover_letter_text.errors else "")) }}
+                    <small class="form-text text-muted">If you chose to refine or enhance, paste your existing cover letter here.</small>
+                    {% for error in form.existing_cover_letter_text.errors %}
+                        <span class="invalid-feedback">{{ error }}</span>
+                    {% endfor %}
+                </div>
+                <div class="form-group">
+                    {{ form.key_points.label(class="font-weight-bold") }}
+                    {{ form.key_points(class="form-control" + (" is-invalid" if form.key_points.errors else "")) }}
+                    <small class="form-text text-muted">Any specific skills, experiences, or qualities you want the AI to focus on? Or areas to improve if refining?</small>
+                    {% for error in form.key_points.errors %}
+                        <span class="invalid-feedback">{{ error }}</span>
+                    {% endfor %}
+                </div>
+                <div class="form-group">
+                    {{ form.tone.label(class="font-weight-bold") }}
+                    {{ form.tone(class="form-control custom-select" + (" is-invalid" if form.tone.errors else "")) }}
+                    {% for error in form.tone.errors %}
+                        <span class="invalid-feedback">{{ error }}</span>
+                    {% endfor %}
+                </div>
+
+                <hr>
+                <div class="form-group text-center">
+                    {{ form.submit(class="btn btn-primary btn-lg") }}
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+// Optional: Add any client-side JavaScript here, for example, to show/hide
+// the 'existing_cover_letter_text' field based on 'refinement_type' selection.
+document.addEventListener('DOMContentLoaded', function() {
+    const refinementType = document.getElementById('refinement_type');
+    const existingCoverLetterGroup = document.getElementById('existing_cover_letter_text')?.closest('.form-group'); // Find parent form-group
+
+    function toggleExistingCoverLetterVisibility() {
+        if (!existingCoverLetterGroup) return;
+        if (refinementType.value === 'refine_existing' || refinementType.value === 'enhance_with_resume') {
+            existingCoverLetterGroup.style.display = '';
+        } else {
+            existingCoverLetterGroup.style.display = 'none';
+        }
+    }
+
+    if (refinementType && existingCoverLetterGroup) {
+        refinementType.addEventListener('change', toggleExistingCoverLetterVisibility);
+        toggleExistingCoverLetterVisibility(); // Initial check
+    }
+});
+</script>
+{% endblock %}
