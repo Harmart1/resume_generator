@@ -1,5 +1,5 @@
 import logging # Added for logging
-from flask import Blueprint, render_template, redirect, url_for, flash, request
+from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_required, current_user, login_user, logout_user
 from backend.models import User, Resume, CoverLetter, MockInterview, Credit, FeatureUsageLog
 from backend.extensions import db, bcrypt
@@ -117,3 +117,57 @@ def register():
             logger.error("Critical: User model is missing set_password method during registration.", exc_info=False)
             flash('Error setting up user. Please contact support.', 'danger')
     return render_template('auth/register.html', title='Register', form=form)
+
+@main_bp.route('/account/edit', methods=['GET', 'POST'])
+@login_required
+def edit_account():
+    # TODO: Implement actual form handling for account editing (e.g., username, email, password change)
+    # For now, just displays basic info and a placeholder message.
+    # A form similar to RegistrationForm or LoginForm could be adapted.
+    flash('Account editing is under construction. Basic info shown.', 'info')
+    return render_template('auth/edit_account.html', user=current_user, title="Edit Account")
+
+@main_bp.route('/create-checkout-session', methods=['POST'])
+@login_required
+def create_checkout_session():
+    '''
+    Placeholder for Stripe checkout session creation.
+    In a real implementation, this would interact with the Stripe API.
+    '''
+    try:
+        data = request.get_json()
+        price_id = data.get('price_id')
+
+        if not price_id:
+            logger.warning(f"create_checkout_session: Missing price_id for user {current_user.id}")
+            return jsonify({'error': 'Missing price_id'}), 400
+
+        logger.info(f"User {current_user.id} initiated checkout for price_id: {price_id}")
+
+        # TODO: Implement actual Stripe session creation here.
+        # Example:
+        # session = stripe.checkout.Session.create(...)
+        # return jsonify({'url': session.url, 'session_id': session.id})
+
+        # For now, return a dummy response to make the JS work without erroring.
+        dummy_session_id = f"cs_test_placeholder_{current_user.id}_{price_id.replace('price_', '')[:10]}"
+        dummy_checkout_url = f"https://checkout.stripe.com/pay/{dummy_session_id}" # More realistic dummy
+
+        # Simulate different responses based on price_id for testing if needed
+        if "credit_pack" in price_id:
+             logger.info("Simulating credit pack purchase flow.")
+        elif "starter" in price_id:
+             logger.info("Simulating starter subscription flow.")
+        elif "pro" in price_id:
+             logger.info("Simulating pro subscription flow.")
+
+
+        return jsonify({
+            'url': dummy_checkout_url,
+            'session_id': dummy_session_id,
+            'message': 'This is a placeholder response. No payment processed.'
+        })
+
+    except Exception as e:
+        logger.error(f"Error in create_checkout_session for user {current_user.id}: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500

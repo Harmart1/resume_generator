@@ -72,7 +72,7 @@
 
                             <div class="px-4 py-3 hover:bg-gray-700">
                                 {% if current_user.is_authenticated and current_user.tier in ['starter', 'pro'] %}
-                                    <a href="{{ url_for('resume_builder.start') }}" class="block text-sm text-primary-light hover:text-electric-cyan">Resume Builder</a>
+                                    <a href="{{ url_for('resume_builder.index') }}" class="block text-sm text-primary-light hover:text-electric-cyan">Resume Builder</a>
                                 {% else %} {# Free tier or not authenticated #}
                                     <div class="flex justify-between items-center">
                                         <span class="text-sm text-gray-400">Resume Builder</span>
