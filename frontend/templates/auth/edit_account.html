@@ -1,63 +1,54 @@
 {% extends "app_base.html" %}
 
-{% block title %}Account Information - Revisume.ai{% endblock %}
+{% block title %}{{ title }} - {{ super() }}{% endblock %}
 
-{% block content %}
-<div class="glass-card p-6 sm:p-8 md:p-10 w-full max-w-2xl mx-auto">
-    <h2 class="text-2xl sm:text-3xl font-sora font-extrabold text-electric-cyan mb-8 text-center">
-        Account Information
-    </h2>
+{% block page_content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="glass-card p-6 md:p-8">
+                <h2 class="text-3xl font-sora font-bold text-primary-light mb-6 text-center">{{ title }}</h2>
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            <div class="mb-6 space-y-2">
-                {% for category, message in messages %}
-                    {% set alert_category = 'error' if category == 'danger' else category %}
-                    <div class="flash-message {{ alert_category }}">{{ message }}</div>
-                {% endfor %}
-            </div>
-        {% endif %}
-    {% endwith %}
+                {# Flash messages #}
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="flash-message {{ category }} mb-4">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
 
-    <div class="space-y-6">
-        <div class="p-6 glass-card-inner rounded-lg">
-            <h3 class="text-xl font-sora font-semibold text-electric-cyan mb-4">Your Details</h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 text-primary-light">
-                <div>
-                    <p class="font-medium text-tech-blue">Email:</p>
-                    <p class="text-secondary-light p-2 bg-gray-700 bg-opacity-30 rounded-md">{{ current_user.email }}</p>
+                <div class="space-y-4">
+                    <div>
+                        <strong class="text-electric-cyan">Username:</strong>
+                        <span class="text-secondary-light ml-2">{{ user.username }}</span>
+                    </div>
+                    <div>
+                        <strong class="text-electric-cyan">Email:</strong>
+                        <span class="text-secondary-light ml-2">{{ user.email }}</span>
+                    </div>
+                    <div>
+                        <strong class="text-electric-cyan">Current Tier:</strong>
+                        <span class="text-secondary-light ml-2">{{ user.tier | capitalize }}</span>
+                    </div>
+                    {% if user.stripe_customer_id %}
+                    <div>
+                        <strong class="text-electric-cyan">Stripe Customer ID:</strong>
+                        <span class="text-secondary-light ml-2">{{ user.stripe_customer_id }}</span>
+                    </div>
+                    {% endif %}
                 </div>
-                <div>
-                    <p class="font-medium text-tech-blue">Username:</p>
-                    <p class="text-secondary-light p-2 bg-gray-700 bg-opacity-30 rounded-md">{{ current_user.username if current_user.username else 'Not set' }}</p>
-                </div>
-                <div>
-                    <p class="font-medium text-tech-blue">Current Tier:</p>
-                    <p class="text-secondary-light p-2 bg-gray-700 bg-opacity-30 rounded-md">{{ current_user.tier | capitalize }}</p>
-                </div>
-                <div>
-                    <p class="font-medium text-tech-blue">Contact Phone:</p>
-                    <p class="text-secondary-light p-2 bg-gray-700 bg-opacity-30 rounded-md">{{ current_user.contact_phone if current_user.contact_phone else 'Not set' }}</p>
-                </div>
-                <div>
-                    <p class="font-medium text-tech-blue">Industry Preference:</p>
-                    <p class="text-secondary-light p-2 bg-gray-700 bg-opacity-30 rounded-md">{{ current_user.industry_preference if current_user.industry_preference else 'Not set' }}</p>
-                </div>
-            </div>
-            <div class="mt-6 text-center">
-                <p class="text-sm text-secondary-light">(Full editing capabilities coming soon!)</p>
-            </div>
-        </div>
 
-        <div class="p-6 glass-card-inner rounded-lg">
-            <h3 class="text-xl font-sora font-semibold text-electric-cyan mb-4">Actions</h3>
-             <div class="mt-4 flex flex-col space-y-3 sm:flex-row sm:space-y-0 sm:space-x-3 justify-center">
-                <a href="{{ url_for('user_profile') }}" class="btn-primary btn-glow inline-flex items-center justify-center px-6 py-3 font-semibold rounded-full text-white text-base transition duration-300 ease-in-out transform hover:scale-105 w-full sm:w-auto">
-                    View Full Profile
-                </a>
-                <a href="{{ url_for('index', _anchor='pricing-section') }}" class="btn-download btn-glow inline-flex items-center justify-center px-6 py-3 font-semibold rounded-full text-white text-base transition duration-300 ease-in-out transform hover:scale-105 w-full sm:w-auto">
-                    Manage Subscription / Upgrade
-                </a>
+                <hr class="my-6 border-gray-700">
+
+                <p class="text-secondary-light text-center">
+                    Full account editing functionality (like changing password, email, or preferences) is currently under development.
+                </p>
+                <p class="text-center mt-4">
+                    <a href="{{ url_for('main.dashboard') }}" class="btn-primary px-6 py-2 rounded-lg">Back to Dashboard</a>
+                </p>
             </div>
         </div>
     </div>
