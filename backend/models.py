@@ -70,14 +70,17 @@ class MockInterview(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     job_description = db.Column(db.Text, nullable=True)
-    questions = db.Column(db.Text, nullable=False) # Storing JSON string of questions
-    answers = db.Column(db.Text, nullable=True)    # Storing JSON string of answers
-    scores = db.Column(db.Text, nullable=True)     # Storing JSON string of scores per question
-    feedback = db.Column(db.Text, nullable=True)   # Storing JSON string of feedback per question
+    questions = db.Column(db.Text, nullable=False)
+    answers = db.Column(db.Text, nullable=True)
+    scores = db.Column(db.Text, nullable=True)
+    feedback = db.Column(db.Text, nullable=True)
     overall_score = db.Column(db.Float, nullable=True)
+    language = db.Column(db.String(50), nullable=False, default='English', server_default='English')
+    pronunciation_feedback = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     is_archived = db.Column(db.Boolean, default=False, nullable=False)
+
     user = db.relationship('User', backref=db.backref('mock_interviews', lazy=True))
 
 # class Credit(db.Model):
@@ -114,3 +117,57 @@ class Credit(db.Model):
     __table_args__ = (db.UniqueConstraint('user_id', 'credit_type', name='uq_user_credit_type'),)
 
 # UserCredit model deleted as per instruction for baseline migration, will be defined by user-provided script
+
+# New Feature Models Start
+
+class EQFeedback(db.Model):
+    __tablename__ = 'eq_feedback'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    interview_id = db.Column(db.Integer, db.ForeignKey('mock_interviews.id'), nullable=True) # Changed from mock_interview.id
+    empathy_score = db.Column(db.Float, nullable=False)
+    self_awareness_score = db.Column(db.Float, nullable=False)
+    feedback = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+    user = db.relationship('User', backref=db.backref('eq_feedbacks', lazy=True))
+    interview = db.relationship('MockInterview', backref=db.backref('eq_feedbacks', lazy=True))
+
+class BrandingKit(db.Model):
+    __tablename__ = 'branding_kit'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    linkedin_banner = db.Column(db.Text, nullable=True)  # Stores SVG or link
+    portfolio_template = db.Column(db.Text, nullable=True) # Stores HTML/CSS or link
+    elevator_pitch = db.Column(db.Text, nullable=False)
+    bio = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+    user = db.relationship('User', backref=db.backref('branding_kits', lazy=True))
+
+class Negotiation(db.Model):
+    __tablename__ = 'negotiation'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    job_title = db.Column(db.String(150), nullable=False) # Increased length from 100 to 150
+    script = db.Column(db.Text, nullable=False)
+    scenario = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+    user = db.relationship('User', backref=db.backref('negotiations', lazy=True))
+
+class SkillGap(db.Model):
+    __tablename__ = 'skill_gap'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    job_description = db.Column(db.Text, nullable=False)
+    # For missing_skills and resources, Text will be used by default for SQLite.
+    # setup_migrations.py will handle using sa.JSON() for PostgreSQL if that's configured.
+    # So, defining as db.Text here is fine as a base.
+    missing_skills = db.Column(db.Text, nullable=False)  # JSON stored as Text
+    resources = db.Column(db.Text, nullable=False)     # JSON stored as Text
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+    user = db.relationship('User', backref=db.backref('skill_gaps', lazy=True))
+
+# New Feature Models End
