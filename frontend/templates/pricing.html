@@ -1,0 +1,51 @@
+{% extends "app_base.html" %}
+
+{% block title %}Pricing Plans - {{ super() }}{% endblock %}
+
+{% block page_content %}
+<div class="container mt-8 mb-8">
+    <div class="flex justify-center">
+        <div class="w-full max-w-3xl">
+            <div class="glass-card p-8 md:p-10 text-center">
+                <h1 class="text-3xl sm:text-4xl font-bold font-sora mb-8 text-primary-light">Our Pricing Plans</h1>
+
+                {# Flash messages can be added here if any route related to pricing might flash them #}
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        <div class="mb-6 space-y-2">
+                            {% for category, message in messages %}
+                                <div class="flash-message {{ category }}">{{ message }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
+
+                <p class="text-secondary-light text-lg mb-4">
+                    Detailed pricing information is coming soon!
+                </p>
+                <p class="text-secondary-light mb-8">
+                    We are working on crafting the perfect plans to help you succeed. Please check back later.
+                </p>
+
+                {# Example of how pricing cards might look, but kept simple for placeholder #}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    <div class="glass-card-inner p-6 rounded-lg border border-gray-700">
+                        <h2 class="text-xl font-sora font-semibold text-electric-cyan mb-3">Starter Tier</h2>
+                        <p class="text-secondary-light text-sm">Basic access to core tools. Perfect for getting started.</p>
+                        <p class="text-3xl font-bold text-primary-light mt-4">Soon!</p>
+                    </div>
+                    <div class="glass-card-inner p-6 rounded-lg border border-gray-700">
+                        <h2 class="text-xl font-sora font-semibold text-electric-cyan mb-3">Pro Tier</h2>
+                        <p class="text-secondary-light text-sm">Full access to all features and premium support. Maximize your potential.</p>
+                        <p class="text-3xl font-bold text-primary-light mt-4">Soon!</p>
+                    </div>
+                </div>
+
+                <a href="{{ url_for('main.home') }}" class="btn-primary px-8 py-3 rounded-lg text-lg">
+                    Back to Homepage
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

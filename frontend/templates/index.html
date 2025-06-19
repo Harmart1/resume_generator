@@ -1,91 +1,64 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Resume Suite - Home</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    {# Assuming homepage_styles.css is for additional styles beyond Tailwind #}
-    <link href="{{ url_for('static', filename='css/homepage_styles.css') }}" rel="stylesheet">
-    <link href="{{ url_for('static', filename='css/styles.css') }}" rel="stylesheet"> {# General styles #}
-</head>
-<body class="bg-gray-900 text-white">
-    {# Navigation will be loaded from app_base.html if this page extends it. #}
-    {# However, the issue's index.html has its own nav. #}
-    {# For consistency, app_base.html should be the source of truth for nav. #}
-    {# I will use the nav from app_base.html by having this template extend it. #}
-    {# This means removing the nav from this file if app_base.html has it. #}
-    {# Let's assume for now app_base.html is the primary navigation source. #}
-    {# The issue's app_base.html isn't shown, so I'll keep the nav here for now, #}
-    {# but ideally, this index.html should extend app_base.html and use its nav block #}
+{% extends "app_base.html" %}
 
-    <nav class="bg-gray-900 p-4 shadow-md">
-        <div class="container mx-auto flex justify-between items-center">
-            <a href="{{ url_for('index_route') }}" class="text-white text-2xl font-bold hover:text-indigo-400 transition">Revisume</a>
-            <div class="space-x-3">
-                <a href="{{ url_for('resume_builder.index') }}" class="text-gray-300 hover:text-indigo-400 transition">Resume Builder</a>
-                <a href="{{ url_for('cover_letter.index') }}" class="text-gray-300 hover:text-indigo-400 transition">Cover Letter</a>
-                <a href="{{ url_for('mock_interview.index') }}" class="text-gray-300 hover:text-indigo-400 transition">Mock Interview</a>
-                {# Assuming contact and pricing routes exist or will be created #}
-                {# <a href="{{ url_for('contact_route') }}" class="text-gray-300 hover:text-indigo-400 transition">Contact Us</a> #}
-                {# <a href="{{ url_for('pricing_route') }}" class="text-gray-300 hover:text-indigo-400 transition">Pricing</a> #}
+{% block title %}Content Analyzer - {{ super() }}{% endblock %}
 
-                {% if current_user.is_authenticated %}
-                    <a href="{{ url_for('auth.edit_account') }}" class="text-gray-300 hover:text-indigo-400 transition">Account</a>
-                    <a href="{{ url_for('auth.logout') }}" class="text-gray-300 hover:text-indigo-400 transition">Logout</a>
-                {% else %}
-                    <a href="{{ url_for('auth.login') }}" class="text-gray-300 hover:text-indigo-400 transition">Login</a>
-                    <a href="{{ url_for('auth.register') }}" class="bg-indigo-600 px-4 py-2 rounded-md text-white hover:bg-indigo-700 transition">Sign Up</a>
-                {% endif %}
-            </div>
-        </div>
-    </nav>
+{% block page_content %}
+<div class="container mx-auto px-4 py-8 text-primary-light">
 
-    <div class="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white py-20">
-        <div class="container mx-auto px-6 text-center">
-            <h1 class="text-5xl font-extrabold mb-4 leading-tight">Build Your Career Confidence</h1>
-            <p class="text-xl text-indigo-100 mb-8">AI-powered tools for ATS-friendly resumes, compelling cover letters, and sharp interview preparation.</p>
-            <a href="{{ url_for('auth.register') if not current_user.is_authenticated else url_for('resume_builder.index') }}"
-               class="bg-white text-indigo-700 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-indigo-100 transition transform hover:scale-105 shadow-lg">
-               Get Started Now
-            </a>
-        </div>
+    {# Adapted Hero Section #}
+    <div class="text-center py-12 md:py-20">
+        <h1 class="text-4xl sm:text-5xl md:text-6xl font-bold font-sora mb-6">
+            Build Your <span class="text-electric-cyan">Career Confidence</span>
+        </h1>
+        <p class="text-lg sm:text-xl text-secondary-light max-w-2xl mx-auto mb-10">
+            AI-powered tools for ATS-friendly resumes, compelling cover letters, and sharp interview preparation. This page is currently a placeholder for a future content analyzer tool.
+        </p>
+        <a href="{{ url_for('main.register') if not current_user.is_authenticated else url_for('main.dashboard') }}"
+           class="btn-primary text-lg px-8 py-4 rounded-lg font-semibold transition transform hover:scale-105 shadow-lg">
+           Get Started Now
+        </a>
     </div>
 
-    <div class="container mx-auto px-6 py-16">
-        <h2 class="text-4xl font-bold text-white mb-12 text-center">Our Core Features</h2>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-10">
-            <div class="bg-gray-800 p-8 rounded-xl shadow-xl hover:shadow-2xl transition-shadow duration-300 transform hover:-translate-y-1">
-                <div class="text-indigo-400 mb-4">
-                    {# Placeholder for an icon #}
-                    <svg class="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+    {# Adapted Core Features Section #}
+    <div class="py-12 md:py-16">
+        <h2 class="text-3xl sm:text-4xl font-bold font-sora text-center mb-12 md:mb-16 text-primary-light">
+            Our Core Features
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-10">
+
+            <div class="glass-card p-6 md:p-8 flex flex-col items-center text-center">
+                <div class="text-electric-cyan mb-4">
+                    <svg class="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                 </div>
-                <h3 class="text-2xl font-semibold text-white mb-3">AI Resume Builder</h3>
-                <p class="text-gray-400 leading-relaxed">Create professional, ATS-optimized resumes with AI suggestions. Save multiple versions and tailor them to each job.</p>
-                 <a href="{{ url_for('resume_builder.index') }}" class="mt-4 inline-block text-indigo-400 hover:text-indigo-300 transition">Learn More &rarr;</a>
+                <h3 class="text-2xl font-semibold font-sora text-primary-light mb-3">AI Resume Builder</h3>
+                <p class="text-secondary-light leading-relaxed mb-4 flex-grow">
+                    Create professional, ATS-optimized resumes with AI suggestions. Save multiple versions and tailor them to each job.
+                </p>
+                <a href="{{ url_for('resume_builder.index') }}" class="mt-auto text-electric-cyan hover:underline font-medium">Learn More &rarr;</a>
             </div>
-            <div class="bg-gray-800 p-8 rounded-xl shadow-xl hover:shadow-2xl transition-shadow duration-300 transform hover:-translate-y-1">
-                <div class="text-indigo-400 mb-4">
-                     <svg class="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+
+            <div class="glass-card p-6 md:p-8 flex flex-col items-center text-center">
+                <div class="text-electric-cyan mb-4">
+                     <svg class="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
                 </div>
-                <h3 class="text-2xl font-semibold text-white mb-3">AI Cover Letter Generator</h3>
-                <p class="text-gray-400 leading-relaxed">Craft compelling, tailored cover letters with AI assistance. Make a strong first impression effortlessly.</p>
-                <a href="{{ url_for('cover_letter.index') }}" class="mt-4 inline-block text-indigo-400 hover:text-indigo-300 transition">Learn More &rarr;</a>
+                <h3 class="text-2xl font-semibold font-sora text-primary-light mb-3">AI Cover Letter Generator</h3>
+                <p class="text-secondary-light leading-relaxed mb-4 flex-grow">
+                    Craft compelling, tailored cover letters with AI assistance. Make a strong first impression effortlessly.
+                </p>
+                <a href="{{ url_for('cover_letter.index') }}" class="mt-auto text-electric-cyan hover:underline font-medium">Learn More &rarr;</a>
             </div>
-            <div class="bg-gray-800 p-8 rounded-xl shadow-xl hover:shadow-2xl transition-shadow duration-300 transform hover:-translate-y-1">
-                 <div class="text-indigo-400 mb-4">
-                    <svg class="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"></path></svg>
+
+            <div class="glass-card p-6 md:p-8 flex flex-col items-center text-center">
+                 <div class="text-electric-cyan mb-4">
+                    <svg class="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"></path></svg>
                 </div>
-                <h3 class="text-2xl font-semibold text-white mb-3">AI Mock Interview</h3>
-                <p class="text-gray-400 leading-relaxed">Practice with AI-generated questions based on job descriptions and get detailed feedback to ace your interviews.</p>
-                <a href="{{ url_for('mock_interview.index') }}" class="mt-4 inline-block text-indigo-400 hover:text-indigo-300 transition">Learn More &rarr;</a>
+                <h3 class="text-2xl font-semibold font-sora text-primary-light mb-3">AI Mock Interview</h3>
+                <p class="text-secondary-light leading-relaxed mb-4 flex-grow">
+                    Practice with AI-generated questions based on job descriptions and get detailed feedback to ace your interviews.
+                </p>
+                <a href="{{ url_for('mock_interview.index') }}" class="mt-auto text-electric-cyan hover:underline font-medium">Learn More &rarr;</a>
             </div>
         </div>
     </div>
-
-    <footer class="bg-gray-800 mt-16 py-8 text-center">
-        <p class="text-gray-400">&copy; 2024 Revisume. All rights reserved.</p>
-        {# Add other footer links if needed #}
-    </footer>
-</body>
-</html>
+</div>
+{% endblock %}
