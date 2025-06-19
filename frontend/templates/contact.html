@@ -1,13 +1,13 @@
 {% extends "app_base.html" %}
 
-{% block title %}Contact Us - Revisume.ai{% endblock %}
+{% block title %}Contact Us - {{ super() }}{% endblock %}
 
-{% block content %}
-<div class="min-h-[calc(100vh-10rem)] flex flex-col items-center justify-start py-8 px-4">
-    <div class="glass-card p-6 sm:p-8 md:p-10 w-full max-w-2xl">
-        <h2 class="text-2xl sm:text-3xl font-sora font-extrabold text-electric-cyan mb-6 text-center">
+{% block page_content %}
+<div class="container mx-auto py-8 px-4"> {# Added container for consistent padding #}
+    <div class="glass-card p-6 sm:p-8 md:p-10 w-full max-w-2xl mx-auto"> {# Centered card #}
+        <h1 class="text-3xl sm:text-4xl font-sora font-extrabold text-electric-cyan mb-6 text-center">
             Contact Us
-        </h2>
+        </h1>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
@@ -20,62 +20,61 @@
             {% endif %}
         {% endwith %}
 
-        <form method="POST" action="{{ url_for('contact') }}" class="space-y-6">
+        <form method="POST" action="{{ url_for('main.contact') }}" class="space-y-6"> {# Assuming route is main.contact #}
             {{ form.csrf_token }}
 
             <div>
-                {{ form.name.label(class="block text-md font-sora font-semibold text-tech-blue mb-2") }}
-                {{ form.name(class="w-full p-3 rounded-lg shadow-sm focus:ring-electric-cyan focus:border-electric-cyan transition duration-200 glass-card-inner border border-electric-cyan border-opacity-30 text-primary-light placeholder-secondary-light", placeholder="Your Name") }}
+                {{ form.name.label(class="block text-sm font-medium text-secondary-light mb-1") }}
+                {{ form.name(class="mt-1 block w-full px-3 py-2 bg-gray-700 bg-opacity-50 border border-gray-600 rounded-md shadow-sm placeholder-secondary-light text-primary-light focus:outline-none focus:ring-electric-cyan focus:border-electric-cyan sm:text-sm" + (" border-red-500" if form.name.errors else ""), placeholder="Your Name") }}
                 {% if form.name.errors %}
-                    <ul class="text-red-400 text-xs mt-1 space-y-0.5">
-                        {% for error in form.name.errors %}<li>{{ error }}</li>{% endfor %}
-                    </ul>
+                    <div class="mt-1 text-red-400 text-xs">
+                        {% for error in form.name.errors %}<span>{{ error }}</span><br>{% endfor %}
+                    </div>
                 {% endif %}
             </div>
 
             <div>
-                {{ form.email.label(class="block text-md font-sora font-semibold text-tech-blue mb-2") }}
-                {{ form.email(class="w-full p-3 rounded-lg shadow-sm focus:ring-electric-cyan focus:border-electric-cyan transition duration-200 glass-card-inner border border-electric-cyan border-opacity-30 text-primary-light placeholder-secondary-light", placeholder="you@example.com") }}
+                {{ form.email.label(class="block text-sm font-medium text-secondary-light mb-1") }}
+                {{ form.email(class="mt-1 block w-full px-3 py-2 bg-gray-700 bg-opacity-50 border border-gray-600 rounded-md shadow-sm placeholder-secondary-light text-primary-light focus:outline-none focus:ring-electric-cyan focus:border-electric-cyan sm:text-sm" + (" border-red-500" if form.email.errors else ""), placeholder="you@example.com") }}
                 {% if form.email.errors %}
-                    <ul class="text-red-400 text-xs mt-1 space-y-0.5">
-                        {% for error in form.email.errors %}<li>{{ error }}</li>{% endfor %}
-                    </ul>
+                    <div class="mt-1 text-red-400 text-xs">
+                        {% for error in form.email.errors %}<span>{{ error }}</span><br>{% endfor %}
+                    </div>
                 {% endif %}
             </div>
 
             <div>
-                {{ form.subject.label(class="block text-md font-sora font-semibold text-tech-blue mb-2") }}
-                {# Ensure select also gets the right styling; WTForms renders select for SelectField #}
-                {{ form.subject(class="w-full p-3 rounded-lg shadow-sm focus:ring-electric-cyan focus:border-electric-cyan transition duration-200 glass-card-inner border border-electric-cyan border-opacity-30 text-primary-light") }}
+                {{ form.subject.label(class="block text-sm font-medium text-secondary-light mb-1") }}
+                {{ form.subject(class="mt-1 block w-full pl-3 pr-10 py-2 bg-gray-700 bg-opacity-50 border border-gray-600 rounded-md shadow-sm text-primary-light focus:outline-none focus:ring-electric-cyan focus:border-electric-cyan sm:text-sm" + (" border-red-500" if form.subject.errors else "")) }}
                 {% if form.subject.errors %}
-                    <ul class="text-red-400 text-xs mt-1 space-y-0.5">
-                        {% for error in form.subject.errors %}<li>{{ error }}</li>{% endfor %}
-                    </ul>
+                     <div class="mt-1 text-red-400 text-xs">
+                        {% for error in form.subject.errors %}<span>{{ error }}</span><br>{% endfor %}
+                    </div>
                 {% endif %}
             </div>
 
             <div id="other_subject_div" style="display: none;">
-                {{ form.other_subject.label(class="block text-md font-sora font-semibold text-tech-blue mb-2") }}
-                {{ form.other_subject(class="w-full p-3 rounded-lg shadow-sm focus:ring-electric-cyan focus:border-electric-cyan transition duration-200 glass-card-inner border border-electric-cyan border-opacity-30 text-primary-light placeholder-secondary-light", placeholder="Please specify your subject") }}
+                {{ form.other_subject.label(class="block text-sm font-medium text-secondary-light mb-1") }}
+                {{ form.other_subject(class="mt-1 block w-full px-3 py-2 bg-gray-700 bg-opacity-50 border border-gray-600 rounded-md shadow-sm placeholder-secondary-light text-primary-light focus:outline-none focus:ring-electric-cyan focus:border-electric-cyan sm:text-sm" + (" border-red-500" if form.other_subject.errors else ""), placeholder="Please specify your subject") }}
                 {% if form.other_subject.errors %}
-                    <ul class="text-red-400 text-xs mt-1 space-y-0.5">
-                        {% for error in form.other_subject.errors %}<li>{{ error }}</li>{% endfor %}
-                    </ul>
+                    <div class="mt-1 text-red-400 text-xs">
+                        {% for error in form.other_subject.errors %}<span>{{ error }}</span><br>{% endfor %}
+                    </div>
                 {% endif %}
             </div>
 
             <div>
-                {{ form.message.label(class="block text-md font-sora font-semibold text-tech-blue mb-2") }}
-                {{ form.message(rows="6", class="w-full p-3 rounded-lg shadow-sm focus:ring-electric-cyan focus:border-electric-cyan transition duration-200 glass-card-inner border border-electric-cyan border-opacity-30 text-primary-light placeholder-secondary-light", placeholder="Your message here...") }}
+                {{ form.message.label(class="block text-sm font-medium text-secondary-light mb-1") }}
+                {{ form.message(rows="6", class="mt-1 block w-full px-3 py-2 bg-gray-700 bg-opacity-50 border border-gray-600 rounded-md shadow-sm placeholder-secondary-light text-primary-light focus:outline-none focus:ring-electric-cyan focus:border-electric-cyan sm:text-sm" + (" border-red-500" if form.message.errors else ""), placeholder="Your message here...") }}
                 {% if form.message.errors %}
-                    <ul class="text-red-400 text-xs mt-1 space-y-0.5">
-                        {% for error in form.message.errors %}<li>{{ error }}</li>{% endfor %}
-                    </ul>
+                    <div class="mt-1 text-red-400 text-xs">
+                        {% for error in form.message.errors %}<span>{{ error }}</span><br>{% endfor %}
+                    </div>
                 {% endif %}
             </div>
 
             <div class="pt-4 flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-4">
-                <a href="{{ url_for('serve_homepage_file') }}" class="btn-glow btn-secondary inline-flex items-center justify-center px-8 py-3 font-bold rounded-full shadow-lg text-white text-lg transition duration-300 ease-in-out transform hover:scale-105 w-full sm:w-auto text-center">Cancel</a>
+                <a href="{{ url_for('main.home') }}" class="btn-glow inline-flex items-center justify-center px-8 py-3 font-bold rounded-full shadow-lg text-primary-light border border-secondary-light hover:bg-gray-700 transition duration-300 ease-in-out transform hover:scale-105 w-full sm:w-auto text-center">Cancel</a>
                 {{ form.submit(class="btn-glow btn-primary inline-flex items-center justify-center px-8 py-3 font-bold rounded-full shadow-lg text-white text-lg transition duration-300 ease-in-out transform hover:scale-105 w-full sm:w-auto") }}
             </div>
         </form>
