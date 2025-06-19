@@ -1,52 +1,71 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-</head>
-<body>
-    <div class="container">
-        <h2>Login</h2>
-        {# Assuming 'title' is passed from the route, if not, remove it or set it in the route #}
-        <form method="POST" action="{{ url_for('main.login') }}" novalidate>
-            {{ form.csrf_token }}
-            <div class="form-group">
-                {{ form.email.label(class="form-label") }}
-                {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else "")) }}
-                {% if form.email.errors %}
-                    <div class="invalid-feedback">
-                        {% for error in form.email.errors %}
-                            <span>{{ error }}</span>
+{% extends "app_base.html" %}
+
+{% block title %}Login - {{ super() }}{% endblock %}
+
+{% block page_content %}
+<div class="container mt-8 mb-8">
+    <div class="flex justify-center">
+        <div class="w-full max-w-lg">
+            <div class="glass-card p-8 md:p-10">
+                <h1 class="text-3xl sm:text-4xl font-bold font-sora text-center mb-8 text-primary-light">Login</h1>
+
+                {# Flash messages #}
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="flash-message {{ category }} mb-6">
+                                {{ message }}
+                            </div>
                         {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <form method="POST" action="{{ url_for('main.login') }}" novalidate class="space-y-6">
+                    {{ form.csrf_token }}
+
+                    <div>
+                        {{ form.email.label(class="block text-sm font-medium text-secondary-light mb-1") }}
+                        {{ form.email(class="mt-1 block w-full px-3 py-2 bg-gray-700 bg-opacity-50 border border-gray-600 rounded-md shadow-sm placeholder-gray-400 text-primary-light focus:outline-none focus:ring-electric-cyan focus:border-electric-cyan sm:text-sm" + (" border-red-500" if form.email.errors else "")) }}
+                        {% if form.email.errors %}
+                            <div class="mt-1 text-red-400 text-xs">
+                                {% for error in form.email.errors %}
+                                    <span>{{ error }}</span><br>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
                     </div>
-                {% endif %}
-            </div>
 
-            <div class="form-group">
-                {{ form.password.label(class="form-label") }}
-                {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else "")) }}
-                {% if form.password.errors %}
-                    <div class="invalid-feedback">
-                        {% for error in form.password.errors %}
-                            <span>{{ error }}</span>
-                        {% endfor %}
+                    <div>
+                        {{ form.password.label(class="block text-sm font-medium text-secondary-light mb-1") }}
+                        {{ form.password(class="mt-1 block w-full px-3 py-2 bg-gray-700 bg-opacity-50 border border-gray-600 rounded-md shadow-sm placeholder-gray-400 text-primary-light focus:outline-none focus:ring-electric-cyan focus:border-electric-cyan sm:text-sm" + (" border-red-500" if form.password.errors else "")) }}
+                        {% if form.password.errors %}
+                            <div class="mt-1 text-red-400 text-xs">
+                                {% for error in form.password.errors %}
+                                    <span>{{ error }}</span><br>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
                     </div>
-                {% endif %}
-            </div>
 
-            <div class="form-group form-check">
-                {{ form.remember(class="form-check-input") }}
-                {{ form.remember.label(class="form-check-label") }}
-            </div>
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            {{ form.remember(class="h-4 w-4 checkbox-custom focus:ring-electric-cyan") }}
+                            {{ form.remember.label(class="ml-2 block text-sm text-secondary-light") }}
+                        </div>
+                    </div>
 
-            <div class="form-group">
-                {{ form.submit(class="btn btn-primary") }}
+                    <div>
+                        {{ form.submit(class="w-full btn-primary text-lg px-6 py-3 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300") }}
+                    </div>
+                </form>
+                <p class="mt-6 text-center text-sm text-secondary-light">
+                    Don't have an account?
+                    <a href="{{ url_for('main.register') }}" class="font-medium text-electric-cyan hover:text-tech-blue">
+                        Register here
+                    </a>
+                </p>
             </div>
-        </form>
-        <p>Don't have an account? <a href="{{ url_for('main.register') }}">Register here</a></p>
+        </div>
     </div>
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-</body>
-</html>
+</div>
+{% endblock %}

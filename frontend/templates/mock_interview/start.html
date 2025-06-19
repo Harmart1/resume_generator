@@ -1,20 +1,72 @@
 {% extends 'app_base.html' %}
-{% block title %}Start Mock Interview - Mock Interview App{% endblock %}
-{% block content %}
-<h1 class="text-3xl font-bold mb-6">Start New Mock Interview</h1>
-<form method="POST" action="{{ url_for('mock_interview.start') }}" class="max-w-lg mx-auto bg-gray-800 p-8 rounded-lg shadow-xl" novalidate>
-    {{ form.csrf_token }} {# CSRF token from Flask-WTF #}
+{% block title %}Start Mock Interview - {{ super() }}{% endblock %}
+{% block page_content %}
+<div class="container mt-8 mb-8">
+    <div class="flex justify-center">
+        <div class="w-full max-w-xl">
+            <div class="glass-card p-8 md:p-10">
+                <h1 class="text-3xl sm:text-4xl font-bold font-sora text-center mb-8 text-primary-light">Start New Mock Interview</h1>
 
-    <div class="mb-6">
-        {{ form.job_description.label(class="block text-gray-300 font-semibold mb-2") }}
-        {{ form.job_description(class="w-full p-3 rounded bg-gray-700 text-white border border-gray-600 focus:border-electric-cyan focus:ring-electric-cyan" + (" border-red-500" if form.job_description.errors else ""), rows="8", placeholder="Paste the job description here to tailor questions...") }}
-        {% if form.job_description.errors %}
-            <ul class="text-red-500 text-xs mt-1">
-                {% for error in form.job_description.errors %}<li>{{ error }}</li>{% endfor %}
-            </ul>
-        {% endif %}
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="flash-message {{ category }} mb-6">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <form method="POST" action="{{ url_for('mock_interview.start') }}" novalidate enctype="multipart/form-data" class="space-y-6">
+                    {{ form.csrf_token }}
+
+                    <div>
+                        {{ form.job_description.label(class="block text-sm font-medium text-secondary-light mb-1") }}
+                        {{ form.job_description(class="mt-1 block w-full px-3 py-2 bg-gray-700 bg-opacity-50 border border-gray-600 rounded-md shadow-sm placeholder-gray-400 text-primary-light focus:outline-none focus:ring-electric-cyan focus:border-electric-cyan sm:text-sm" + (" border-red-500" if form.job_description.errors else ""), rows=form.job_description.render_kw.rows if form.job_description.render_kw and form.job_description.render_kw.rows else 8, placeholder=form.job_description.render_kw.placeholder if form.job_description.render_kw and form.job_description.render_kw.placeholder else "Paste the job description here...") }}
+                        {% if form.job_description.errors %}
+                            <div class="mt-1 text-red-400 text-xs">
+                                {% for error in form.job_description.errors %}<span>{{ error }}</span><br>{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        {{ form.resume_text.label(class="block text-sm font-medium text-secondary-light mb-1") }}
+                        {{ form.resume_text(class="mt-1 block w-full px-3 py-2 bg-gray-700 bg-opacity-50 border border-gray-600 rounded-md shadow-sm placeholder-gray-400 text-primary-light focus:outline-none focus:ring-electric-cyan focus:border-electric-cyan sm:text-sm" + (" border-red-500" if form.resume_text.errors else ""), rows=form.resume_text.render_kw.rows if form.resume_text.render_kw and form.resume_text.render_kw.rows else 15, placeholder=form.resume_text.render_kw.placeholder if form.resume_text.render_kw and form.resume_text.render_kw.placeholder else "Paste your resume here...") }}
+                        <small class="mt-1 block text-xs text-gray-400">Pasting your resume or uploading a file can help tailor the interview questions.</small>
+                        {% if form.resume_text.errors %}
+                            <div class="mt-1 text-red-400 text-xs">
+                                {% for error in form.resume_text.errors %}<span>{{ error }}</span><br>{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        {{ form.resume_file.label(class="block text-sm font-medium text-secondary-light mb-1") }}
+                        {{ form.resume_file(class="mt-1 block w-full text-sm text-secondary-light file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-electric-cyan file:text-gray-900 hover:file:bg-tech-blue hover:file:text-white" + (" border-red-500" if form.resume_file.errors else "")) }}
+                        {% if form.resume_file.errors %}
+                            <div class="mt-1 text-red-400 text-xs">
+                                {% for error in form.resume_file.errors %}<span>{{ error }}</span><br>{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        {{ form.language.label(class="block text-sm font-medium text-secondary-light mb-1") }}
+                        {{ form.language(class="mt-1 block w-full pl-3 pr-10 py-2 bg-gray-700 bg-opacity-50 border border-gray-600 rounded-md shadow-sm text-primary-light focus:outline-none focus:ring-electric-cyan focus:border-electric-cyan sm:text-sm" + (" border-red-500" if form.language.errors else "")) }}
+                        {% if form.language.errors %}
+                            <div class="mt-1 text-red-400 text-xs">
+                                {% for error in form.language.errors %}<span>{{ error }}</span><br>{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        {{ form.submit(class="w-full btn-primary text-lg px-6 py-3 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 mt-6") }}
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
-
-    {{ form.submit(class="w-full bg-blue-500 text-white px-4 py-3 rounded hover:bg-blue-600 font-semibold transition duration-300") }}
-</form>
+</div>
 {% endblock %}

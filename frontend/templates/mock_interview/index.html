@@ -1,19 +1,55 @@
 {% extends 'app_base.html' %}
-{% block title %}Mock Interviews - Your Interviews{% endblock %}
-{% block content %}
-<h1 class="text-3xl font-bold mb-6">Your Mock Interviews</h1>
-<a href="{{ url_for('mock_interview.start') }}" class="mb-4 inline-block bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Start New Mock Interview</a>
-{% if interviews and interviews|length > 0 %}
-<ul class="space-y-4">
-    {% for interview in interviews %}
-        <li class="bg-gray-800 p-4 rounded shadow-md">
-            <h2 class="text-xl font-semibold text-electric-cyan">Interview for: {{ interview.job_description | truncate(50) if interview.job_description else 'General Practice' }}</h2>
-            <p class="text-gray-400">Created: {{ interview.created_at.strftime('%Y-%m-%d %H:%M') if interview.created_at else 'N/A' }}</p>
-            {# Add link to view results if available #}
-        </li>
-    {% endfor %}
-</ul>
-{% else %}
-<p class="text-gray-400">You haven't started any mock interviews yet. <a href="{{ url_for('mock_interview.start') }}" class="text-electric-cyan hover:underline">Start one now!</a></p>
-{% endif %}
+{% block title %}Your Mock Interviews - {{ super() }}{% endblock %}
+{% block page_content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-8">
+        <h1 class="text-3xl sm:text-4xl font-bold font-sora text-primary-light text-center sm:text-left">Your Mock Interviews</h1>
+        <a href="{{ url_for('mock_interview.start') }}" class="btn-primary px-6 py-2 rounded-lg inline-block">Start New Mock Interview</a>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="flash-message {{ category }} mb-6">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    {% if interviews and interviews|length > 0 %}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for interview in interviews %}
+            <div class="glass-card-inner p-6 rounded-lg flex flex-col justify-between">
+                <div>
+                    <h2 class="text-xl font-semibold font-sora text-electric-cyan mb-2 truncate">
+                        {{ interview.job_description | truncate(50) if interview.job_description else 'General Practice Session' }}
+                    </h2>
+                    <p class="text-xs text-secondary-light mb-1">
+                        Language: {{ interview.language if interview.language else 'Not specified' }}
+                    </p>
+                    <p class="text-xs text-secondary-light mb-1">
+                        Last Updated: {{ interview.updated_at.strftime('%Y-%m-%d %H:%M') if interview.updated_at else 'N/A' }}
+                    </p>
+                    <p class="text-xs text-secondary-light mb-4">
+                        Created: {{ interview.created_at.strftime('%Y-%m-%d %H:%M') if interview.created_at else 'N/A' }}
+                    </p>
+                </div>
+                <div class="mt-auto flex justify-end space-x-2">
+                    <a href="#" class="text-sm text-tech-blue hover:underline">View Results</a> {# Placeholder for view results route #}
+                    <a href="#" class="text-sm text-red-400 hover:underline">Delete</a> {# Placeholder for delete route #}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center glass-card-inner p-10 rounded-lg">
+        <i class="fas fa-microphone-alt fa-3x text-secondary-light mb-4"></i> {# Example icon #}
+        <p class="text-xl text-secondary-light mb-4">You haven't started any mock interviews yet.</p>
+        <a href="{{ url_for('mock_interview.start') }}" class="btn-primary px-6 py-3 rounded-lg inline-block text-lg">
+            Start Your First Mock Interview
+        </a>
+    </div>
+    {% endif %}
+</div>
 {% endblock %}
