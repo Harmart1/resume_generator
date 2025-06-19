@@ -1,18 +1,60 @@
 {% extends 'app_base.html' %}
-{% block title %}Cover Letter - Your Cover Letters{% endblock %}
-{% block content %}
-<h1 class="text-3xl font-bold mb-6">Your Cover Letters</h1>
-<a href="{{ url_for('cover_letter.create') }}" class="mb-4 inline-block bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Create New Cover Letter</a>
-{% if cover_letters and cover_letters|length > 0 %}
-<ul class="space-y-4">
-    {% for letter in cover_letters %}
-        <li class="bg-gray-800 p-4 rounded shadow-md">
-            <h2 class="text-xl font-semibold text-electric-cyan">{{ letter.title }}</h2>
-            <p class="text-gray-400">Created: {{ letter.created_at.strftime('%Y-%m-%d %H:%M') if letter.created_at else 'N/A' }}</p>
-        </li>
-    {% endfor %}
-</ul>
-{% else %}
-<p class="text-gray-400">You haven't created any cover letters yet. <a href="{{ url_for('cover_letter.create') }}" class="text-electric-cyan hover:underline">Create one now!</a></p>
-{% endif %}
+{% block title %}Your Cover Letters - {{ super() }}{% endblock %}
+{% block page_content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-8">
+        <h1 class="text-3xl sm:text-4xl font-bold font-sora text-primary-light text-center sm:text-left">Your Cover Letters</h1>
+        <div>
+            <a href="{{ url_for('cover_letter.generate_ai_cover_letter') }}" class="btn-primary px-6 py-2 rounded-lg inline-block">Generate AI Cover Letter</a>
+            {# <a href="{{ url_for('cover_letter.create_manual_cover_letter') }}" class="btn-secondary px-4 py-2 rounded-lg inline-block ml-3">Create Manually</a> #}
+        </div>
+    </div>
+
+    {# Flash messages can be added here if needed from other routes redirecting here #}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="flash-message {{ category }} mb-6">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    {% if cover_letters and cover_letters|length > 0 %}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for letter in cover_letters %}
+            <div class="glass-card-inner p-6 rounded-lg"> {# Changed from li to div for grid layout #}
+                <h2 class="text-xl font-semibold font-sora text-electric-cyan mb-2 truncate">{{ letter.title }}</h2>
+                <p class="text-xs text-secondary-light mb-1">
+                    Last Updated: {{ letter.updated_at.strftime('%Y-%m-%d %H:%M') if letter.updated_at else 'N/A' }}
+                </p>
+                <p class="text-xs text-secondary-light mb-4">
+                    Created: {{ letter.created_at.strftime('%Y-%m-%d %H:%M') if letter.created_at else 'N/A' }}
+                </p>
+                {# Placeholder for content preview - could be first few lines #}
+                <p class="text-sm text-primary-light mb-4 line-clamp-3">
+                    {{ letter.content | striptags | truncate(100) if letter.content else 'No content preview.' }}
+                </p>
+                <div class="mt-auto flex justify-end space-x-2">
+                    {# Add View/Edit/Delete links here when routes are ready #}
+                    <a href="#" class="text-sm text-tech-blue hover:underline">View/Edit</a>
+                    <a href="#" class="text-sm text-red-400 hover:underline">Delete</a>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center glass-card-inner p-10 rounded-lg">
+        <i class="fas fa-folder-open fa-3x text-secondary-light mb-4"></i> {# Example icon #}
+        <p class="text-xl text-secondary-light mb-4">You haven't created any cover letters yet.</p>
+        <a href="{{ url_for('cover_letter.generate_ai_cover_letter') }}" class="btn-primary px-6 py-3 rounded-lg inline-block text-lg">
+            Generate Your First AI Cover Letter
+        </a>
+        <p class="mt-3">
+            <a href="{{ url_for('cover_letter.create_manual_cover_letter') }}" class="text-sm text-electric-cyan hover:underline">Or create one manually</a>
+        </p>
+    </div>
+    {% endif %}
+</div>
 {% endblock %}

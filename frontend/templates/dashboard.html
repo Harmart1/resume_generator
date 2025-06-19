@@ -1,23 +1,27 @@
 {% extends 'app_base.html' %}
-{% block title %}Dashboard - Career App{% endblock %}
-{% block content %}
-<div class="text-center">
-    <h1 class="text-3xl font-bold mb-6">Welcome, {{ current_user.username }}!</h1>
-    <p class="text-lg mb-8">Manage your career tools and track your credits.</p>
-    <div class="mb-8">
-        <h2 class="text-2xl font-semibold mb-4">Your Credits</h2>
-        <p class="text-gray-300">Available Credits: {{ credit_amount }}</p>
-        <a href="/pricing" class="inline-block bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mt-4">Add Credits</a>
+{% block title %}Dashboard - {{ super() }}{% endblock %}
+{% block page_content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="text-center mb-12">
+        <h1 class="text-4xl font-bold font-sora mb-4 text-primary-light">Welcome, {{ current_user.username }}!</h1>
+        <p class="text-xl text-secondary-light">Manage your career tools and track your credits.</p>
     </div>
+
+    <section class="mb-8 glass-card p-6 md:p-8" aria-labelledby="credits-heading">
+        <h2 id="credits-heading" class="text-2xl font-semibold mb-4 text-primary-light">Your Credits</h2>
+        <p class="text-secondary-light text-lg">Available Credits: <span class="font-bold text-electric-cyan">{{ credit_amount }}</span></p>
+        <a href="{{ url_for('main.pricing') }}" class="btn-primary px-6 py-2 rounded-lg mt-4 inline-block">Add Credits</a>
+    </section>
+
     <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <div class="bg-gray-800 p-6 rounded-lg">
-            <h2 class="text-2xl font-semibold mb-4">Resumes</h2>
+        <section class="glass-card p-6 md:p-8" aria-labelledby="resumes-heading">
+            <h2 id="resumes-heading" class="text-2xl font-semibold mb-4 text-primary-light">Resumes</h2>
             {% if resumes %}
-                <ul class="space-y-2">
+                <ul class="space-y-3">
                     {% for resume in resumes %}
-                        <li class="text-gray-300 flex justify-between items-center">
-                            <span>{{ resume.title }} - {{ resume.updated_at.strftime('%Y-%m-%d') }}</span>
-                            <div>
+                        <li class="text-secondary-light flex justify-between items-center p-3 bg-gray-700 bg-opacity-30 rounded-md">
+                            <span class="truncate">{{ resume.title }} - <span class="text-xs">{{ resume.updated_at.strftime('%Y-%m-%d') }}</span></span>
+                            <div class="flex-shrink-0 ml-2">
                                 <a href="{{ url_for('resume_builder.edit_resume', resume_id=resume.id) }}" class="text-sm text-blue-400 hover:text-blue-300 mr-2">Edit</a>
                                 <a href="{{ url_for('resume_builder.delete_resume', resume_id=resume.id) }}" class="text-sm text-red-400 hover:text-red-300" onclick="return confirm('Are you sure you want to delete this resume?');">Delete</a>
                             </div>
@@ -25,18 +29,19 @@
                     {% endfor %}
                 </ul>
             {% else %}
-                <p class="text-gray-300">No resumes yet.</p>
+                <p class="text-secondary-light">No resumes yet.</p>
             {% endif %}
-            <a href="/resume-builder/create" class="inline-block bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mt-4">Create Resume</a>
-        </div>
-        <div class="bg-gray-800 p-6 rounded-lg">
-            <h2 class="text-2xl font-semibold mb-4">Cover Letters</h2>
+            <a href="{{ url_for('resume_builder.create') }}" class="btn-primary px-6 py-2 rounded-lg mt-6 inline-block w-full text-center">Create Resume</a>
+        </section>
+
+        <section class="glass-card p-6 md:p-8" aria-labelledby="cover-letters-heading">
+            <h2 id="cover-letters-heading" class="text-2xl font-semibold mb-4 text-primary-light">Cover Letters</h2>
             {% if cover_letters %}
-                <ul class="space-y-2">
+                <ul class="space-y-3">
                     {% for letter in cover_letters %}
-                        <li class="text-gray-300 flex justify-between items-center">
-                            <span>{{ letter.title }} - {{ letter.updated_at.strftime('%Y-%m-%d') }}</span>
-                            <div>
+                        <li class="text-secondary-light flex justify-between items-center p-3 bg-gray-700 bg-opacity-30 rounded-md">
+                            <span class="truncate">{{ letter.title }} - <span class="text-xs">{{ letter.updated_at.strftime('%Y-%m-%d') }}</span></span>
+                            <div class="flex-shrink-0 ml-2">
                                 <a href="{{ url_for('cover_letter.edit_cover_letter', letter_id=letter.id) }}" class="text-sm text-blue-400 hover:text-blue-300 mr-2">Edit</a>
                                 <a href="{{ url_for('cover_letter.delete_cover_letter', letter_id=letter.id) }}" class="text-sm text-red-400 hover:text-red-300" onclick="return confirm('Are you sure you want to delete this cover letter?');">Delete</a>
                             </div>
@@ -44,18 +49,19 @@
                     {% endfor %}
                 </ul>
             {% else %}
-                <p class="text-gray-300">No cover letters yet.</p>
+                <p class="text-secondary-light">No cover letters yet.</p>
             {% endif %}
-            <a href="/cover-letter/create" class="inline-block bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mt-4">Create Cover Letter</a>
-        </div>
-        <div class="bg-gray-800 p-6 rounded-lg">
-            <h2 class="text-2xl font-semibold mb-4">Mock Interviews</h2>
+            <a href="{{ url_for('cover_letter.index') }}" class="btn-primary px-6 py-2 rounded-lg mt-6 inline-block w-full text-center">Manage Cover Letters</a>
+        </section>
+
+        <section class="glass-card p-6 md:p-8" aria-labelledby="mock-interviews-heading">
+            <h2 id="mock-interviews-heading" class="text-2xl font-semibold mb-4 text-primary-light">Mock Interviews</h2>
             {% if interviews %}
-                <ul class="space-y-2">
+                <ul class="space-y-3">
                     {% for interview in interviews %}
-                        <li class="text-gray-300 flex justify-between items-center">
-                            <span>{{ interview.job_description[:30] }}... - {{ interview.updated_at.strftime('%Y-%m-%d') }}</span>
-                            <div>
+                        <li class="text-secondary-light flex justify-between items-center p-3 bg-gray-700 bg-opacity-30 rounded-md">
+                            <span class="truncate">{{ interview.job_description[:25] if interview.job_description else 'General Interview' }}... - <span class="text-xs">{{ interview.updated_at.strftime('%Y-%m-%d') }}</span></span>
+                            <div class="flex-shrink-0 ml-2">
                                 <a href="{{ url_for('mock_interview.view_interview_results', interview_id=interview.id) }}" class="text-sm text-blue-400 hover:text-blue-300 mr-2">View</a>
                                 <a href="{{ url_for('mock_interview.delete_interview', interview_id=interview.id) }}" class="text-sm text-red-400 hover:text-red-300" onclick="return confirm('Are you sure you want to delete this interview session?');">Delete</a>
                             </div>
@@ -63,10 +69,10 @@
                     {% endfor %}
                 </ul>
             {% else %}
-                <p class="text-gray-300">No mock interviews yet.</p>
+                <p class="text-secondary-light">No mock interviews yet.</p>
             {% endif %}
-            <a href="/mock-interview/start" class="inline-block bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mt-4">Start Interview</a>
-        </div>
+            <a href="{{ url_for('mock_interview.start') }}" class="btn-primary px-6 py-2 rounded-lg mt-6 inline-block w-full text-center">Start Interview</a>
+        </section>
     </div>
 </div>
 {% endblock %}
