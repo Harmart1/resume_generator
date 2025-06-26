@@ -1,0 +1,246 @@
+{% extends 'app_base.html' %}
+
+{% block title %}AI Resume Formatter Pro - {{ super() }}{% endblock %}
+
+{% block content %}
+<!-- Font Awesome -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+<!-- Custom Formatter Styles -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/formatter.css') }}">
+
+<div class="bg-gray-50 min-h-screen">
+    <!-- Progress Bar and Title/Save -->
+    <div class="bg-white border-b sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+            <div class="md:flex md:items-center md:justify-between">
+                 <div class="mb-2 md:mb-0 flex-grow md:mr-4">
+                    <label for="resumeTitleInput" class="sr-only">Resume Title</label>
+                    <input type="text" id="resumeTitleInput" name="resume_title" placeholder="Enter Resume Title Here"
+                           class="w-full text-xl font-semibold text-gray-800 border-b-2 border-transparent focus:border-blue-500 focus:outline-none py-1">
+                </div>
+                <div class="flex items-center justify-between md:justify-end">
+                    <div class="flex items-center space-x-1 sm:space-x-2">
+                        <div class="progress-step active flex items-center px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg text-xs sm:text-sm" title="Upload/Input">
+                            <i class="fas fa-upload mr-1 sm:mr-2"></i><span class="hidden sm:inline">Upload</span>
+                        </div>
+                        <div class="w-4 sm:w-6 h-0.5 bg-gray-300"></div>
+                        <div class="progress-step flex items-center px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg bg-gray-100 text-xs sm:text-sm" title="Parse/Process">
+                            <i class="fas fa-cogs mr-1 sm:mr-2"></i><span class="hidden sm:inline">Parse</span>
+                        </div>
+                        <div class="w-4 sm:w-6 h-0.5 bg-gray-300"></div>
+                        <div class="progress-step flex items-center px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg bg-gray-100 text-xs sm:text-sm" title="Choose Template">
+                            <i class="fas fa-palette mr-1 sm:mr-2"></i><span class="hidden sm:inline">Template</span>
+                        </div>
+                        <div class="w-4 sm:w-6 h-0.5 bg-gray-300"></div>
+                        <div class="progress-step flex items-center px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg bg-gray-100 text-xs sm:text-sm" title="Export">
+                            <i class="fas fa-download mr-1 sm:mr-2"></i><span class="hidden sm:inline">Export</span>
+                        </div>
+                    </div>
+                     <button id="saveResumeButton" class="ml-2 sm:ml-4 bg-green-500 hover:bg-green-600 text-white font-semibold px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg transition-colors text-xs sm:text-sm">
+                        <i class="fas fa-save mr-1 sm:mr-2"></i>Save Resume
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left Column - Input and Controls -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Upload Section -->
+                <div class="bg-white rounded-xl card-shadow p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-xl font-semibold text-gray-900">Resume Input</h2>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-sm text-gray-500">Supported formats:</span>
+                            <div class="flex space-x-1">
+                                <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">.pdf</span>
+                                <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">.doc</span>
+                                <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">.docx</span>
+                                <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">.txt</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- File Upload -->
+                        <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-400 transition-colors">
+                            <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-4"></i>
+                            <h3 class="text-lg font-medium text-gray-900 mb-2">Choose File</h3>
+                            <p class="text-sm text-gray-600 mb-4">Drag and drop your resume or click to browse</p>
+                            <input type="file" id="fileInput" class="hidden" accept=".pdf,.doc,.docx,.txt">
+                            <button onclick="document.getElementById('fileInput').click()" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                                <i class="fas fa-folder-open mr-2"></i>
+                                Browse Files
+                            </button>
+                        </div>
+
+                        <!-- Text Input -->
+                        <div class="space-y-4">
+                            <h3 class="text-lg font-medium text-gray-900">Or Paste Resume Text / JSON</h3>
+                            <textarea id="resumeText" placeholder="Paste your resume content here (plain text for parsing, or full JSON for direct load)..." class="w-full h-40 p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"></textarea>
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <h4 class="font-medium text-gray-900 mb-2">Example format (for pasting):</h4>
+                                <div class="text-sm text-gray-600 space-y-1">
+                                    <div><strong>John Doe</strong> | Software Engineer</div>
+                                    <div>john@email.com | (555) 123-4567</div>
+                                    <div class="mt-2"><strong>EXPERIENCE</strong>...</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 flex items-center justify-between">
+                        <div class="flex items-center space-x-4">
+                            <button id="parseBtn" class="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-3 rounded-lg font-medium hover:from-blue-700 hover:to-purple-700 transition-all transform hover:scale-105" title="Simulates parsing and populates AI analysis section for demo.">
+                                <i class="fas fa-cogs mr-2"></i> {/* Changed icon */}
+                                Process Input
+                            </button>
+                            <div id="loadingIndicator" class="hidden flex items-center text-blue-600">
+                                <div class="loading-spinner w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full mr-2"></div>
+                                <span class="text-sm">Processing...</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-2 text-sm text-gray-600">
+                            <i class="fas fa-info-circle"></i>
+                            <span>Processing is currently simulated for demo.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Analysis Results -->
+                <div id="analysisResults" class="hidden bg-white rounded-xl card-shadow p-6 fade-in">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-xl font-semibold text-gray-900">AI Analysis Results (Demo)</h2>
+                        <button class="text-blue-600 hover:text-blue-700 text-sm font-medium opacity-50 cursor-not-allowed" id="refreshAnalysisBtn" disabled title="AI features coming soon">
+                            <i class="fas fa-sync-alt mr-1"></i>
+                            Refresh Analysis
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                        <div class="metric-card">
+                            <div class="ats-score w-20 h-20 mx-auto mb-3" style="--score-deg: 252deg;">
+                                <div class="absolute inset-0 flex items-center justify-center">
+                                    <div class="text-center z-10">
+                                        <div class="metric-number text-lg">85</div><div class="text-xs text-gray-600">ATS Score</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <p class="text-sm text-gray-600">Applicant Tracking System compatibility</p>
+                        </div>
+                        <div class="metric-card"><div class="metric-number">12</div><p class="text-sm text-gray-600 mt-1">Suggestions</p><p class="text-xs text-gray-500">Ready to apply</p></div>
+                        <div class="metric-card"><div class="metric-number">7</div><p class="text-sm text-gray-600 mt-1">Keywords</p><p class="text-xs text-gray-500">Industry relevant</p></div>
+                        <div class="metric-card"><div class="metric-number">94%</div><p class="text-sm text-gray-600 mt-1">Match</p><p class="text-xs text-gray-500">Format compliance</p></div>
+                    </div>
+
+                    <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 mb-6">
+                        <div class="flex items-center justify-between mb-3"><h3 class="font-medium text-gray-900">Detected Industry</h3><span class="industry-badge">Technology</span></div>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="skills-tag bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">JavaScript</span>
+                            <span class="skills-tag bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm">React</span>
+                            <span class="skills-tag bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm">Node.js</span>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <h3 class="font-medium text-gray-900 flex items-center">
+                            <i class="fas fa-lightbulb mr-2 text-yellow-500"></i>AI Suggestions (Demo - Not Functional)
+                            <span class="ml-2 text-sm text-gray-500">(12 pending)</span>
+                        </h3>
+                        <div class="space-y-3">
+                            <div class="suggestion-card pending bg-white p-4 rounded-lg border">
+                                <div class="flex items-start justify-between">
+                                    <div class="flex-1"><div class="flex items-center mb-2"><i class="fas fa-exclamation-triangle text-yellow-500 mr-2"></i><span class="font-medium text-gray-900">Quantify Your Achievements</span><span class="ml-2 px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded">High Impact</span></div><p class="text-sm text-gray-600 mb-2">Add specific numbers and metrics to your accomplishments.</p><div class="text-sm text-gray-500"><strong>Example:</strong> "Increased sales by 30%"</div></div>
+                                    <div class="flex items-center space-x-2 ml-4"><button class="text-gray-400 hover:text-gray-600 tooltip opacity-50 cursor-not-allowed" data-tooltip="Dismiss" disabled><i class="fas fa-times"></i></button><button class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 opacity-50 cursor-not-allowed" disabled title="AI features coming soon">Apply</button></div>
+                                </div>
+                            </div>
+                            <div class="suggestion-card applied bg-white p-4 rounded-lg border">
+                                <div class="flex items-start justify-between">
+                                    <div class="flex-1"><div class="flex items-center mb-2"><i class="fas fa-check-circle text-green-500 mr-2"></i><span class="font-medium text-gray-900">Action Verbs Enhancement</span><span class="ml-2 px-2 py-1 bg-green-100 text-green-800 text-xs rounded">Applied</span></div><p class="text-sm text-gray-600">Used strong action verbs.</p></div>
+                                    <div class="flex items-center space-x-2 ml-4"><button class="text-gray-400 hover:text-gray-600 tooltip opacity-50 cursor-not-allowed" data-tooltip="Undo" disabled title="AI features coming soon"><i class="fas fa-undo"></i></button></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between pt-4 border-t"><div class="text-sm text-gray-600"><span class="font-medium">Progress:</span> 1 of 12 applied</div><button class="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-2 rounded-lg font-medium hover:from-blue-700 hover:to-purple-700 opacity-50 cursor-not-allowed" disabled title="AI features coming soon">Apply All</button></div>
+                    </div>
+                </div>
+
+                <!-- Template Selection -->
+                <div class="bg-white rounded-xl card-shadow p-6">
+                    <div class="flex items-center justify-between mb-6"><h2 class="text-xl font-semibold text-gray-900">Choose Template</h2><div class="flex items-center space-x-2"><span class="text-sm text-gray-500">Preview:</span><button id="livePreviewToggleBtn" class="text-blue-600 hover:text-blue-700 text-sm font-medium"><i class="fas fa-eye mr-1"></i>Live Preview</button></div></div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                        <div class="template-card bg-white border-2 border-gray-200 rounded-lg p-4 text-center" data-template-name="modern"><div class="bg-gradient-to-br from-blue-500 to-blue-600 h-24 rounded mb-3 flex items-center justify-center"><i class="fas fa-file-alt text-white text-2xl"></i></div><h3 class="font-medium text-gray-900 mb-1">Modern</h3><p class="text-sm text-gray-600">Clean & contemporary</p></div>
+                        <div class="template-card selected bg-white border-2 rounded-lg p-4 text-center" data-template-name="professional"><div class="bg-gradient-to-br from-gray-700 to-gray-800 h-24 rounded mb-3 flex items-center justify-center"><i class="fas fa-briefcase text-white text-2xl"></i></div><h3 class="font-medium mb-1">Professional</h3><p class="text-sm">Traditional format</p></div>
+                        <div class="template-card bg-white border-2 border-gray-200 rounded-lg p-4 text-center" data-template-name="creative"><div class="bg-gradient-to-br from-purple-500 to-pink-500 h-24 rounded mb-3 flex items-center justify-center"><i class="fas fa-palette text-white text-2xl"></i></div><h3 class="font-medium text-gray-900 mb-1">Creative</h3><p class="text-sm text-gray-600">Unique & artistic</p></div>
+                        <div class="template-card bg-white border-2 border-gray-200 rounded-lg p-4 text-center" data-template-name="executive"><div class="bg-gradient-to-br from-gold-500 to-yellow-600 h-24 rounded mb-3 flex items-center justify-center"><i class="fas fa-crown text-white text-2xl"></i></div><h3 class="font-medium text-gray-900 mb-1">Executive</h3><p class="text-sm text-gray-600">Leadership style</p></div>
+                    </div>
+                    <div class="customization-panel">
+                        <h3 class="font-medium text-gray-900 mb-4">Customize Template</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div><label class="block text-sm font-medium text-gray-700 mb-3">Color Scheme</label><div class="flex space-x-3"><div class="color-picker bg-blue-600" data-color="blue"></div><div class="color-picker bg-purple-600" data-color="purple"></div><div class="color-picker bg-green-600" data-color="green"></div><div class="color-picker bg-red-600" data-color="red"></div><div class="color-picker bg-yellow-600" data-color="yellow"></div><div class="color-picker bg-gray-600" data-color="gray"></div></div></div>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-3">Font Family</label><div class="space-y-2"><div class="font-preview selected" style="font-family: 'Inter', sans-serif;" data-font="Inter"><span class="text-sm font-medium">Inter</span><span class="text-xs text-gray-500 block">Modern & professional</span></div><div class="font-preview" style="font-family: 'Times New Roman', serif;" data-font="Times New Roman"><span class="text-sm font-medium">Times New Roman</span><span class="text-xs text-gray-500 block">Classic & traditional</span></div><div class="font-preview" style="font-family: 'Arial', sans-serif;" data-font="Arial"><span class="text-sm font-medium">Arial</span><span class="text-xs text-gray-500 block">Clean & readable</span></div></div></div>
+                        </div>
+                        <div class="mt-6 flex items-center justify-between">
+                            <div class="flex items-center space-x-4"><label class="flex items-center"><input type="checkbox" id="includeContactIcons" class="mr-2" checked><span class="text-sm text-gray-700">Contact icons</span></label><label class="flex items-center"><input type="checkbox" id="twoColumnLayout" class="mr-2"><span class="text-sm text-gray-700">Two-column</span></label></div>
+                            <button id="saveCustomizationBtn" class="text-blue-600 hover:text-blue-700 text-sm font-medium opacity-70" title="Customizations are saved with main 'Save Resume' button."><i class="fas fa-save mr-1"></i>Apply Customization</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Export Section -->
+                <div class="bg-white rounded-xl card-shadow p-6">
+                    <div class="flex items-center justify-between mb-6"><h2 class="text-xl font-semibold text-gray-900">Export Resume</h2><div class="flex items-center space-x-2 text-sm text-gray-600"><i class="fas fa-clock mr-1"></i><span id="lastUpdatedTimestamp">Last updated: N/A</span></div></div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <button class="flex items-center justify-center p-6 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-colors group opacity-50 cursor-not-allowed" disabled title="Export features coming soon"><div class="text-center"><i class="fas fa-file-word text-4xl text-blue-600 mb-3 group-hover:scale-110 transition-transform"></i><h3 class="font-medium text-gray-900 mb-1">Download as Word</h3><p class="text-sm text-gray-600">(.docx format)</p></div></button>
+                        <button class="flex items-center justify-center p-6 border-2 border-dashed border-gray-300 rounded-lg hover:border-red-400 hover:bg-red-50 transition-colors group opacity-50 cursor-not-allowed" disabled title="Export features coming soon"><div class="text-center"><i class="fas fa-file-pdf text-4xl text-red-600 mb-3 group-hover:scale-110 transition-transform"></i><h3 class="font-medium text-gray-900 mb-1">Download as PDF</h3><p class="text-sm text-gray-600">(.pdf format)</p></div></button>
+                    </div>
+                    <div class="mt-6 bg-gray-50 rounded-lg p-4">
+                        <div class="flex items-center justify-between mb-3"><h3 class="font-medium text-gray-900">Advanced Export Options</h3><button class="text-sm text-blue-600 hover:text-blue-700 opacity-50 cursor-not-allowed" disabled title="Export features coming soon"><i class="fas fa-cog mr-1"></i>Configure</button></div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                            <label class="flex items-center"><input type="checkbox" class="mr-2" checked disabled><span class="text-gray-700">Include metadata</span></label>
+                            <label class="flex items-center"><input type="checkbox" class="mr-2" disabled><span class="text-gray-700">Password protect</span></label>
+                            <label class="flex items-center"><input type="checkbox" class="mr-2" checked disabled><span class="text-gray-700">ATS-friendly format</span></label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column - Preview and Insights -->
+            <div class="lg:sticky lg:top-24 space-y-6"> {/* Made this column sticky */}
+                <div class="bg-white rounded-xl card-shadow p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-gray-900">Live Preview</h3>
+                        <div class="flex items-center space-x-2">
+                            <button id="zoomOutBtn" class="text-gray-400 hover:text-gray-600 tooltip" data-tooltip="Zoom out"><i class="fas fa-search-minus"></i></button>
+                            <span id="zoomLevelDisplay" class="text-sm text-gray-600">100%</span>
+                            <button id="zoomInBtn" class="text-gray-400 hover:text-gray-600 tooltip" data-tooltip="Zoom in"><i class="fas fa-search-plus"></i></button>
+                        </div>
+                    </div>
+                    <div class="preview-container"><div class="resume-preview" id="resumePreviewContent">
+                        <div class="text-center mb-6"><h1 id="previewFullName" class="text-2xl font-bold text-gray-900 mb-2">John Doe</h1><p id="previewJobTitle" class="text-lg text-gray-700 mb-3">Software Engineer</p><div id="previewContactInfo" class="flex justify-center items-center space-x-4 text-sm text-gray-600"><span><i class="fas fa-envelope mr-1"></i>john@email.com</span><span><i class="fas fa-phone mr-1"></i>(555)123-4567</span><span><i class="fas fa-map-marker-alt mr-1"></i>San Francisco,CA</span></div></div>
+                        <div id="previewSummarySection" class="mb-6"><h2 class="text-lg font-semibold text-gray-900 mb-3 border-b-2 border-blue-600 pb-1">PROFESSIONAL SUMMARY</h2><p id="previewSummaryText" class="text-sm text-gray-700 leading-relaxed">Experienced software engineer...</p></div>
+                        <div id="previewExperienceSection" class="mb-6"><h2 class="text-lg font-semibold text-gray-900 mb-3 border-b-2 border-blue-600 pb-1">EXPERIENCE</h2></div>
+                        <div id="previewSkillsSection" class="mb-6"><h2 class="text-lg font-semibold text-gray-900 mb-3 border-b-2 border-blue-600 pb-1">SKILLS</h2></div>
+                        <div id="previewEducationSection"><h2 class="text-lg font-semibold text-gray-900 mb-3 border-b-2 border-blue-600 pb-1">EDUCATION</h2></div>
+                    </div></div>
+                    <div class="mt-4 text-center"><p class="text-sm text-gray-600"><i class="fas fa-info-circle mr-1"></i>Preview updates as you interact (basic).</p></div>
+                </div>
+                <div class="bg-white rounded-xl card-shadow p-6"><h3 class="text-lg font-semibold text-gray-900 mb-4">Industry Insights (Demo)</h3><p class="text-sm text-gray-500">Full industry insights coming soon!</p></div>
+                <div class="bg-white rounded-xl card-shadow p-6"><h3 class="text-lg font-semibold text-gray-900 mb-4">Quick Stats (Demo)</h3><p class="text-sm text-gray-500">Dynamic quick stats coming soon!</p></div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+    // Data passed from Flask backend
+    const initialResumeTitle = {{ resume_title | tojson | safe }};
+    const initialResumeContentJsonString = {{ resume_content_json | tojson | safe }}; // This is a stringified JSON
+    const currentResumeId = {{ resume_id | tojson | safe }}; // This can be null for new resumes
+</script>
+<!-- Custom Formatter Script -->
+<script src="{{ url_for('static', filename='js/formatter.js') }}"></script>
+{% endblock %}
