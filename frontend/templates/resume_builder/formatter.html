@@ -77,25 +77,80 @@
                             </button>
                         </div>
 
-                        <!-- Text Input -->
+                        <!-- Text Input (Now for Raw JSON / Debug) -->
                         <div class="space-y-4">
-                            <h3 class="text-lg font-medium text-gray-900">Or Paste Resume Text / JSON</h3>
-                            <textarea id="resumeText" placeholder="Paste your resume content here (plain text for parsing, or full JSON for direct load)..." class="w-full h-40 p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"></textarea>
-                            <div class="bg-gray-50 p-4 rounded-lg">
-                                <h4 class="font-medium text-gray-900 mb-2">Example format (for pasting):</h4>
-                                <div class="text-sm text-gray-600 space-y-1">
-                                    <div><strong>John Doe</strong> | Software Engineer</div>
-                                    <div>john@email.com | (555) 123-4567</div>
-                                    <div class="mt-2"><strong>EXPERIENCE</strong>...</div>
-                                </div>
-                            </div>
+                            <h3 class="text-lg font-medium text-gray-900">Raw JSON Data / Debug View</h3>
+                            <textarea id="resumeText" title="Displays the current resume data as JSON. Advanced users can edit this directly." placeholder="Current resume data in JSON format will appear here. You can also paste a full JSON structure to load it." class="w-full h-60 p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-y font-mono text-xs"></textarea>
+                            <p class="text-xs text-gray-500">This area shows the underlying JSON data. Use the structured fields above for easier editing.</p>
                         </div>
                     </div>
 
-                    <div class="mt-6 flex items-center justify-between">
+                    <!-- Structured Data Editors -->
+                    <div id="structuredDataEditors" class="mt-6 space-y-6">
+                        <!-- Personal Details Editor Placeholder -->
+                        <div id="personalDetailsEditorContainer" class="bg-gray-100 p-4 rounded-lg shadow">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-3">Personal Details</h3>
+                            {/* Form fields for personal details will be rendered here by JS */}
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div><label class="block text-sm font-medium text-gray-700">Full Name</label><input type="text" id="pdFullName" data-path="personal.full_name" class="mt-1 data-field block w-full p-2 border-gray-300 rounded-md shadow-sm sm:text-sm" placeholder="e.g., John Doe"></div>
+                                <div><label class="block text-sm font-medium text-gray-700">Job Title</label><input type="text" id="pdJobTitle" data-path="personal.job_title" class="mt-1 data-field block w-full p-2 border-gray-300 rounded-md shadow-sm sm:text-sm" placeholder="e.g., Software Engineer"></div>
+                                <div><label class="block text-sm font-medium text-gray-700">Email</label><input type="email" id="pdEmail" data-path="personal.email" class="mt-1 data-field block w-full p-2 border-gray-300 rounded-md shadow-sm sm:text-sm" placeholder="e.g., john.doe@example.com"></div>
+                                <div><label class="block text-sm font-medium text-gray-700">Phone</label><input type="tel" id="pdPhone" data-path="personal.phone" class="mt-1 data-field block w-full p-2 border-gray-300 rounded-md shadow-sm sm:text-sm" placeholder="e.g., (555) 123-4567"></div>
+                                <div class="md:col-span-2"><label class="block text-sm font-medium text-gray-700">Location</label><input type="text" id="pdLocation" data-path="personal.location" class="mt-1 data-field block w-full p-2 border-gray-300 rounded-md shadow-sm sm:text-sm" placeholder="e.g., San Francisco, CA"></div>
+                                <div><label class="block text-sm font-medium text-gray-700">LinkedIn Profile URL</label><input type="url" id="pdLinkedIn" data-path="personal.linkedin" class="mt-1 data-field block w-full p-2 border-gray-300 rounded-md shadow-sm sm:text-sm" placeholder="e.g., https://linkedin.com/in/johndoe"></div>
+                                <div><label class="block text-sm font-medium text-gray-700">Portfolio/Website URL</label><input type="url" id="pdPortfolio" data-path="personal.portfolio" class="mt-1 data-field block w-full p-2 border-gray-300 rounded-md shadow-sm sm:text-sm" placeholder="e.g., https://github.com/johndoe"></div>
+                            </div>
+                        </div>
+
+                        <!-- Summary Editor Placeholder -->
+                        <div id="summaryEditorContainer" class="bg-gray-100 p-4 rounded-lg shadow">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-3">Professional Summary</h3>
+                            <textarea id="summaryTextarea" data-path="summary" class="w-full p-2 border-gray-300 data-field rounded-md shadow-sm sm:text-sm" rows="5" placeholder="Write a compelling summary of your skills and experience..."></textarea>
+                        </div>
+
+                        <!-- Experience Section Editor Placeholder -->
+                        <div id="experienceEditorContainer" class="bg-gray-100 p-4 rounded-lg shadow">
+                            <div class="flex justify-between items-center mb-3">
+                                <h3 class="text-lg font-semibold text-gray-800">Work Experience</h3>
+                                <button id="addExperienceBtn" class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 text-sm shadow focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"><i class="fas fa-plus mr-2"></i>Add Experience</button>
+                            </div>
+                            <div id="experienceList" class="space-y-4">
+                                {/* JS will populate this with experience item forms */}
+                            </div>
+                        </div>
+
+                        <!-- Education Section Editor Placeholder -->
+                        <div id="educationEditorContainer" class="bg-gray-100 p-4 rounded-lg shadow">
+                            <div class="flex justify-between items-center mb-3">
+                                <h3 class="text-lg font-semibold text-gray-800">Education</h3>
+                                <button id="addEducationBtn" class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 text-sm shadow focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"><i class="fas fa-plus mr-2"></i>Add Education</button>
+                            </div>
+                            <div id="educationList" class="space-y-4">
+                                {/* JS will populate this with education item forms */}
+                            </div>
+                        </div>
+
+                        <!-- Skills Section Editor Placeholder -->
+                         <div id="skillsEditorContainer" class="bg-gray-100 p-4 rounded-lg shadow">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-3">Skills</h3>
+                            <div id="skillsInputsContainer">
+                                {/* JS will populate with inputs for technical, soft, certifications */}
+                            </div>
+                        </div>
+
+                        <!-- Additional Info Editor Placeholder (optional for this step) -->
+                         <div id="additionalInfoEditorContainer" class="bg-gray-100 p-4 rounded-lg shadow">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-3">Additional Information</h3>
+                            <div><label class="block text-sm font-medium text-gray-700">Projects</label><textarea data-path="additional.projects" class="mt-1 data-field w-full p-2 border-gray-300 rounded-md shadow-sm sm:text-sm" rows="3" placeholder="Describe your key projects..."></textarea></div>
+                            <div class="mt-3"><label class="block text-sm font-medium text-gray-700">Languages</label><textarea data-path="additional.languages" class="mt-1 data-field w-full p-2 border-gray-300 rounded-md shadow-sm sm:text-sm" rows="2" placeholder="e.g., English (Native), Spanish (Conversational)"></textarea></div>
+                            <div class="mt-3"><label class="block text-sm font-medium text-gray-700">Volunteer Experience</label><textarea data-path="additional.volunteer" class="mt-1 data-field w-full p-2 border-gray-300 rounded-md shadow-sm sm:text-sm" rows="3" placeholder="Describe your volunteer roles..."></textarea></div>
+                        </div>
+                    </div>
+
+                    <div class="mt-8 flex items-center justify-between"> {/* Increased top margin */}
                         <div class="flex items-center space-x-4">
                             <button id="parseBtn" class="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-3 rounded-lg font-medium hover:from-blue-700 hover:to-purple-700 transition-all transform hover:scale-105" title="Simulates parsing and populates AI analysis section for demo.">
-                                <i class="fas fa-cogs mr-2"></i> {/* Changed icon */}
+                                <i class="fas fa-cogs mr-2"></i>
                                 Process Input
                             </button>
                             <div id="loadingIndicator" class="hidden flex items-center text-blue-600">
