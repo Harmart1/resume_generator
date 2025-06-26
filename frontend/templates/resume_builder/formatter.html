@@ -202,24 +202,71 @@
 
                     <div class="space-y-4">
                         <h3 class="font-medium text-gray-900 flex items-center">
-                            <i class="fas fa-lightbulb mr-2 text-yellow-500"></i>AI Suggestions (Demo - Not Functional)
-                            <span class="ml-2 text-sm text-gray-500">(12 pending)</span>
+                            <i class="fas fa-lightbulb mr-2 text-yellow-500"></i>AI Suggestions (Frontend Simulation)
+                            <span class="ml-2 text-sm text-gray-500" id="pendingSuggestionsCount">(3 Active Suggestions)</span>
                         </h3>
-                        <div class="space-y-3">
-                            <div class="suggestion-card pending bg-white p-4 rounded-lg border">
+                        <div class="space-y-3" id="suggestionsList">
+                            {/* Quantify Achievements Card - Now Interactive */}
+                            <div class="suggestion-card pending bg-white p-4 rounded-lg border" data-suggestion-id="quantify1">
                                 <div class="flex items-start justify-between">
-                                    <div class="flex-1"><div class="flex items-center mb-2"><i class="fas fa-exclamation-triangle text-yellow-500 mr-2"></i><span class="font-medium text-gray-900">Quantify Your Achievements</span><span class="ml-2 px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded">High Impact</span></div><p class="text-sm text-gray-600 mb-2">Add specific numbers and metrics to your accomplishments.</p><div class="text-sm text-gray-500"><strong>Example:</strong> "Increased sales by 30%"</div></div>
-                                    <div class="flex items-center space-x-2 ml-4"><button class="text-gray-400 hover:text-gray-600 tooltip opacity-50 cursor-not-allowed" data-tooltip="Dismiss" disabled><i class="fas fa-times"></i></button><button class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 opacity-50 cursor-not-allowed" disabled title="AI features coming soon">Apply</button></div>
+                                    <div class="flex-1">
+                                        <div class="flex items-center mb-2">
+                                            <i class="fas fa-chart-line text-yellow-500 mr-2"></i> {/* Changed icon */}
+                                            <span class="font-medium text-gray-900">Quantify Your Achievements</span>
+                                            <span class="suggestion-impact-badge ml-2 px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded">High Impact</span>
+                                        </div>
+                                        <p class="text-sm text-gray-600 mb-2">Add specific numbers and metrics to your accomplishments to make them more compelling.</p>
+                                        <div class="text-sm text-gray-500"><strong>Example:</strong> "Increased sales by 30%" instead of "Improved sales"</div>
+                                    </div>
+                                    <div class="flex items-center space-x-2 ml-4">
+                                        <button class="suggestion-dismiss-btn text-gray-400 hover:text-gray-600 tooltip" data-tooltip="Dismiss" title="Dismiss this suggestion"><i class="fas fa-times"></i></button>
+                                        <button class="apply-suggestion-btn bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700" data-suggestion-type="quantifyAchievements">Apply</button>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="suggestion-card applied bg-white p-4 rounded-lg border">
+                            {/* Action Verbs Card - Now Interactive and Pending */}
+                            <div class="suggestion-card pending bg-white p-4 rounded-lg border" data-suggestion-id="actionverbs1">
                                 <div class="flex items-start justify-between">
-                                    <div class="flex-1"><div class="flex items-center mb-2"><i class="fas fa-check-circle text-green-500 mr-2"></i><span class="font-medium text-gray-900">Action Verbs Enhancement</span><span class="ml-2 px-2 py-1 bg-green-100 text-green-800 text-xs rounded">Applied</span></div><p class="text-sm text-gray-600">Used strong action verbs.</p></div>
-                                    <div class="flex items-center space-x-2 ml-4"><button class="text-gray-400 hover:text-gray-600 tooltip opacity-50 cursor-not-allowed" data-tooltip="Undo" disabled title="AI features coming soon"><i class="fas fa-undo"></i></button></div>
+                                    <div class="flex-1">
+                                        <div class="flex items-center mb-2">
+                                            <i class="fas fa-bolt text-purple-500 mr-2"></i> {/* Changed icon */}
+                                            <span class="font-medium text-gray-900">Use Strong Action Verbs</span>
+                                            <span class="suggestion-impact-badge ml-2 px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded">Medium Impact</span>
+                                        </div>
+                                        <p class="text-sm text-gray-600 mb-2">Replace common verbs with more dynamic action verbs to make your experience sound more impactful.</p>
+                                        <div class="text-sm text-gray-500"><strong>Example:</strong> "Spearheaded project..." instead of "Managed project..."</div>
+                                    </div>
+                                    <div class="flex items-center space-x-2 ml-4">
+                                        <button class="suggestion-dismiss-btn text-gray-400 hover:text-gray-600 tooltip" data-tooltip="Dismiss" title="Dismiss this suggestion"><i class="fas fa-times"></i></button>
+                                        <button class="apply-suggestion-btn bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700" data-suggestion-type="actionVerbs">Apply</button>
+                                    </div>
+                                </div>
+                            </div>
+                            {/* Keywords Card - Kept as non-interactive for demo variety */}
+                             <div class="suggestion-card pending bg-white p-4 rounded-lg border" data-suggestion-id="keywords1">
+                                <div class="flex items-start justify-between">
+                                    <div class="flex-1">
+                                        <div class="flex items-center mb-2">
+                                            <i class="fas fa-search text-blue-500 mr-2"></i>
+                                            <span class="font-medium text-gray-900">Add Keywords for ATS</span>
+                                            <span class="suggestion-impact-badge ml-2 px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">ATS Optimization</span>
+                                        </div>
+                                        <p class="text-sm text-gray-600 mb-2">Include relevant industry keywords to improve your resume's visibility in applicant tracking systems.</p>
+                                        <div class="text-sm text-gray-500"><strong>Suggested keywords:</strong> API Development, Microservices, DevOps, Agile</div>
+                                    </div>
+                                    <div class="flex items-center space-x-2 ml-4">
+                                        <button class="suggestion-dismiss-btn text-gray-400 hover:text-gray-600 tooltip opacity-50 cursor-not-allowed" data-tooltip="Dismiss" disabled><i class="fas fa-times"></i></button>
+                                        <button class="apply-suggestion-btn bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 opacity-50 cursor-not-allowed" disabled title="AI features coming soon">Apply</button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="flex items-center justify-between pt-4 border-t"><div class="text-sm text-gray-600"><span class="font-medium">Progress:</span> 1 of 12 applied</div><button class="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-2 rounded-lg font-medium hover:from-blue-700 hover:to-purple-700 opacity-50 cursor-not-allowed" disabled title="AI features coming soon">Apply All</button></div>
+                        <div class="flex items-center justify-between pt-4 border-t">
+                            <div class="text-sm text-gray-600" id="suggestionProgressText">
+                                <span class="font-medium">Progress:</span> <span id="appliedCount">0</span> of <span id="totalActiveSuggestions">2</span> suggestions applied (<span>1</span> more disabled)
+                            </div>
+                            <button id="applyAllSuggestionsBtn" class="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-2 rounded-lg font-medium hover:from-blue-700 hover:to-purple-700 opacity-50 cursor-not-allowed" disabled title="AI features coming soon">Apply All Suggestions</button>
+                        </div>
                     </div>
                 </div>
 
@@ -250,7 +297,7 @@
                     <div class="flex items-center justify-between mb-6"><h2 class="text-xl font-semibold text-gray-900">Export Resume</h2><div class="flex items-center space-x-2 text-sm text-gray-600"><i class="fas fa-clock mr-1"></i><span id="lastUpdatedTimestamp">Last updated: N/A</span></div></div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <button class="flex items-center justify-center p-6 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-colors group opacity-50 cursor-not-allowed" disabled title="Export features coming soon"><div class="text-center"><i class="fas fa-file-word text-4xl text-blue-600 mb-3 group-hover:scale-110 transition-transform"></i><h3 class="font-medium text-gray-900 mb-1">Download as Word</h3><p class="text-sm text-gray-600">(.docx format)</p></div></button>
-                        <button class="flex items-center justify-center p-6 border-2 border-dashed border-gray-300 rounded-lg hover:border-red-400 hover:bg-red-50 transition-colors group opacity-50 cursor-not-allowed" disabled title="Export features coming soon"><div class="text-center"><i class="fas fa-file-pdf text-4xl text-red-600 mb-3 group-hover:scale-110 transition-transform"></i><h3 class="font-medium text-gray-900 mb-1">Download as PDF</h3><p class="text-sm text-gray-600">(.pdf format)</p></div></button>
+                        <button id="downloadPdfBtn" class="flex items-center justify-center p-6 border-2 border-dashed border-gray-300 rounded-lg hover:border-red-400 hover:bg-red-50 transition-colors group cursor-pointer" title="Download resume as PDF"><div class="text-center"><i class="fas fa-file-pdf text-4xl text-red-600 mb-3 group-hover:scale-110 transition-transform"></i><h3 class="font-medium text-gray-900 mb-1">Download as PDF</h3><p class="text-sm text-gray-600">(.pdf format)</p></div></button>
                     </div>
                     <div class="mt-6 bg-gray-50 rounded-lg p-4">
                         <div class="flex items-center justify-between mb-3"><h3 class="font-medium text-gray-900">Advanced Export Options</h3><button class="text-sm text-blue-600 hover:text-blue-700 opacity-50 cursor-not-allowed" disabled title="Export features coming soon"><i class="fas fa-cog mr-1"></i>Configure</button></div>
