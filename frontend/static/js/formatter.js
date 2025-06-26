@@ -90,6 +90,12 @@ document.addEventListener('DOMContentLoaded', function() {
     setupCoreEventListeners();
     setupTemplateSelectors();
     setupCustomizationControls();
+
+    // ***** NEW CALLS HERE *****
+    applyTemplateSettingsToUI();
+    updateLivePreview();         // Ensure preview reflects loaded settings immediately
+    // **************************
+
     setupZoomControls();
     setupTooltips();
     setupSuggestionCardDismiss();
@@ -102,9 +108,42 @@ document.addEventListener('DOMContentLoaded', function() {
         animateMetricsOnShow();
         analysisResultsSection.dataset.metricsAnimated = "true";
     }
+    setupExportButtons(); // Add this call
+
     console.log("Formatter script initialized with dynamic editors.");
     // updateLivePreview(); // Will be enhanced later
 });
+
+// --- Export Functionality ---
+function setupExportButtons() {
+    const downloadPdfBtn = document.getElementById('downloadPdfBtn');
+    if (downloadPdfBtn) {
+        downloadPdfBtn.addEventListener('click', () => {
+            // Ensure the preview is fully up-to-date with any recent data changes
+            // updateLivePreview(); // Called by data change handlers already
+
+            const originalTitle = document.title;
+            const resumeTitleInput = document.getElementById('resumeTitleInput');
+            let resumeTitle = "resume"; // Default filename
+            if (resumeTitleInput && resumeTitleInput.value) {
+                resumeTitle = resumeTitleInput.value.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+            }
+            document.title = resumeTitle; // Set for print-to-PDF filename suggestion
+
+            window.print(); // Uses @media print styles
+
+            // Restore original title after a short delay (print dialog might be async)
+            setTimeout(() => {
+                document.title = originalTitle;
+            }, 1000);
+        });
+    }
+
+    // Placeholder for Word export if added later
+    // const downloadWordBtn = document.getElementById('downloadWordBtn');
+    // if (downloadWordBtn) { /* ... */ }
+}
+
 
 function populateStaticFormFields() {
     // Personal Details
@@ -202,12 +241,21 @@ function renderExperienceSection() {
 }
 
 document.getElementById('addExperienceBtn')?.addEventListener('click', () => {
-    currentResumeData.experiences.push({
+    const newExp = {
         id: generateUUID(), job_title: "", company: "", location: "",
         start_date: "", end_date: "", achievements: []
-    });
+    };
+    currentResumeData.experiences.push(newExp);
     renderExperienceSection();
     updateResumeTextDebugView();
+    updateLivePreview(); // Ensure preview updates
+
+    // Scroll to the new item and focus its first input
+    const newItemElement = document.querySelector(`#experienceList .dynamic-field[data-path="experiences[${currentResumeData.experiences.length - 1}].job_title"]`);
+    if (newItemElement && newItemElement.closest('.p-3')) {
+        newItemElement.closest('.p-3').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        newItemElement.focus();
+    }
 });
 
 // --- Dynamic Section: Education ---
@@ -233,11 +281,19 @@ function renderEducationSection() {
     addDynamicFieldListeners(listContainer);
 }
 document.getElementById('addEducationBtn')?.addEventListener('click', () => {
-    currentResumeData.education.push({
+    const newEdu = {
         id: generateUUID(), degree: "", institution: "", field_of_study: "", graduation_year: "", gpa: ""
-    });
+    };
+    currentResumeData.education.push(newEdu);
     renderEducationSection();
     updateResumeTextDebugView();
+    updateLivePreview();
+
+    const newItemElement = document.querySelector(`#educationList .dynamic-field[data-path="education[${currentResumeData.education.length - 1}].degree"]`);
+    if (newItemElement && newItemElement.closest('.p-3')) {
+        newItemElement.closest('.p-3').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        newItemElement.focus();
+    }
 });
 
 // --- Dynamic Section: Skills ---
@@ -287,10 +343,12 @@ function addSkillEventListeners() {
             const skillValue = input.value.trim();
             if (skillValue && !currentResumeData.skills[skillType].includes(skillValue)) {
                 currentResumeData.skills[skillType].push(skillValue);
-                renderSkillsSection(); // Re-render this specific skill section or all skills
+                renderSkillsSection();
                 updateResumeTextDebugView();
+                updateLivePreview();
             }
-            input.value = ''; // Clear input
+            input.value = '';
+            input.focus(); // Focus back on the input for quick next entry
         });
     });
     document.querySelectorAll('.delete-skill-btn').forEach(button => {
@@ -402,8 +460,38 @@ function handleProcessInput() { // Demo functionality
 
 // --- Save Data ---
 async function saveResumeDataToServer() {
+    const saveButton = document.getElementById('saveResumeButton');
+    const originalButtonHTML = saveButton.innerHTML; // Store full HTML content
+    saveButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Saving...';
+    saveButton.disabled = true;
+
     const titleToSave = document.getElementById('resumeTitleInput').value || "Untitled Resume";
-    // currentResumeData is the source of truth now, updated by dynamic forms
+
+    // Ensure currentResumeData is up-to-date if user edited JSON directly in textarea
+    // This was part of previous logic, ensure it's still relevant or simplified
+    // if structured forms are the sole source of truth for currentResumeData.
+    const resumeTextarea = document.getElementById('resumeText');
+    if (resumeTextarea) {
+        try {
+            const dataFromTextarea = JSON.parse(resumeTextarea.value);
+            // Only merge if the debug view actually differs, to avoid overwriting structured changes
+            if (JSON.stringify(dataFromTextarea) !== JSON.stringify(currentResumeData)) {
+                 deepMerge(currentResumeData, dataFromTextarea);
+                 // If debug view was edited, re-render forms to reflect this merge
+                 populateStaticFormFields();
+                 renderAllDynamicSections();
+                 console.log("Data merged from Raw JSON view before saving.");
+            }
+        } catch (e) {
+            // Ignore if not valid JSON, currentResumeData from forms is primary
+        }
+    }
+
+    // Clean up raw_text if structured data is present
+    if (currentResumeData.summary || (currentResumeData.experiences && currentResumeData.experiences.length > 0)) {
+        delete currentResumeData.raw_text;
+    }
+
     const contentToSaveStr = JSON.stringify(currentResumeData);
     const payload = { title: titleToSave, content: contentToSaveStr, resume_id: globalResumeId };
 
@@ -427,6 +515,9 @@ async function saveResumeDataToServer() {
     } catch (error) {
         console.error('Failed to save resume:', error);
         showToast('Failed to save resume. Check console.', 'error');
+    } finally {
+        saveButton.innerHTML = originalButtonHTML; // Restore original HTML
+        saveButton.disabled = false;
     }
 }
 
@@ -493,7 +584,7 @@ function updateLivePreview() {
 
     // Experience
     const expSectionEl = document.getElementById('previewExperienceSection');
-    expSectionEl.innerHTML = `<h2 class="text-lg font-semibold text-gray-900 mb-3 border-b-2 pb-1" style="border-color: var(--preview-accent-color);">EXPERIENCE</h2>`;
+    expSectionEl.innerHTML = `<h2 class="text-lg font-semibold text-gray-900 mb-3 border-b-2 pb-1 preview-section-title">EXPERIENCE</h2>`;
     if (experiences.length > 0) {
         experiences.forEach(exp => {
             const expDiv = document.createElement('div');
@@ -523,7 +614,7 @@ function updateLivePreview() {
 
     // Education
     const eduSectionEl = document.getElementById('previewEducationSection');
-    eduSectionEl.innerHTML = `<h2 class="text-lg font-semibold text-gray-900 mb-3 border-b-2 pb-1" style="border-color: var(--preview-accent-color);">EDUCATION</h2>`;
+    eduSectionEl.innerHTML = `<h2 class="text-lg font-semibold text-gray-900 mb-3 border-b-2 pb-1 preview-section-title">EDUCATION</h2>`;
     if (educationItems.length > 0) {
         educationItems.forEach(edu => {
             const eduDiv = document.createElement('div');
@@ -548,7 +639,7 @@ function updateLivePreview() {
 
     // Skills
     const skillsSectionEl = document.getElementById('previewSkillsSection');
-    skillsSectionEl.innerHTML = `<h2 class="text-lg font-semibold text-gray-900 mb-3 border-b-2 pb-1" style="border-color: var(--preview-accent-color);">SKILLS</h2>`;
+    skillsSectionEl.innerHTML = `<h2 class="text-lg font-semibold text-gray-900 mb-3 border-b-2 pb-1 preview-section-title">SKILLS</h2>`;
     let hasSkills = false;
     const skillsContentDiv = document.createElement('div');
     // For two-column layout, skills might need different styling
@@ -671,16 +762,127 @@ function setupTooltips() {
 }
 
 function setupSuggestionCardDismiss() {
-    // ... (same as before)
-    document.querySelectorAll('.suggestion-card .tooltip[data-tooltip="Dismiss"]').forEach(button => {
+    document.querySelectorAll('.suggestion-dismiss-btn').forEach(button => {
         if(button.disabled) return;
         button.addEventListener('click', function(e) {
             e.stopPropagation();
             const card = this.closest('.suggestion-card');
-            if (card) card.remove();
+            if (card) {
+                card.remove(); // Remove the card from the DOM
+                updateSuggestionCounts(); // Update counts after dismissing
+            }
         });
     });
 }
+
+function setupAISuggestionApplyButtons() {
+    document.querySelectorAll('.apply-suggestion-btn').forEach(button => {
+        if (button.disabled) return;
+
+        button.addEventListener('click', function() {
+            const suggestionType = this.dataset.suggestionType;
+            const card = this.closest('.suggestion-card');
+            let success = false;
+            let affectedSectionToRender = null; // To specify which editor section might need re-rendering
+
+            if (suggestionType === 'quantifyAchievements') {
+                if (currentResumeData.experiences && currentResumeData.experiences.length > 0) {
+                    const firstExp = currentResumeData.experiences[0];
+                    if (!firstExp.achievements) firstExp.achievements = [];
+                    // Add to the beginning for visibility
+                    firstExp.achievements.unshift("Simulated: Increased key metric by 25% through strategic initiative.");
+                    success = true;
+                    affectedSectionToRender = renderExperienceSection;
+                } else {
+                    showToast("Please add an experience item first to apply this suggestion.", "info");
+                }
+            } else if (suggestionType === 'actionVerbs') {
+                if (currentResumeData.summary) {
+                    currentResumeData.summary = currentResumeData.summary.replace(/Helped with/gi, "Facilitated")
+                                                                     .replace(/Managed/gi, "Spearheaded")
+                                                                     .replace(/Responsible for/gi, "Pioneered");
+                    if (!currentResumeData.summary.includes("Facilitated") && !currentResumeData.summary.includes("Spearheaded") && !currentResumeData.summary.includes("Pioneered")) {
+                        currentResumeData.summary = "Simulated: Spearheaded new initiative for summary. " + currentResumeData.summary; // Ensure a change if no common verbs found
+                    }
+                    success = true;
+                    affectedSectionToRender = () => { // Re-populate summary textarea
+                        const summaryTextarea = document.getElementById('summaryTextarea');
+                        if (summaryTextarea) summaryTextarea.value = currentResumeData.summary || "";
+                    };
+                } else if (currentResumeData.experiences && currentResumeData.experiences.length > 0 && currentResumeData.experiences[0].achievements && currentResumeData.experiences[0].achievements.length > 0) {
+                    let firstAchievement = currentResumeData.experiences[0].achievements[0];
+                    let originalAchievement = firstAchievement;
+                    firstAchievement = firstAchievement.replace(/Helped with/gi, "Facilitated")
+                                                       .replace(/Managed/gi, "Spearheaded")
+                                                       .replace(/Responsible for/gi, "Pioneered");
+                    if (firstAchievement === originalAchievement) { // If no common weak verbs found, prepend a simulated change
+                        firstAchievement = "Simulated: Spearheaded " + firstAchievement;
+                    }
+                    currentResumeData.experiences[0].achievements[0] = firstAchievement;
+                    success = true;
+                    affectedSectionToRender = renderExperienceSection;
+                } else {
+                     showToast("Please add a summary or an experience item to apply this suggestion.", "info");
+                }
+            }
+
+            if (success) {
+                card.classList.remove('pending');
+                card.classList.add('applied');
+                const badge = card.querySelector('.suggestion-impact-badge');
+                if (badge) {
+                    badge.classList.remove('bg-yellow-100', 'text-yellow-800', 'bg-blue-100', 'text-blue-800');
+                    badge.classList.add('bg-green-100', 'text-green-800');
+                    badge.textContent = 'Applied';
+                }
+                this.innerHTML = '<i class="fas fa-undo mr-1"></i>Undo';
+                this.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                this.classList.add('bg-gray-400', 'hover:bg-gray-500', 'opacity-70', 'cursor-not-allowed');
+                this.disabled = true; // For Phase 3, Undo is non-functional, so disable after apply.
+
+                if (affectedSectionToRender) affectedSectionToRender();
+                updateLivePreview();
+                updateResumeTextDebugView();
+                updateSuggestionCounts();
+                showToast("Suggestion applied (simulated).", "success");
+            }
+        });
+    });
+}
+
+
+function updateSuggestionCounts() {
+    const appliedCountEl = document.getElementById('appliedCount');
+    const totalActiveSuggestionsEl = document.getElementById('totalActiveSuggestions'); // Span for the number of active suggestions
+    const suggestionsList = document.getElementById('suggestionsList');
+    const pendingCountHeaderEl = document.getElementById('pendingSuggestionsCount'); // Span next to section title
+
+    if (!appliedCountEl || !totalActiveSuggestionsEl || !suggestionsList || !pendingCountHeaderEl) return;
+
+    let totalInteractiveInList = 0;
+    let appliedInList = 0;
+    let pendingInteractiveInList = 0;
+
+    suggestionsList.querySelectorAll('.suggestion-card').forEach(card => {
+        const applyBtn = card.querySelector('.apply-suggestion-btn');
+        // A card is considered interactive if its apply button has a suggestion type (i.e., it's not just a placeholder)
+        if (applyBtn && applyBtn.dataset.suggestionType) {
+            totalInteractiveInList++;
+            if (card.classList.contains('applied')) {
+                appliedInList++;
+            } else if (card.classList.contains('pending') && !applyBtn.disabled) {
+                // Count as pending only if its apply button is not disabled (meaning it's one of the active ones)
+                pendingInteractiveInList++;
+            }
+        }
+    });
+
+    appliedCountEl.textContent = appliedInList;
+    totalActiveSuggestionsEl.textContent = totalInteractiveInList;
+
+    pendingCountHeaderEl.textContent = `(${pendingInteractiveInList} interactive pending)`;
+}
+
 
 function updateLastUpdatedTimestamp() {
     // ... (same as before)
@@ -728,6 +930,49 @@ function animateMetricsOnShow() {
             }
         }, stepTime);
     });
+}
+
+// --- UI State Sync for Template Settings ---
+function applyTemplateSettingsToUI() {
+    const settings = currentResumeData.template_settings;
+
+    // Template Card
+    document.querySelectorAll('.template-card').forEach(card => {
+        if (card.dataset.templateName === settings.name) {
+            card.classList.add('selected');
+        } else {
+            card.classList.remove('selected');
+        }
+    });
+
+    // Color Picker
+    document.querySelectorAll('.color-picker').forEach(picker => {
+        picker.classList.remove('ring-2', 'ring-offset-2', 'ring-blue-500'); // Reset all
+        if (picker.dataset.color === settings.color_scheme) {
+            picker.classList.add('ring-2', 'ring-offset-2', 'ring-blue-500'); // Active state
+        }
+    });
+
+    // Font Preview
+    document.querySelectorAll('.font-preview').forEach(preview => {
+        if (preview.dataset.font === settings.font_family) {
+            preview.classList.add('selected');
+        } else {
+            preview.classList.remove('selected');
+        }
+    });
+
+    // Checkboxes
+    const contactIconsCheckbox = document.getElementById('includeContactIcons');
+    if (contactIconsCheckbox) {
+        contactIconsCheckbox.checked = settings.contact_icons;
+    }
+    const twoColumnCheckbox = document.getElementById('twoColumnLayout');
+    if (twoColumnCheckbox) {
+        twoColumnCheckbox.checked = settings.two_column;
+    }
+
+    console.log("Template settings applied to UI controls based on currentResumeData.");
 }
 
 function adjustForMobile() { /* Placeholder */ }

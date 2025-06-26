@@ -1,214 +1,183 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
-/* Styles from the provided HTML, excluding the font import which should be handled by app_base or formatter.html if necessary */
-/* The main font-family: 'Inter' is already set by app_base.html, so '*' selector might be redundant or could be more specific if needed */
+/* formatter.css */
 
-.gradient-bg { /* This was on the <header> which is removed. May not be needed, or reused elsewhere */
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
-.card-shadow {
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-}
-
-.progress-step {
-    transition: all 0.3s ease;
-}
-
-.progress-step.active {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-}
-
-.template-card {
-    transition: all 0.3s ease;
-    cursor: pointer;
-}
-
-.template-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
-}
-
-.template-card.selected {
-    border: 2px solid #667eea;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-}
-
-.suggestion-card {
-    transition: all 0.3s ease;
-    border-left: 4px solid #e5e7eb; /* Tailwind gray-200 */
-}
-
-.suggestion-card.applied {
-    border-left-color: #10b981; /* Tailwind green-500 */
-    background-color: #f0fdf4; /* Tailwind green-50 */
-}
-
-.suggestion-card.pending {
-    border-left-color: #f59e0b; /* Tailwind amber-500 */
-    background-color: #fffbeb; /* Tailwind amber-50 */
-}
-
-.ats-score {
-    background: conic-gradient(from 0deg, #10b981 0deg, #10b981 var(--score-deg), #e5e7eb var(--score-deg), #e5e7eb 360deg);
-    border-radius: 50%;
-    position: relative;
-}
-
-.ats-score::after {
-    content: '';
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    right: 10px;
-    bottom: 10px;
-    background: white;
-    border-radius: 50%;
-}
-
-.skills-tag {
-    transition: all 0.3s ease;
-}
-
-.skills-tag:hover {
-    transform: scale(1.05);
-}
-
-.preview-container {
-    max-height: 800px;
-    overflow-y: auto;
-    background: white;
-    border: 1px solid #e5e7eb; /* Tailwind gray-200 */
-    border-radius: 8px;
-}
-
+/* Base styles for resume preview if not overridden by specific templates */
 .resume-preview {
-    font-size: 12px;
-    line-height: 1.4;
+    /* Default font set by JS: font-family: 'Inter', sans-serif; */
+    font-size: 11pt; /* Slightly larger default for better readability in preview */
+    line-height: 1.5;
     background: white;
-    padding: 40px;
-    min-height: 600px;
+    color: #333; /* Default text color */
+    padding: 30px 40px; /* Default padding */
+    min-height: calc(11in * 0.8); /* Approximate letter size scaled down */
+    width: calc(8.5in * 0.8); /* Approximate letter size scaled down */
+    margin: 0 auto; /* Center preview */
+    box-shadow: 0 0 15px rgba(0,0,0,0.1); /* Softer shadow */
 }
 
-.loading-spinner {
-    animation: spin 1s linear infinite;
+.resume-preview h1, .resume-preview h2, .resume-preview h3, .resume-preview h4 {
+    color: #111; /* Darker headings */
+    font-weight: 600; /* Slightly less bold for a cleaner look */
+}
+.resume-preview h1 { font-size: 1.8em; margin-bottom: 0.2em; }
+.resume-preview h2.preview-section-title { /* Class for section titles like EXPERIENCE */
+    font-size: 1.2em;
+    font-weight: 700; /* Bolder for section titles */
+    border-bottom: 2px solid var(--preview-accent-color, #2563EB); /* Use CSS variable */
+    color: var(--preview-accent-color, #2563EB); /* Use CSS variable */
+    padding-bottom: 0.2em;
+    margin-bottom: 0.6em;
+    text-transform: uppercase;
+}
+.resume-preview p { margin-bottom: 0.5em; }
+.resume-preview ul { list-style-position: outside; padding-left: 1.2em; }
+.resume-preview li { margin-bottom: 0.2em; }
+.resume-preview a { color: var(--preview-accent-color, #2563EB); text-decoration: none; }
+.resume-preview a:hover { text-decoration: underline; }
+
+/* Template Specific Styles */
+.resume-preview.template-modern {
+    /* font-family: 'Arial', sans-serif; /* Example: JS will set this directly */
+}
+.resume-preview.template-professional {
+    /* font-family: 'Times New Roman', serif; /* Example */
+}
+.resume-preview.template-professional h2.preview-section-title {
+    /* Example: Different border or text transform */
+    /* text-transform: none; */
+    /* border-bottom-style: dashed; */
+}
+.resume-preview.template-creative {
+    /* font-family: 'Verdana', sans-serif; /* Example */
+}
+.resume-preview.template-creative h2.preview-section-title {
+    /* border-left: 4px solid var(--preview-accent-color, #2563EB); */
+    /* border-bottom: none; */
+    /* padding-left: 0.5em; */
+}
+.resume-preview.template-executive {
+    /* font-size: 12pt; */
+}
+.resume-preview.template-executive h1 {
+    /* font-size: 2em; */
+    /* text-align: left; */
 }
 
-@keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+
+/* Two Column Layout (Basic) */
+.resume-preview.layout-two-column {
+    display: flex;
+    flex-wrap: wrap; /* Allow wrapping if content is too much for a single row */
+}
+.resume-preview.layout-two-column > .preview-main-content { /* Hypothetical class for main sections */
+    flex: 2; /* Takes 2/3 of the space */
+    padding-right: 20px;
+}
+.resume-preview.layout-two-column > .preview-sidebar-content { /* Hypothetical class for sidebar */
+    flex: 1; /* Takes 1/3 of the space */
+    padding-left: 20px;
+    border-left: 1px solid #eee;
+}
+/* Specific sections to move to sidebar in two-column layout */
+.resume-preview.layout-two-column #previewSkillsSection,
+.resume-preview.layout-two-column #previewContactInfoContainer { /* Assume contact info might move to sidebar */
+    /* These would need to be wrapped in .preview-sidebar-content or handled by JS moving them */
 }
 
-.fade-in {
-    animation: fadeIn 0.5s ease-in;
+
+/* Styles for skills tags in preview, using CSS variables for color */
+.resume-preview .preview-skill-tag {
+    background-color: color-mix(in srgb, var(--preview-accent-color, #2563EB) 15%, #f0f0f0);
+    color: color-mix(in srgb, var(--preview-accent-color, #2563EB) 120%, black);
+    padding: 0.2em 0.6em;
+    margin: 0.2em;
+    border-radius: 4px;
+    font-size: 0.9em;
+    display: inline-block;
 }
 
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
+
+/* Print Styles */
+@media print {
+    body {
+        background-color: white !important; /* Ensure white background for print */
+        -webkit-print-color-adjust: exact !important; /* Chrome, Safari */
+        color-adjust: exact !important; /* Firefox, Edge */
+    }
+    .no-print { display: none !important; }
+    .resume-preview {
+        width: 100% !important;
+        min-height: auto !important;
+        margin: 0 !important;
+        padding: 0 !important; /* Or minimal padding like 0.5in */
+        box-shadow: none !important;
+        border: none !important;
+        font-size: 10pt !important; /* Adjust for print */
+        transform: scale(1) !important; /* Reset any zoom */
+    }
+    .preview-container { /* If this is the parent of resume-preview */
+        border: none !important;
+        max-height: none !important;
+        overflow: visible !important;
+    }
+    /* Ensure accent colors print */
+    .resume-preview h2.preview-section-title,
+    .resume-preview a,
+    .resume-preview .preview-skill-tag {
+        color: var(--preview-accent-color, #000) !important; /* Fallback to black if var not supported well */
+    }
+    .resume-preview h2.preview-section-title {
+        border-color: var(--preview-accent-color, #000) !important;
+    }
+     .resume-preview .preview-skill-tag {
+        background-color: color-mix(in srgb, var(--preview-accent-color, #ccc) 15%, #fff) !important; /* Lighter for print */
+        border: 1px solid color-mix(in srgb, var(--preview-accent-color, #999) 50%, #fff) !important; /* Ensure visibility */
+    }
 }
 
-.tooltip {
-    position: relative;
-}
 
-/* Tooltip pseudo-element styling, might conflict with JS-based tooltips if both are active */
-/* The JS in the provided HTML seems to create its own tooltip elements. This CSS one might be a fallback or for different tooltips. */
-.tooltip:hover::after {
-    content: attr(data-tooltip);
-    position: absolute;
-    bottom: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    background: #1f2937; /* Tailwind gray-800 */
-    color: white;
-    padding: 8px 12px;
-    border-radius: 6px;
-    font-size: 12px;
-    white-space: nowrap;
-    z-index: 1000;
-}
-
-.industry-badge {
+/* Original styles from the provided HTML for UI elements (not preview) */
+/* These are mostly fine, but some might need to be scoped if they conflict with app_base.html */
+.gradient-bg {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 500;
 }
+.card-shadow { box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); }
+.progress-step { transition: all 0.3s ease; }
+.progress-step.active { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+.template-card { transition: all 0.3s ease; cursor: pointer; }
+.template-card:hover { transform: translateY(-5px); box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15); }
+.template-card.selected { border: 2px solid #667eea; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+.suggestion-card { transition: all 0.3s ease; border-left: 4px solid #e5e7eb; }
+.suggestion-card.applied { border-left-color: #10b981; background-color: #f0fdf4; }
+.suggestion-card.pending { border-left-color: #f59e0b; background-color: #fffbeb; }
+.ats-score { background: conic-gradient(from 0deg, #10b981 0deg, #10b981 var(--score-deg), #e5e7eb var(--score-deg), #e5e7eb 360deg); border-radius: 50%; position: relative; }
+.ats-score::after { content: ''; position: absolute; top: 10px; left: 10px; right: 10px; bottom: 10px; background: white; border-radius: 50%; }
+.skills-tag { transition: all 0.3s ease; } /* This is for editor skill tags */
+.skills-tag:hover { transform: scale(1.05); }
+.preview-container { max-height: 800px; overflow-y: auto; background: white; border: 1px solid #e5e7eb; border-radius: 8px; }
+/* .resume-preview is defined above with more specific styles */
+.loading-spinner { animation: spin 1s linear infinite; }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.fade-in { animation: fadeIn 0.5s ease-in; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.tooltip { position: relative; }
+/* JS now handles tooltip creation, so this ::after might not be needed or could be a fallback */
+/* .tooltip:hover::after { ... } */
+.industry-badge { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+.metric-card { background: white; border-radius: 12px; padding: 20px; text-align: center; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08); }
+.metric-number { font-size: 28px; font-weight: 700; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.customization-panel { background: #f8fafc; border-radius: 12px; padding: 20px; }
+.color-picker { width: 40px; height: 40px; border-radius: 8px; border: 2px solid #e5e7eb; cursor: pointer; transition: all 0.3s ease; }
+.color-picker:hover { transform: scale(1.1); border-color: #667eea; }
+.font-preview { padding: 10px; border: 1px solid #e5e7eb; border-radius: 6px; cursor: pointer; transition: all 0.3s ease; }
+.font-preview:hover { border-color: #667eea; background: #f8fafc; }
+.font-preview.selected { border-color: #667eea; background: #eff6ff; }
 
-.metric-card {
-    background: white;
-    border-radius: 12px;
-    padding: 20px;
-    text-align: center;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+/* Styles for dynamic editor sections */
+#experienceList .p-3, #educationList .p-3 {
+    background-color: #fff; /* Ensure items have white background */
 }
-
-.metric-number {
-    font-size: 28px;
-    font-weight: 700;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+#skillsInputsContainer .skills-tag-container .skills-tag { /* For editor skill tags */
+    /* Already styled by .skills-tag, but can add specifics here if needed */
 }
-
-.customization-panel {
-    background: #f8fafc; /* Tailwind gray-50 */
-    border-radius: 12px;
-    padding: 20px;
-}
-
-.color-picker {
-    width: 40px;
-    height: 40px;
-    border-radius: 8px;
-    border: 2px solid #e5e7eb; /* Tailwind gray-200 */
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.color-picker:hover {
-    transform: scale(1.1);
-    border-color: #667eea;
-}
-
-.font-preview {
-    padding: 10px;
-    border: 1px solid #e5e7eb; /* Tailwind gray-200 */
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.font-preview:hover {
-    border-color: #667eea;
-    background: #f8fafc; /* Tailwind gray-50 */
-}
-
-.font-preview.selected {
-    border-color: #667eea;
-    background: #eff6ff; /* Tailwind blue-50 */
-}
-
-/* Ensure the main content area of formatter.html uses the light theme classes if app_base is dark */
-/* This is handled by the <div class="bg-gray-50 min-h-screen"> in formatter.html */
-/* However, text colors might need adjustment if app_base sets a default dark mode text color that cascades. */
-/* For example, if app_base.html body color is light, and formatter.html needs dark text on its light gray bg: */
-#formatter-main-content .text-gray-900 { color: #1f2937; } /* Tailwind gray-800 */
-#formatter-main-content .text-gray-700 { color: #374151; } /* Tailwind gray-700 */
-#formatter-main-content .text-gray-600 { color: #4b5563; } /* Tailwind gray-600 */
-#formatter-main-content .text-gray-500 { color: #6b7280; } /* Tailwind gray-500 */
-/* Add an ID to the main content wrapper in formatter.html to scope these if needed */
-
-/* The Inter font is already loaded by app_base.html.
-   The specific import for Inter in this file is removed to avoid duplication.
-   If a different version or weight configuration of Inter is needed,
-   it might be better to consolidate in app_base.html or ensure this file's import takes precedence.
-*/
-/* Removed: @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap'); */
-/* Removed: * { font-family: 'Inter', sans-serif; } as app_base sets body font */Tool output for `create_file_with_block`:
