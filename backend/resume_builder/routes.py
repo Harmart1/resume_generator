@@ -73,28 +73,38 @@ def create():
 @login_required
 def create_new_formatter():
     """Renders the new AI resume formatter for creating a new resume."""
-    # Check credits before even rendering the form
     user_credit = Credit.query.filter_by(user_id=current_user.id, credit_type='legacy').first()
     if not user_credit or user_credit.amount <= 0:
         flash('You do not have enough credits to create a new resume. Please purchase more credits.', 'warning')
         return redirect(url_for('resume_builder.index'))
 
-    default_resume_data = {
-        "title": "Untitled Resume",
-        "content": { # Basic structure for the new formatter
-            "personal": {"full_name": "", "email": "", "phone": "", "location": "", "linkedin": "", "portfolio": ""},
-            "summary": "",
-            "experiences": [],
-            "education": [],
-            "skills": {"technical_skills": "", "soft_skills": "", "certifications": ""},
-            "additional": {"projects": "", "languages": "", "volunteer": ""}
+    # Updated default structure to align with refined JS model
+    default_content = {
+        "personal": {
+            "full_name": "", "job_title": "", "email": "", "phone": "",
+            "location": "", "linkedin": "", "portfolio": ""
+        },
+        "summary": "",
+        "experiences": [], # Expects array of objects
+        "education": [],   # Expects array of objects
+        "skills": {
+            "technical_skills": [], # Array of strings
+            "soft_skills": [],    # Array of strings
+            "certifications": []  # Array of strings (or objects like {name, date} later)
+        },
+        "additional": {
+            "projects": "", "languages": "", "volunteer": ""
+        },
+        "template_settings": { # Default template settings from JS model
+            "name": "professional", "color_scheme": "blue", "font_family": "Inter",
+            "contact_icons": True, "two_column": False
         }
+        # "raw_text": "" # No raw_text for a brand new resume
     }
-    # Content needs to be a JSON string when passed to template if template expects string
-    # Or template JS handles it if passed as dict. For consistency with loading, pass as string.
+
     return render_template('resume_builder/formatter.html',
-                           resume_title=default_resume_data["title"],
-                           resume_content_json=json.dumps(default_resume_data["content"]),
+                           resume_title="Untitled Resume",
+                           resume_content_json=json.dumps(default_content),
                            resume_id=None)
 
 @bp.route('/formatter/edit/<int:resume_id>', methods=['GET'])
