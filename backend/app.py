@@ -23,8 +23,18 @@ load_dotenv()
 logger.info("Environment variables loaded.")
 
 # --- App Initialization and Configuration ---
-app = Flask(__name__, instance_relative_config=True) # Added instance_relative_config
-logger.info("Flask app initialized.")
+# This assumes app.py is in backend/ and we want to go one level up to src/ (project_root)
+# and then to frontend/static
+PROJECT_ROOT_FOR_STATIC_CONFIG = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+FLASK_STATIC_FOLDER_PATH = os.path.join(PROJECT_ROOT_FOR_STATIC_CONFIG, 'frontend', 'static')
+
+app = Flask(
+    __name__,
+    instance_relative_config=True,
+    static_folder=FLASK_STATIC_FOLDER_PATH,
+    static_url_path='/static'
+)
+logger.info(f"Flask app initialized. Static folder: {FLASK_STATIC_FOLDER_PATH}, Static URL path: /static")
 
 # Secret Key (ensure this is strong and unique in production)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-default-secret-key-change-me')
@@ -173,8 +183,8 @@ from flask_login import current_user # Import current_user for g.user
 # Define project root for static file serving if not already defined globally
 # This assumes app.py is in backend/ and we want to go one level up to src/ (project_root)
 # and then to frontend/static
-PROJECT_ROOT_FOR_STATIC = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-GLOBAL_STATIC_FOLDER = os.path.join(PROJECT_ROOT_FOR_STATIC, 'frontend', 'static')
+# PROJECT_ROOT_FOR_STATIC = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+# GLOBAL_STATIC_FOLDER = os.path.join(PROJECT_ROOT_FOR_STATIC, 'frontend', 'static')
 
 @app.before_request
 def setup_jinja_globals():
@@ -189,11 +199,12 @@ def setup_jinja_globals():
 
 
 # --- Static file serving (If not handled by webserver in production) ---
-@app.route('/static/<path:filename>') # Changed path to filename for clarity
-def project_static_files(filename): # Renamed function
-    # Use the globally defined absolute path for the static folder
-    logger.debug(f"Attempting to serve static file: {filename} from {GLOBAL_STATIC_FOLDER}")
-    return send_from_directory(GLOBAL_STATIC_FOLDER, filename)
+# Custom static file serving route removed as Flask's built-in static handling
+# is now configured via static_folder and static_url_path in app initialization.
+# @app.route('/static/<path:filename>')
+# def project_static_files(filename):
+#     logger.debug(f"Attempting to serve static file: {filename} from {GLOBAL_STATIC_FOLDER}")
+#     return send_from_directory(GLOBAL_STATIC_FOLDER, filename)
 
 
 # --- Main Execution (for development) ---
