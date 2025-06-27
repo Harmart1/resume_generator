@@ -13,10 +13,10 @@ logger = logging.getLogger(__name__) # Added for logging
 # Define paths relative to this file's location (backend/routes.py)
 # os.path.dirname(__file__) is backend/
 # os.path.abspath(os.path.join(os.path.dirname(__file__), '..')) is project_root/ (e.g., src/)
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-MAIN_TEMPLATE_FOLDER = os.path.join(PROJECT_ROOT, 'frontend', 'templates')
+# PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..')) # No longer needed for template folder here
+# MAIN_TEMPLATE_FOLDER = os.path.join(PROJECT_ROOT, 'frontend', 'templates') # No longer needed here
 
-main_bp = Blueprint('main', __name__, template_folder=MAIN_TEMPLATE_FOLDER)
+main_bp = Blueprint('main', __name__) # Removed template_folder argument
 
 @main_bp.route('/')
 def home():

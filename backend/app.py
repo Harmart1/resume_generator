@@ -24,17 +24,19 @@ logger.info("Environment variables loaded.")
 
 # --- App Initialization and Configuration ---
 # This assumes app.py is in backend/ and we want to go one level up to src/ (project_root)
-# and then to frontend/static
-PROJECT_ROOT_FOR_STATIC_CONFIG = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-FLASK_STATIC_FOLDER_PATH = os.path.join(PROJECT_ROOT_FOR_STATIC_CONFIG, 'frontend', 'static')
+# and then to frontend/static and frontend/templates
+PROJECT_ROOT_FOR_APP_CONFIG = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+FLASK_STATIC_FOLDER_PATH = os.path.join(PROJECT_ROOT_FOR_APP_CONFIG, 'frontend', 'static')
+FLASK_APP_TEMPLATE_FOLDER_PATH = os.path.join(PROJECT_ROOT_FOR_APP_CONFIG, 'frontend', 'templates')
 
 app = Flask(
     __name__,
     instance_relative_config=True,
     static_folder=FLASK_STATIC_FOLDER_PATH,
-    static_url_path='/static'
+    static_url_path='/static',
+    template_folder=FLASK_APP_TEMPLATE_FOLDER_PATH
 )
-logger.info(f"Flask app initialized. Static folder: {FLASK_STATIC_FOLDER_PATH}, Static URL path: /static")
+logger.info(f"Flask app initialized. Static folder: {FLASK_STATIC_FOLDER_PATH}, Static URL path: /static, Template folder: {FLASK_APP_TEMPLATE_FOLDER_PATH}")
 
 # Secret Key (ensure this is strong and unique in production)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-default-secret-key-change-me')
