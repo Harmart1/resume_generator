@@ -140,13 +140,13 @@ logger.info("Flask-Session initialized with type 'filesystem'.")
 try:
     from backend.resume_builder import bp as resume_builder_bp
     from backend.cover_letter_app import cover_letter_bp # Corrected import
-    from backend.mock_interview_app import bp as mock_interview_bp
+    from backend.mock_interview_app import mock_interview_bp # Corrected import
     # Import main_bp for core routes like /, /contact etc.
     from backend.routes import main_bp # Renamed to avoid clash if user had main_bp
 
     app.register_blueprint(resume_builder_bp, url_prefix='/resume-builder')
     app.register_blueprint(cover_letter_bp, url_prefix='/cover-letter') # Use the correctly imported name
-    app.register_blueprint(mock_interview_bp, url_prefix='/mock-interview')
+    app.register_blueprint(mock_interview_bp, url_prefix='/mock-interview') # Use the correctly imported name
     app.register_blueprint(main_bp) # Register core routes
     logger.info("Blueprints (resume_builder, cover_letter, mock_interview, main_bp) registered.")
 except ImportError as e:
