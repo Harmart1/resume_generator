@@ -58,7 +58,7 @@
         <div class="container flex flex-col md:flex-row justify-between items-center">
             <div class="flex items-center mb-4 md:mb-0">
                 <a href="{{ url_for('main.home') }}"> <!-- Link logo to welcome page -->
-                    <img src="/static/logo.png" alt="Revisume.ai Logo" class="h-10 sm:h-12 mr-3" onerror="this.onerror=null;this.src='https://placehold.co/48x48/1A1A2E/00D8FF?text=AI';">
+                    <img src="{{ url_for('static', filename='logo.png') }}" alt="Revisume.ai Logo" class="h-10 sm:h-12 mr-3" onerror="this.onerror=null;this.src='https://placehold.co/48x48/1A1A2E/00D8FF?text=AI';">
                 </a>
             </div>
             <nav class="mb-4 md:mb-0">
