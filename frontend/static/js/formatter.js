@@ -54,6 +54,141 @@ function updateResumeTextDebugView() {
     }
 }
 
+// --- Plain Text Parsing (Basic) ---
+function parsePlainTextToStructuredData(text) {
+    const parsed = JSON.parse(JSON.stringify(defaultResumeStructure)); // Start with a clean default structure
+    const lines = text.split('\n').map(line => line.trim()).filter(line => line);
+
+    // Very basic name/contact extraction (assumes they are early in the doc)
+    if (lines.length > 0) {
+        // Attempt to find a plausible name (two capitalized words, or first line if simple)
+        const nameMatch = lines[0].match(/^([A-Z][a-z]+(?: [A-Z][a-z'-]+)+)$/);
+        parsed.personal.full_name = nameMatch ? nameMatch[0] : lines[0].substring(0,50); // Limit length if not a clear name
+    }
+
+    // Try to find email and phone in the first few lines
+    const contactInfoLines = lines.slice(0, 5).join('\n');
+    const emailMatch = contactInfoLines.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+    if (emailMatch) parsed.personal.email = emailMatch[0];
+    const phoneMatch = contactInfoLines.match(/\(?\d{3}\)?[\s-]?\d{3}[\s-]?\d{4}/);
+    if (phoneMatch) parsed.personal.phone = phoneMatch[0];
+
+
+    let currentSectionKey = null; // e.g., 'summary', 'experience'
+    let sectionContentBuffer = [];
+
+    // Define more robust section headers, allowing for variations
+    const sectionHeadersRegex = {
+        summary: /^(summary|objective|profile|about me)$/i,
+        experience: /^(experience|work experience|employment history|professional experience)$/i,
+        education: /^(education|academic background|qualifications)$/i,
+        skills: /^(skills|technical skills|core competencies|proficiencies)$/i,
+        projects: /^(projects|personal projects)$/i,
+        // Add other common headers as needed
+    };
+
+    lines.forEach(line => {
+        let matchedNewSection = false;
+        for (const key in sectionHeadersRegex) {
+            if (sectionHeadersRegex[key].test(line)) {
+                if (currentSectionKey) { // Process previous section content before switching
+                    processSectionContent(parsed, currentSectionKey, sectionContentBuffer.join('\n'));
+                }
+                currentSectionKey = key;
+                sectionContentBuffer = [];
+                matchedNewSection = true;
+                // console.log(`Switched to section: ${currentSectionKey}`);
+                break;
+            }
+        }
+
+        if (!matchedNewSection) {
+            if (currentSectionKey) { // Content for an active section
+                sectionContentBuffer.push(line);
+            } else {
+                // Content before any recognized section, could be part of personal details or start of summary
+                // Avoid adding the already extracted name/email/phone again to summary
+                if (line !== parsed.personal.full_name &&
+                    (!parsed.personal.email || !line.includes(parsed.personal.email)) &&
+                    (!parsed.personal.phone || !line.includes(parsed.personal.phone))) {
+                     // If no summary yet, this pre-section content might be the summary
+                     if (!parsed.summary && line.length > 20) { // Heuristic: longer lines are likely paragraphs
+                        parsed.summary += (parsed.summary ? '\n' : '') + line;
+                     }
+                }
+            }
+        }
+    });
+    if (currentSectionKey) { // Process the last accumulated section
+        processSectionContent(parsed, currentSectionKey, sectionContentBuffer.join('\n'));
+    }
+
+    // If summary is still empty after section processing, try to grab first few meaningful lines
+    if (!parsed.summary && lines.length > 2) {
+        let potentialSummary = lines.slice(1, 4).join(' ').trim(); // take lines 1-3 (0 is name)
+         // remove already captured contact info from potential summary
+        if(parsed.personal.email) potentialSummary = potentialSummary.replace(parsed.personal.email, '');
+        if(parsed.personal.phone) potentialSummary = potentialSummary.replace(parsed.personal.phone, '');
+        if(potentialSummary.length > 50) parsed.summary = potentialSummary.substring(0, 500) + (potentialSummary.length > 500 ? "..." : "");
+    }
+
+
+    return parsed;
+}
+
+function processSectionContent(parsedData, sectionName, content) {
+    if (!sectionName || !content) return;
+    content = content.trim();
+    // console.log(`Processing section ${sectionName}:`, content.substring(0,100));
+
+    switch (sectionName) {
+        case 'summary':
+            // Append if summary already has pre-section content
+            parsedData.summary = (parsedData.summary ? parsedData.summary + '\n' : '') + content;
+            break;
+        case 'skills':
+            const skillsArray = content.split(/[\n,;•*-]+/) // Split by common delimiters
+                                   .map(s => s.trim())
+                                   .filter(s => s && s.length > 1 && s.length < 50); // Basic filtering
+            // Distribute skills somewhat arbitrarily if not further parsable
+            parsedData.skills.technical_skills = [...new Set(skillsArray.slice(0, Math.ceil(skillsArray.length / 2)))];
+            parsedData.skills.soft_skills = [...new Set(skillsArray.slice(Math.ceil(skillsArray.length / 2)))];
+            break;
+        case 'experience':
+            // Rudimentary split by looking for what might be job titles/company names (often capitalized or followed by dates)
+            // This is very naive and will need significant improvement for real-world resumes.
+            // For now, let's just make one entry with all content as achievements.
+            if (content) {
+                 parsedData.experiences.push({
+                    id: generateUUID(),
+                    job_title: "Job Title (auto-parsed)",
+                    company: "Company (auto-parsed)",
+                    achievements: content.split('\n')
+                                      .map(s => s.replace(/^[\s\-\*•–]\s*/, '').trim()) // Remove leading bullets/dashes
+                                      .filter(s => s && s.length > 5) // Filter very short lines
+                });
+            }
+            break;
+        case 'education':
+            if (content) {
+                // Similar to experience, create one entry for now.
+                const eduLines = content.split('\n').map(s => s.trim()).filter(s => s);
+                parsedData.education.push({
+                    id: generateUUID(),
+                    degree: "Degree (auto-parsed)",
+                    institution: eduLines[0] || "Institution (auto-parsed)",
+                    graduation_year: content.match(/\b(20\d{2}|19\d{2})\b/)?.[0] || "",
+                    field_of_study: ""
+                });
+            }
+            break;
+        case 'projects':
+             parsedData.additional.projects = content;
+             break;
+        // Add more cases for other sections if defined in sectionHeadersRegex
+    }
+}
+
 // --- Initialization ---
 document.addEventListener('DOMContentLoaded', function() {
     globalResumeId = currentResumeId;
@@ -114,34 +249,241 @@ document.addEventListener('DOMContentLoaded', function() {
     // updateLivePreview(); // Will be enhanced later
 });
 
-// --- Export Functionality ---
-function setupExportButtons() {
-    const downloadPdfBtn = document.getElementById('downloadPdfBtn');
-    if (downloadPdfBtn) {
-        downloadPdfBtn.addEventListener('click', () => {
-            // Ensure the preview is fully up-to-date with any recent data changes
-            // updateLivePreview(); // Called by data change handlers already
+// --- Export Functionality / PDF Generation with jsPDF ---
 
-            const originalTitle = document.title;
-            const resumeTitleInput = document.getElementById('resumeTitleInput');
-            let resumeTitle = "resume"; // Default filename
-            if (resumeTitleInput && resumeTitleInput.value) {
-                resumeTitle = resumeTitleInput.value.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+const PDF_CONFIG = {
+    font: 'helvetica', // Default font, will be overridden by template settings
+    nameFontSize: 20,
+    jobTitleFontSize: 14,
+    sectionTitleFontSize: 14,
+    textFontSize: 10, // Standard text size
+    smallTextFontSize: 9, // For dates, locations etc.
+    margin: 15, // Page margin in mm
+    lineHeightFactor: 1.4, // Multiplier for font size to get line height
+    pageWidth: 210,    // A4 width in mm
+    pageHeight: 297,   // A4 height in mm
+    bullet: '•', // Bullet character
+    colorMap: { // Mirrored from updateLivePreview for consistency
+        blue: '#2563EB', purple: '#7C3AED', green: '#10B981',
+        red: '#EF4444', yellow: '#F59E0B', gray: '#4B5563',
+        default: '#000000' // Black as default text color
+    }
+};
+
+// Helper to get line height based on font size
+function getLineHeight(fontSize) {
+    return fontSize * PDF_CONFIG.lineHeightFactor / 2.83465; // convert pt to mm (approx) then apply factor
+}
+
+
+// Adapted addSection function
+function addSectionToPdf(doc, title, contentArray, currentY, isBulletedList = false, customFontSize = PDF_CONFIG.textFontSize) {
+    const contentMargin = PDF_CONFIG.margin;
+    const usableWidth = PDF_CONFIG.pageWidth - 2 * contentMargin;
+    let y = currentY;
+
+    if (title) {
+        doc.setFontSize(PDF_CONFIG.sectionTitleFontSize);
+        doc.setFont(currentResumeData.template_settings.font_family || PDF_CONFIG.font, 'bold');
+        const accentColorHex = PDF_CONFIG.colorMap[currentResumeData.template_settings.color_scheme] || PDF_CONFIG.colorMap.blue;
+        const rgb = hexToRgb(accentColorHex);
+        doc.setTextColor(rgb.r, rgb.g, rgb.b);
+
+        if (y + getLineHeight(PDF_CONFIG.sectionTitleFontSize) > PDF_CONFIG.pageHeight - PDF_CONFIG.margin) {
+            doc.addPage();
+            y = PDF_CONFIG.margin;
+        }
+        doc.text(title.toUpperCase(), contentMargin, y);
+        y += getLineHeight(PDF_CONFIG.sectionTitleFontSize) * 0.7; // Space after title
+        doc.setLineWidth(0.5);
+        doc.setDrawColor(rgb.r, rgb.g, rgb.b); // Use accent for line
+        doc.line(contentMargin, y, contentMargin + usableWidth / 3, y); // Shorter line under title
+        y += getLineHeight(PDF_CONFIG.sectionTitleFontSize) * 0.7;
+        doc.setTextColor(0,0,0); // Reset to black for content
+    }
+
+    doc.setFontSize(customFontSize);
+    doc.setFont(currentResumeData.template_settings.font_family || PDF_CONFIG.font, 'normal');
+
+    contentArray.forEach(itemText => {
+        if (itemText && itemText.trim()) {
+            const textLines = doc.splitTextToSize(itemText.trim(), usableWidth - (isBulletedList ? 5 : 0));
+            textLines.forEach((line, index) => {
+                if (y + getLineHeight(customFontSize) > PDF_CONFIG.pageHeight - PDF_CONFIG.margin) {
+                    doc.addPage();
+                    y = PDF_CONFIG.margin;
+                    // If section title was just printed and content starts on new page, reprint title? For now, no.
+                }
+                let xPos = contentMargin;
+                let lineToPrint = line;
+                if (isBulletedList && index === 0) { // Add bullet only to the first line of a bulleted item
+                    lineToPrint = `${PDF_CONFIG.bullet} ${line}`;
+                }
+                // Indent subsequent lines of a bullet point if we want hanging indent
+                // if (isBulletedList && index > 0) xPos += 5;
+                doc.text(lineToPrint, xPos, y);
+                y += getLineHeight(customFontSize);
+            });
+             if (!isBulletedList) y += getLineHeight(customFontSize) * 0.3; // Extra space between non-bulleted paragraphs
+        }
+    });
+    return y + getLineHeight(customFontSize) * 0.3; // Extra space after section/list
+}
+
+function hexToRgb(hex) {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return { r, g, b };
+}
+
+
+async function generatePdfWithJsPDF() {
+    if (typeof jspdf === 'undefined') {
+        showToast('Error: jsPDF library not loaded.', 'error');
+        console.error('jsPDF library not loaded.');
+        return;
+    }
+    const { jsPDF } = jspdf;
+    const doc = new jsPDF({
+        orientation: 'p',
+        unit: 'mm',
+        format: 'a4'
+    });
+
+    let currentY = PDF_CONFIG.margin;
+    const contentMargin = PDF_CONFIG.margin;
+    const usableWidth = PDF_CONFIG.pageWidth - 2 * contentMargin;
+    const currentSettings = currentResumeData.template_settings;
+    const currentData = currentResumeData;
+    const mainFont = currentSettings.font_family || PDF_CONFIG.font;
+    const accentColorHex = PDF_CONFIG.colorMap[currentSettings.color_scheme] || PDF_CONFIG.colorMap.blue;
+    const accentRgb = hexToRgb(accentColorHex);
+
+    // --- Header: Personal Info ---
+    doc.setFont(mainFont, 'bold');
+    doc.setFontSize(PDF_CONFIG.nameFontSize);
+    doc.setTextColor(accentRgb.r, accentRgb.g, accentRgb.b);
+    doc.text(currentData.personal.full_name || "Your Name", contentMargin, currentY);
+    currentY += getLineHeight(PDF_CONFIG.nameFontSize) * 0.8;
+
+    if (currentData.personal.job_title) {
+        doc.setFont(mainFont, 'normal');
+        doc.setFontSize(PDF_CONFIG.jobTitleFontSize);
+        doc.setTextColor(80, 80, 80); // Dark Gray
+        doc.text(currentData.personal.job_title, contentMargin, currentY);
+        currentY += getLineHeight(PDF_CONFIG.jobTitleFontSize);
+    }
+
+    doc.setFontSize(PDF_CONFIG.smallTextFontSize);
+    doc.setTextColor(50, 50, 50); // Near black
+    let contactLine = [];
+    if (currentData.personal.email) contactLine.push(currentData.personal.email);
+    if (currentData.personal.phone) contactLine.push(currentData.personal.phone);
+    if (currentData.personal.location) contactLine.push(currentData.personal.location);
+    doc.text(contactLine.join(' | '), contentMargin, currentY);
+    currentY += getLineHeight(PDF_CONFIG.smallTextFontSize);
+    if (currentData.personal.linkedin) {
+         doc.textWithLink('LinkedIn', contentMargin, currentY, { url: currentData.personal.linkedin });
+         // crude way to measure text width for next link
+         let linkedinWidth = doc.getStringUnitWidth('LinkedIn') * PDF_CONFIG.smallTextFontSize / doc.internal.scaleFactor;
+         if(currentData.personal.portfolio) doc.textWithLink('Portfolio', contentMargin + linkedinWidth + 5 , currentY, { url: currentData.personal.portfolio });
+         currentY += getLineHeight(PDF_CONFIG.smallTextFontSize);
+    } else if(currentData.personal.portfolio){
+         doc.textWithLink('Portfolio', contentMargin, currentY, { url: currentData.personal.portfolio });
+         currentY += getLineHeight(PDF_CONFIG.smallTextFontSize);
+    }
+    currentY += 2; // Extra space before line
+    doc.setDrawColor(accentRgb.r, accentRgb.g, accentRgb.b);
+    doc.line(contentMargin, currentY, PDF_CONFIG.pageWidth - contentMargin, currentY);
+    currentY += getLineHeight(PDF_CONFIG.sectionTitleFontSize);
+
+
+    // --- Summary ---
+    if (currentData.summary) {
+        currentY = addSectionToPdf(doc, "Summary", [currentData.summary], currentY);
+    }
+
+    // --- Experience ---
+    if (currentData.experiences && currentData.experiences.length > 0) {
+        doc.setFontSize(PDF_CONFIG.sectionTitleFontSize); // Set font for section title before calling addSectionToPdf
+        doc.setFont(mainFont, 'bold');
+        if (currentY + getLineHeight(PDF_CONFIG.sectionTitleFontSize) > PDF_CONFIG.pageHeight - PDF_CONFIG.margin) { doc.addPage(); currentY = PDF_CONFIG.margin; }
+        doc.setTextColor(accentRgb.r, accentRgb.g, accentRgb.b);
+        doc.text("EXPERIENCE", contentMargin, currentY);
+        currentY += getLineHeight(PDF_CONFIG.sectionTitleFontSize) * 0.7;
+        doc.setLineWidth(0.5); doc.setDrawColor(accentRgb.r, accentRgb.g, accentRgb.b);
+        doc.line(contentMargin, currentY, contentMargin + usableWidth / 3, currentY);
+        currentY += getLineHeight(PDF_CONFIG.sectionTitleFontSize) * 0.7;
+        doc.setTextColor(0,0,0);
+
+        currentData.experiences.forEach(exp => {
+            if (currentY + 3 * getLineHeight(PDF_CONFIG.textFontSize) > PDF_CONFIG.pageHeight - PDF_CONFIG.margin) { doc.addPage(); currentY = PDF_CONFIG.margin; } // Check space for header
+
+            doc.setFont(mainFont, 'bold');
+            doc.setFontSize(PDF_CONFIG.textFontSize);
+            doc.text(exp.job_title || "Job Title", contentMargin, currentY);
+
+            doc.setFont(mainFont, 'normal');
+            const companyText = `${exp.company || "Company"}${exp.location ? ` | ${exp.location}` : ''}`;
+            doc.text(companyText, contentMargin, currentY + getLineHeight(PDF_CONFIG.textFontSize) * 0.9);
+
+            const dateText = `${exp.start_date || "Start Date"} - ${exp.end_date || "End Date"}`;
+            const dateWidth = doc.getStringUnitWidth(dateText) * PDF_CONFIG.smallTextFontSize / doc.internal.scaleFactor;
+            doc.setFontSize(PDF_CONFIG.smallTextFontSize);
+            doc.text(dateText, PDF_CONFIG.pageWidth - contentMargin - dateWidth, currentY);
+            currentY += getLineHeight(PDF_CONFIG.textFontSize) * 1.8; // Space for title and company line
+
+            if (exp.achievements && exp.achievements.length > 0) {
+                currentY = addSectionToPdf(doc, null, exp.achievements, currentY, true, PDF_CONFIG.textFontSize);
             }
-            document.title = resumeTitle; // Set for print-to-PDF filename suggestion
-
-            window.print(); // Uses @media print styles
-
-            // Restore original title after a short delay (print dialog might be async)
-            setTimeout(() => {
-                document.title = originalTitle;
-            }, 1000);
+            currentY += getLineHeight(PDF_CONFIG.textFontSize) * 0.5; // Space between experiences
         });
     }
 
-    // Placeholder for Word export if added later
-    // const downloadWordBtn = document.getElementById('downloadWordBtn');
-    // if (downloadWordBtn) { /* ... */ }
+    // --- Education ---
+     if (currentData.education && currentData.education.length > 0) {
+        currentY = addSectionToPdf(doc, "Education",
+            currentData.education.map(edu => `${edu.degree || ""} - ${edu.institution || ""} (${edu.graduation_year || ""})${edu.field_of_study ? ", "+edu.field_of_study : ""}${edu.gpa ? ", GPA: "+edu.gpa : ""}`),
+            currentY, false, PDF_CONFIG.textFontSize);
+    }
+
+    // --- Skills ---
+    if (currentData.skills) {
+        let skillsText = [];
+        if (currentData.skills.technical_skills && currentData.skills.technical_skills.length > 0) {
+            skillsText.push("Technical: " + currentData.skills.technical_skills.join(', '));
+        }
+        if (currentData.skills.soft_skills && currentData.skills.soft_skills.length > 0) {
+            skillsText.push("Soft: " + currentData.skills.soft_skills.join(', '));
+        }
+        if (currentData.skills.certifications && currentData.skills.certifications.length > 0) {
+            skillsText.push("Certifications: " + currentData.skills.certifications.join(', '));
+        }
+        if (skillsText.length > 0) {
+            currentY = addSectionToPdf(doc, "Skills", skillsText, currentY, false, PDF_CONFIG.textFontSize);
+        }
+    }
+
+    // --- Additional Info ---
+    // (Similar structure for projects, languages, volunteer if they have content)
+
+
+    const resumeTitleInput = document.getElementById('resumeTitleInput');
+    let resumeTitle = "resume";
+    if (resumeTitleInput && resumeTitleInput.value) {
+        resumeTitle = resumeTitleInput.value.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+    }
+    doc.save(`${resumeTitle}.pdf`);
+}
+
+
+function setupExportButtons() {
+    const downloadPdfBtn = document.getElementById('downloadPdfBtn');
+    if (downloadPdfBtn) {
+        downloadPdfBtn.addEventListener('click', generatePdfWithJsPDF);
+    }
+    // const downloadWordBtn = document.getElementById('downloadWordBtn'); // For later
 }
 
 
@@ -403,42 +745,152 @@ function addDynamicFieldListeners(containerElement) {
 }
 
 
-// --- File Upload & Processing --- (Simplified, as full parsing is complex)
-function handleFileUpload(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    const fileName = file.name;
-    const fileSize = (file.size / 1024 / 1024).toFixed(2);
-    const fileInfoContainer = e.target.closest('div');
-    let fileInfoDiv = fileInfoContainer.querySelector('.file-upload-info');
-    if (fileInfoDiv) fileInfoDiv.remove();
-    fileInfoDiv = document.createElement('div');
-    fileInfoDiv.className = 'file-upload-info mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm';
-    fileInfoDiv.innerHTML = `<div class="flex items-center justify-between">...${fileName}...</div>`; // Simplified
-    fileInfoContainer.appendChild(fileInfoDiv);
+// --- File Upload & Processing ---
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-        const fileContent = event.target.result;
-        document.getElementById('resumeText').value = fileContent; // Put raw content in debug view
-        try {
-            const parsedFromFile = JSON.parse(fileContent);
-            deepMerge(currentResumeData, parsedFromFile);
-            populateStaticFormFields(); // Re-populate static fields
-            renderAllDynamicSections(); // Re-render dynamic sections
-            updateResumeTextDebugView();
-        } catch (err) {
-            console.warn("Uploaded file content is not valid JSON. Displaying in Raw JSON view.");
-            currentResumeData = JSON.parse(JSON.stringify(defaultResumeStructure)); // Reset to default
-            currentResumeData.raw_text = fileContent; // Store raw text
-            populateStaticFormFields();
-            renderAllDynamicSections(); // Render empty sections
-            updateResumeTextDebugView(); // Show raw_text in debug
-        }
-        // updateLivePreview();
-    };
-    reader.readAsText(file);
+// Status display helper
+function showStatus(div, message, type) {
+    if (!div) return;
+    div.textContent = message;
+    // The CSS classes .status.info, .status.success, .status.error now handle all styling including text color.
+    div.className = `status ${type} mt-3 text-sm`;
 }
+
+// File reading functions with progress updates (adapted from provided new JS)
+async function readPDF(file, progressBar) {
+    if (typeof pdfjsLib === 'undefined') {
+        showStatus(document.getElementById('fileUploadStatus'), 'Error: pdf.js library not loaded.', 'error');
+        throw new Error('pdf.js library not loaded.');
+    }
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    let text = '';
+    for (let i = 1; i <= pdf.numPages; i++) {
+        if(progressBar) progressBar.style.width = `${(i / pdf.numPages) * 100}%`;
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        text += content.items.map(item => item.str).join(' ') + '\n';
+    }
+    return text;
+}
+
+async function readDOCX(file, progressBar) {
+    if (typeof mammoth === 'undefined') {
+        showStatus(document.getElementById('fileUploadStatus'), 'Error: mammoth.js library not loaded.', 'error');
+        throw new Error('mammoth.js library not loaded.');
+    }
+    const arrayBuffer = await file.arrayBuffer();
+    if(progressBar) progressBar.style.width = '50%'; // Approximate progress
+    const result = await mammoth.extractRawText({ arrayBuffer });
+    if(progressBar) progressBar.style.width = '100%';
+    return result.value;
+}
+
+async function readTextFile(file, progressBar) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onprogress = (event) => {
+            if (event.lengthComputable && progressBar) {
+                progressBar.style.width = `${(event.loaded / event.total) * 100}%`;
+            }
+        };
+        reader.onload = () => {
+            if(progressBar) progressBar.style.width = '100%';
+            resolve(reader.result);
+        };
+        reader.onerror = () => reject(reader.error);
+        reader.readAsText(file);
+    });
+}
+
+async function handleFileUpload(e) {
+    const file = e.target.files[0];
+    const statusDiv = document.getElementById('fileUploadStatus');
+    const progressContainer = document.getElementById('fileUploadProgressContainer');
+    const progressBar = document.getElementById('fileUploadProgressBar');
+    const resumeTextarea = document.getElementById('resumeText');
+
+    // Clear previous file info shown by older JS version, if any
+    const oldFileInfo = e.target.closest('div').querySelector('.file-upload-info');
+    if(oldFileInfo) oldFileInfo.remove();
+
+    if (!file) {
+        showStatus(statusDiv, '', 'info'); // Clear status if no file selected
+        return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        showStatus(statusDiv, 'File is too large (max 5MB). Please choose a smaller file.', 'error');
+        e.target.value = ''; // Clear the input
+        return;
+    }
+
+    const allowedTypes = [
+        'application/pdf',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // DOCX
+        'text/plain' // TXT
+    ];
+    // Note: RTF might need specific library or backend processing, skipping for now.
+    if (!allowedTypes.includes(file.type)) {
+        showStatus(statusDiv, 'Unsupported file type. Please upload PDF, DOCX, or TXT.', 'error');
+        e.target.value = ''; // Clear the input
+        return;
+    }
+
+    showStatus(statusDiv, 'Processing file...', 'info');
+    if(progressContainer) progressContainer.classList.remove('hidden');
+    if(progressBar) progressBar.style.width = '0%';
+
+    try {
+        let extractedText = '';
+        if (file.type === 'application/pdf') {
+            extractedText = await readPDF(file, progressBar);
+        } else if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+            extractedText = await readDOCX(file, progressBar);
+        } else { // text/plain
+            extractedText = await readTextFile(file, progressBar);
+        }
+
+        if (extractedText) {
+            resumeTextarea.value = extractedText; // Show raw extracted text in debug view first
+            currentResumeData = JSON.parse(JSON.stringify(defaultResumeStructure)); // Reset before attempting to populate
+
+            try {
+                // Attempt to parse the extracted text as if it's our full JSON structure
+                const parsedAsJson = JSON.parse(extractedText);
+                deepMerge(currentResumeData, parsedAsJson);
+                showStatus(statusDiv, `Successfully imported structured JSON from ${file.name}!`, 'success');
+            } catch (jsonError) {
+                // If not full JSON, attempt basic plain text parsing
+                console.warn(`Uploaded ${file.name} content is not full resume JSON. Attempting plain text parse.`, jsonError);
+                const partiallyParsedData = parsePlainTextToStructuredData(extractedText);
+                deepMerge(currentResumeData, partiallyParsedData); // Merge whatever was parsed
+
+                // If parsing didn't yield much, ensure raw_text is still available for debug view
+                if (!currentResumeData.summary && (!currentResumeData.experiences || currentResumeData.experiences.length === 0)) {
+                    currentResumeData.raw_text = extractedText;
+                }
+                showStatus(statusDiv, `Extracted text from ${file.name}. Attempted basic parsing. Review and complete fields.`, 'success');
+            }
+
+            // Refresh UI from currentResumeData
+            populateStaticFormFields();
+            renderAllDynamicSections();
+            updateResumeTextDebugView(); // This will show the full currentResumeData or raw_text
+            updateLivePreview();
+            updateLastUpdatedTimestamp();
+
+        } else {
+            showStatus(statusDiv, `Failed to read content from ${file.name}.`, 'error');
+        }
+    } catch (error) {
+        console.error("File handling error:", error);
+        showStatus(statusDiv, `Error processing file: ${error.message}`, 'error');
+    } finally {
+        if(progressContainer) progressContainer.classList.add('hidden');
+        e.target.value = ''; // Clear the file input to allow re-uploading the same file
+    }
+}
+
 
 function handleProcessInput() { // Demo functionality
     const loadingIndicator = document.getElementById('loadingIndicator');

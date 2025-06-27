@@ -66,15 +66,21 @@
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <!-- File Upload -->
-                        <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-400 transition-colors">
+                        <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-400 transition-colors relative"> {/* Added relative for progress absolute positioning if needed */}
                             <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-4"></i>
                             <h3 class="text-lg font-medium text-gray-900 mb-2">Choose File</h3>
-                            <p class="text-sm text-gray-600 mb-4">Drag and drop your resume or click to browse</p>
-                            <input type="file" id="fileInput" class="hidden" accept=".pdf,.doc,.docx,.txt">
+                            <p class="text-sm text-gray-600 mb-4">Drag and drop or click to browse</p>
+                            <input type="file" id="fileInput" class="hidden" accept=".pdf,.doc,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
                             <button onclick="document.getElementById('fileInput').click()" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
                                 <i class="fas fa-folder-open mr-2"></i>
                                 Browse Files
                             </button>
+                            {/* File Upload Progress and Status -- Added from new JS code context */}
+                            <div id="fileUploadStatus" class="status mt-3 text-sm"></div>
+                            <div id="fileUploadProgressContainer" class="w-full bg-gray-200 rounded-full h-2.5 mt-2 hidden">
+                                <div id="fileUploadProgressBar" class="bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div>
+                            </div>
+                            {/* Existing file-upload-info div will be appended here by JS if a file is selected */}
                         </div>
 
                         <!-- Text Input (Now for Raw JSON / Debug) -->
@@ -343,6 +349,21 @@
     const initialResumeContentJsonString = {{ resume_content_json | tojson | safe }}; // This is a stringified JSON
     const currentResumeId = {{ resume_id | tojson | safe }}; // This can be null for new resumes
 </script>
+
+<!-- External Libraries for Phase 4: PDF reading/generation -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<!-- pdf.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.107/pdf.min.js"></script>
+<script>
+    // Required for pdf.js to work correctly from CDN, point to its worker file.
+    if (typeof pdfjsLib !== 'undefined') {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.107/pdf.worker.min.js';
+    } else {
+        console.warn("pdf.js library not loaded, PDF processing might fail.");
+    }
+</script>
+
 <!-- Custom Formatter Script -->
 <script src="{{ url_for('static', filename='js/formatter.js') }}"></script>
 {% endblock %}
