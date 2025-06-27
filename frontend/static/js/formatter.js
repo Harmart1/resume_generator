@@ -249,7 +249,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // updateLivePreview(); // Will be enhanced later
 });
 
- feat/new-resume-formatter-p1
 // --- Export Functionality / PDF Generation with jsPDF ---
 
 const PDF_CONFIG = {
@@ -485,36 +484,6 @@ function setupExportButtons() {
         downloadPdfBtn.addEventListener('click', generatePdfWithJsPDF);
     }
     // const downloadWordBtn = document.getElementById('downloadWordBtn'); // For later
-=======
-// --- Export Functionality ---
-function setupExportButtons() {
-    const downloadPdfBtn = document.getElementById('downloadPdfBtn');
-    if (downloadPdfBtn) {
-        downloadPdfBtn.addEventListener('click', () => {
-            // Ensure the preview is fully up-to-date with any recent data changes
-            // updateLivePreview(); // Called by data change handlers already
-
-            const originalTitle = document.title;
-            const resumeTitleInput = document.getElementById('resumeTitleInput');
-            let resumeTitle = "resume"; // Default filename
-            if (resumeTitleInput && resumeTitleInput.value) {
-                resumeTitle = resumeTitleInput.value.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-            }
-            document.title = resumeTitle; // Set for print-to-PDF filename suggestion
-
-            window.print(); // Uses @media print styles
-
-            // Restore original title after a short delay (print dialog might be async)
-            setTimeout(() => {
-                document.title = originalTitle;
-            }, 1000);
-        });
-    }
-
-    // Placeholder for Word export if added later
-    // const downloadWordBtn = document.getElementById('downloadWordBtn');
-    // if (downloadWordBtn) { /* ... */ }
- main
 }
 
 
@@ -782,10 +751,8 @@ function addDynamicFieldListeners(containerElement) {
 function showStatus(div, message, type) {
     if (!div) return;
     div.textContent = message;
-    div.className = `status ${type} mt-3 text-sm`; // Added base classes
-    if (type === 'error') div.classList.add('text-red-500');
-    else if (type === 'success') div.classList.add('text-green-500');
-    else div.classList.add('text-blue-500');
+    // The CSS classes .status.info, .status.success, .status.error now handle all styling including text color.
+    div.className = `status ${type} mt-3 text-sm`;
 }
 
 // File reading functions with progress updates (adapted from provided new JS)
@@ -1256,7 +1223,6 @@ function setupSuggestionCardDismiss() {
                 card.remove(); // Remove the card from the DOM
                 updateSuggestionCounts(); // Update counts after dismissing
             }
- feat/new-resume-formatter-p1
         });
     });
 }
@@ -1336,87 +1302,6 @@ function setupAISuggestionApplyButtons() {
     });
 }
 
-=======
-        });
-    });
-}
-
-function setupAISuggestionApplyButtons() {
-    document.querySelectorAll('.apply-suggestion-btn').forEach(button => {
-        if (button.disabled) return;
-
-        button.addEventListener('click', function() {
-            const suggestionType = this.dataset.suggestionType;
-            const card = this.closest('.suggestion-card');
-            let success = false;
-            let affectedSectionToRender = null; // To specify which editor section might need re-rendering
-
-            if (suggestionType === 'quantifyAchievements') {
-                if (currentResumeData.experiences && currentResumeData.experiences.length > 0) {
-                    const firstExp = currentResumeData.experiences[0];
-                    if (!firstExp.achievements) firstExp.achievements = [];
-                    // Add to the beginning for visibility
-                    firstExp.achievements.unshift("Simulated: Increased key metric by 25% through strategic initiative.");
-                    success = true;
-                    affectedSectionToRender = renderExperienceSection;
-                } else {
-                    showToast("Please add an experience item first to apply this suggestion.", "info");
-                }
-            } else if (suggestionType === 'actionVerbs') {
-                if (currentResumeData.summary) {
-                    currentResumeData.summary = currentResumeData.summary.replace(/Helped with/gi, "Facilitated")
-                                                                     .replace(/Managed/gi, "Spearheaded")
-                                                                     .replace(/Responsible for/gi, "Pioneered");
-                    if (!currentResumeData.summary.includes("Facilitated") && !currentResumeData.summary.includes("Spearheaded") && !currentResumeData.summary.includes("Pioneered")) {
-                        currentResumeData.summary = "Simulated: Spearheaded new initiative for summary. " + currentResumeData.summary; // Ensure a change if no common verbs found
-                    }
-                    success = true;
-                    affectedSectionToRender = () => { // Re-populate summary textarea
-                        const summaryTextarea = document.getElementById('summaryTextarea');
-                        if (summaryTextarea) summaryTextarea.value = currentResumeData.summary || "";
-                    };
-                } else if (currentResumeData.experiences && currentResumeData.experiences.length > 0 && currentResumeData.experiences[0].achievements && currentResumeData.experiences[0].achievements.length > 0) {
-                    let firstAchievement = currentResumeData.experiences[0].achievements[0];
-                    let originalAchievement = firstAchievement;
-                    firstAchievement = firstAchievement.replace(/Helped with/gi, "Facilitated")
-                                                       .replace(/Managed/gi, "Spearheaded")
-                                                       .replace(/Responsible for/gi, "Pioneered");
-                    if (firstAchievement === originalAchievement) { // If no common weak verbs found, prepend a simulated change
-                        firstAchievement = "Simulated: Spearheaded " + firstAchievement;
-                    }
-                    currentResumeData.experiences[0].achievements[0] = firstAchievement;
-                    success = true;
-                    affectedSectionToRender = renderExperienceSection;
-                } else {
-                     showToast("Please add a summary or an experience item to apply this suggestion.", "info");
-                }
-            }
-
-            if (success) {
-                card.classList.remove('pending');
-                card.classList.add('applied');
-                const badge = card.querySelector('.suggestion-impact-badge');
-                if (badge) {
-                    badge.classList.remove('bg-yellow-100', 'text-yellow-800', 'bg-blue-100', 'text-blue-800');
-                    badge.classList.add('bg-green-100', 'text-green-800');
-                    badge.textContent = 'Applied';
-                }
-                this.innerHTML = '<i class="fas fa-undo mr-1"></i>Undo';
-                this.classList.remove('bg-blue-600', 'hover:bg-blue-700');
-                this.classList.add('bg-gray-400', 'hover:bg-gray-500', 'opacity-70', 'cursor-not-allowed');
-                this.disabled = true; // For Phase 3, Undo is non-functional, so disable after apply.
-
-                if (affectedSectionToRender) affectedSectionToRender();
-                updateLivePreview();
-                updateResumeTextDebugView();
-                updateSuggestionCounts();
-                showToast("Suggestion applied (simulated).", "success");
-            }
-        });
-    });
-}
-
- main
 
 function updateSuggestionCounts() {
     const appliedCountEl = document.getElementById('appliedCount');

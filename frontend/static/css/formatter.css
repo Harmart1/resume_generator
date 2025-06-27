@@ -64,6 +64,51 @@
     /* text-align: left; */
 }
 
+/* UI Feedback Elements */
+#fileUploadProgressContainer {
+    width: 100%;
+    background-color: #e5e7eb; /* Tailwind gray-200 */
+    border-radius: 4px;
+    height: 8px; /* Slimmer progress bar */
+    margin-top: 0.75rem; /* mt-3 */
+    /* display: none; by default, JS handles visibility via 'hidden' class */
+}
+
+#fileUploadProgressBar {
+    height: 100%;
+    background-color: #1a73e8; /* Blue color from example */
+    width: 0%; /* Initial state */
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+/* Status Messages (for #fileUploadStatus) */
+.status { /* Base class for status messages, JS adds type-specific class and mt-3, text-sm */
+    padding: 0.5rem;
+    border-radius: 0.375rem; /* rounded-md */
+    border-width: 1px;
+    border-style: solid;
+    /* text-sm and mt-3 are added by JS, keeping it flexible */
+}
+
+.status.info {
+    color: #2563eb; /* Tailwind blue-600 / text-blue-600 */
+    background-color: #eff6ff; /* Tailwind blue-50 / bg-blue-50 */
+    border-color: #93c5fd; /* Tailwind blue-300 / border-blue-300 */
+}
+
+.status.success {
+    color: #059669; /* Tailwind green-600 / text-green-600 */
+    background-color: #ecfdf5; /* Tailwind green-50 / bg-green-50 */
+    border-color: #6ee7b7; /* Tailwind green-300 / border-green-300 */
+}
+
+.status.error {
+    color: #dc2626; /* Tailwind red-600 / text-red-600 */
+    background-color: #fee2e2; /* Tailwind red-50 / bg-red-50 */
+    border-color: #fca5a5; /* Tailwind red-300 / border-red-300 */
+}
+
 
 /* Two Column Layout (Basic) */
 .resume-preview.layout-two-column {
