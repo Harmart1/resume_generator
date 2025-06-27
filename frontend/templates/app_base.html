@@ -17,7 +17,7 @@
         body { font-family: 'Inter', sans-serif; background-color: #1A1A2E; color: #E0E0E0; }
         .container { max-width: 1200px; margin: 0 auto; padding: 1rem; }
         @media (min-width: 640px) { .container { padding: 1.5rem; } } @media (min-width: 1024px) { .container { padding: 2rem; } }
-        .glass-card { background-color: rgba(26, 26, 46, 0.7); backdrop-filter: blur(15px); border-radius: 1.25rem; border: 1px solid rgba(0, 216, 255, 0.4); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4); transition: transform 0.3s ease, box-shadow 0.3s ease; }
+        .glass-card { background-color: rgba(26, 26, 46, 0.7); -webkit-backdrop-filter: blur(15px); backdrop-filter: blur(15px); border-radius: 1.25rem; border: 1px solid rgba(0, 216, 255, 0.4); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4); transition: transform 0.3s ease, box-shadow 0.3s ease; }
         .glass-card:hover { transform: translateY(-3px); box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5); }
         .glass-card-inner { background-color: rgba(15, 15, 26, 0.8); border-radius: 1rem; border: 1px solid rgba(0, 216, 255, 0.2); }
         .flash-message { padding: 1rem; margin-bottom: 1.5rem; border-radius: 0.75rem; font-weight: 600; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); text-align: center; border-left: 5px solid; transition: all 0.3s ease-in-out; font-family: 'Sora', sans-serif; }
@@ -58,7 +58,7 @@
         <div class="container flex flex-col md:flex-row justify-between items-center">
             <div class="flex items-center mb-4 md:mb-0">
                 <a href="{{ url_for('main.home') }}"> <!-- Link logo to welcome page -->
-                    <img src="{{ url_for('static', filename='logo.png') }}" alt="Revisume.ai Logo" class="h-10 sm:h-12 mr-3" onerror="this.onerror=null;this.src='https://placehold.co/48x48/1A1A2E/00D8FF?text=AI';">
+                    <img src="/static/logo.png" alt="Revisume.ai Logo" class="h-10 sm:h-12 mr-3" onerror="this.onerror=null;this.src='https://placehold.co/48x48/1A1A2E/00D8FF?text=AI';">
                 </a>
             </div>
             <nav class="mb-4 md:mb-0">
@@ -200,5 +200,6 @@
             }
         }
     </script>
+    {% block scripts %}{% endblock %}
 </body>
 </html>
