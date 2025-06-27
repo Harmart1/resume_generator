@@ -99,10 +99,31 @@ try:
             logger.info("Database connection established successfully.")
         except Exception as e:
             logger.error(f"Database connection failed: {str(e)}", exc_info=True)
+
+    # --- Login Manager Configuration (moved inside the try block) ---
+    login_manager.login_view = 'main.login' # Assuming login route is in main_bp now
+    login_manager.login_message_category = 'info'
+    logger.info(f"LoginManager configured with login_view: '{login_manager.login_view}'.")
+
+    @login_manager.user_loader
+    def load_user(user_id):
+        from backend.models import User # Import here
+        try:
+            user = User.query.get(int(user_id))
+            return user
+        except Exception as e:
+            logger.error(f"Error in user_loader for user_id {user_id}: {e}", exc_info=True)
+            return None
+
 except ImportError:
     logger.error("Failed to import extensions from backend.extensions. Ensure extensions.py is correctly set up.", exc_info=True)
+    # Set extensions to None or handle them if import fails and they are checked later outside this block
+    db, migrate, bcrypt, login_manager = None, None, None, None
+    logger.warning("Extensions (db, migrate, bcrypt, login_manager) set to None due to import failure.")
 except Exception as e:
     logger.error(f"An error occurred during extensions initialization: {e}", exc_info=True)
+    db, migrate, bcrypt, login_manager = None, None, None, None
+    logger.warning("Extensions (db, migrate, bcrypt, login_manager) set to None due to initialization error.")
 
 
 # CSRF Protection
@@ -118,13 +139,13 @@ logger.info("Flask-Session initialized with type 'filesystem'.")
 # --- Blueprints Registration ---
 try:
     from backend.resume_builder import bp as resume_builder_bp
-    from backend.cover_letter_app import bp as cover_letter_bp
+    from backend.cover_letter_app import cover_letter_bp # Corrected import
     from backend.mock_interview_app import bp as mock_interview_bp
     # Import main_bp for core routes like /, /contact etc.
     from backend.routes import main_bp # Renamed to avoid clash if user had main_bp
 
     app.register_blueprint(resume_builder_bp, url_prefix='/resume-builder')
-    app.register_blueprint(cover_letter_bp, url_prefix='/cover-letter')
+    app.register_blueprint(cover_letter_bp, url_prefix='/cover-letter') # Use the correctly imported name
     app.register_blueprint(mock_interview_bp, url_prefix='/mock-interview')
     app.register_blueprint(main_bp) # Register core routes
     logger.info("Blueprints (resume_builder, cover_letter, mock_interview, main_bp) registered.")
@@ -138,23 +159,13 @@ except Exception as e:
 # Models are now in backend.models and imported by blueprints or when needed (e.g. user_loader)
 # No global model import here is needed if blueprints handle their model interactions.
 
-# --- Login Manager Configuration ---
+# --- Check if login_manager was initialized before using it (it might be None) ---
 if login_manager:
-    login_manager.login_view = 'main.login' # Assuming login route is in main_bp now
-    login_manager.login_message_category = 'info'
-    logger.info(f"LoginManager configured with login_view: '{login_manager.login_view}'.")
-
-    @login_manager.user_loader
-    def load_user(user_id):
-        from backend.models import User # Import here
-        try:
-            user = User.query.get(int(user_id))
-            return user
-        except Exception as e:
-            logger.error(f"Error in user_loader for user_id {user_id}: {e}", exc_info=True)
-            return None
+    logger.info(f"LoginManager was initialized. Proceeding with request hooks dependent on it.")
+    # The user_loader is already set if login_manager was initialized.
+    # Additional configurations or checks that depend on login_manager can go here.
 else:
-    logger.warning("LoginManager not available, user session management will be affected.")
+    logger.warning("LoginManager not available, user session management will be affected. Skipping request hooks dependent on it.")
 
 # --- Request Hooks ---
 from flask_login import current_user # Import current_user for g.user
