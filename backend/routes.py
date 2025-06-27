@@ -1,4 +1,5 @@
 import logging # Added for logging
+import os # Added for path manipulation
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_required, current_user, login_user, logout_user
 from backend.models import User, Resume, CoverLetter, MockInterview, Credit, FeatureUsageLog
@@ -9,7 +10,13 @@ from backend.forms import LoginForm, RegistrationForm # Added for auth forms
 # Configure logger for this blueprint
 logger = logging.getLogger(__name__) # Added for logging
 
-main_bp = Blueprint('main', __name__, template_folder='../../frontend/templates')
+# Define paths relative to this file's location (backend/routes.py)
+# os.path.dirname(__file__) is backend/
+# os.path.abspath(os.path.join(os.path.dirname(__file__), '..')) is project_root/ (e.g., src/)
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+MAIN_TEMPLATE_FOLDER = os.path.join(PROJECT_ROOT, 'frontend', 'templates')
+
+main_bp = Blueprint('main', __name__, template_folder=MAIN_TEMPLATE_FOLDER)
 
 @main_bp.route('/')
 def home():
