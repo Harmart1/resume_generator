@@ -101,8 +101,7 @@ def generate_ai_cover_letter():
 
             try:
                 ai_prompt = build_cover_letter_prompt(form_data_dict, form_data_dict['existing_cover_text'])
-                logger.info(f"AI Prompt for user {current_user.id} (first 500 chars):\
-{ai_prompt[:500]}...")
+                logger.info(f"AI Prompt for user {current_user.id} (first 500 chars): {ai_prompt[:500]}...") # Ensuring clean f-string
                 generated_content = f"--- PROMPT FOR AI ---\n{ai_prompt}\n\n--- END (Actual AI content here) ---" # Placeholder
 
                 user_credit_on_submit.amount -= 1
@@ -155,4 +154,3 @@ def create_manual_cover_letter():
     return render_template('cover_letter/create_manual.html', form=form, title="Create Manual Cover Letter")
 
 # TODO: Add other CRUD routes like /view/<id>, /edit/<id>, /delete/<id>
-```
