@@ -179,12 +179,6 @@ else:
 # --- Request Hooks ---
 from flask_login import current_user # Import current_user for g.user
 
-# Define project root for static file serving if not already defined globally
-# This assumes app.py is in backend/ and we want to go one level up to src/ (project_root)
-# and then to frontend/static
-PROJECT_ROOT_FOR_STATIC = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-GLOBAL_STATIC_FOLDER = os.path.join(PROJECT_ROOT_FOR_STATIC, 'frontend', 'static')
-
 @app.before_request
 def setup_jinja_globals():
     if not hasattr(g, 'jinja_filters_setup'):
@@ -210,12 +204,10 @@ def add_security_headers(response):
     response.headers['Expires'] = '0' # for proxy caches
     return response
 
-# --- Static file serving (If not handled by webserver in production) ---
-@app.route('/static/<path:filename>', endpoint='static') # Explicitly named endpoint to 'static'
-def project_static_files(filename): # Renamed function
-    # Use the globally defined absolute path for the static folder
-    logger.debug(f"Attempting to serve static file: {filename} from {GLOBAL_STATIC_FOLDER}")
-    return send_from_directory(GLOBAL_STATIC_FOLDER, filename)
+# --- Custom static file route removed. ---
+# Flask's built-in static handling will be used, configured by:
+# app = Flask(__name__, static_folder=GLOBAL_STATIC_FOLDER, static_url_path='/static')
+# where GLOBAL_STATIC_FOLDER is the absolute path to project_root/frontend/static/
 
 
 # --- Main Execution (for development) ---
