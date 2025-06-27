@@ -53,3 +53,8 @@
     {% endif %}
 </div>
 {% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="{{ url_for('static', filename='js/mock_interview.js') }}"></script>
+{% endblock %}

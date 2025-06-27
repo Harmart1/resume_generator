@@ -58,3 +58,8 @@
     {% endif %}
 </div>
 {% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="{{ url_for('static', filename='js/cover_letter.js') }}"></script>
+{% endblock %}

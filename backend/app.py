@@ -187,9 +187,22 @@ def setup_jinja_globals():
         g.jinja_filters_setup = True
     g.user = current_user
 
+@app.after_request
+def add_security_headers(response):
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+    # For Cache-Control, it's often better to set it specifically for static vs dynamic content,
+    # but a general one can be a start. For static files, Flask's send_from_directory
+    # might already set some cache headers. We can refine this later if needed.
+    # response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0' # Example: very restrictive
+    if 'Cache-Control' not in response.headers:
+        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache' # for HTTP/1.0 caches
+    response.headers['Expires'] = '0' # for proxy caches
+    return response
 
 # --- Static file serving (If not handled by webserver in production) ---
-@app.route('/static/<path:filename>') # Changed path to filename for clarity
+@app.route('/static/<path:filename>', endpoint='static') # Explicitly named endpoint to 'static'
 def project_static_files(filename): # Renamed function
     # Use the globally defined absolute path for the static folder
     logger.debug(f"Attempting to serve static file: {filename} from {GLOBAL_STATIC_FOLDER}")
